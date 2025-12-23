@@ -146,3 +146,43 @@ export const projectIdSchema = z.object({
 export type ProjectCreate = z.infer<typeof projectCreateSchema>
 export type ProjectUpdate = z.infer<typeof projectUpdateSchema>
 export type ProjectId = z.infer<typeof projectIdSchema>
+
+// ========== TASKS ==========
+export const taskCreateSchema = z.object({
+  projectId: z.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif'),
+  assignedTo: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional(),
+  title: z.string().min(1, 'Le titre est requis').max(255, 'Le titre est trop long'),
+  description: z.string().optional().or(z.literal('')),
+  status: z.enum(['todo', 'in_progress', 'done'], {
+    message: 'Le statut doit être "todo", "in_progress" ou "done"'
+  }).default('todo'),
+  priority: z.enum(['low', 'medium', 'high'], {
+    message: 'La priorité doit être "low", "medium" ou "high"'
+  }).default('medium'),
+  dueDate: z.coerce.date().optional()
+})
+
+export const taskUpdateSchema = z.object({
+  projectId: z.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif').optional(),
+  assignedTo: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional(),
+  title: z.string().min(1, 'Le titre ne peut pas être vide').max(255, 'Le titre est trop long').optional().or(z.literal('')),
+  description: z.string().optional().or(z.literal('')),
+  status: z.enum(['todo', 'in_progress', 'done'], {
+    message: 'Le statut doit être "todo", "in_progress" ou "done"'
+  }).optional(),
+  priority: z.enum(['low', 'medium', 'high'], {
+    message: 'La priorité doit être "low", "medium" ou "high"'
+  }).optional(),
+  dueDate: z.coerce.date().optional()
+}).refine(
+  data => Object.keys(data).length > 0,
+  { message: 'Au moins un champ doit être fourni' }
+)
+
+export const taskIdSchema = z.object({
+  id: z.coerce.number().int('L\'ID doit être un entier').positive('L\'ID doit être positif')
+})
+
+export type TaskCreate = z.infer<typeof taskCreateSchema>
+export type TaskUpdate = z.infer<typeof taskUpdateSchema>
+export type TaskId = z.infer<typeof taskIdSchema>

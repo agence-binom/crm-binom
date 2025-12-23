@@ -107,6 +107,14 @@
 
             <div class="flex gap-2">
               <UButton
+                icon="i-lucide-list-checks"
+                variant="soft"
+                size="sm"
+                @click="navigateTo(`/projects/${project.id}/tasks`)"
+              >
+                Tâches
+              </UButton>
+              <UButton
                 icon="i-lucide-pencil"
                 variant="soft"
                 size="sm"
@@ -114,22 +122,12 @@
               >
                 Modifier
               </UButton>
+              <p class="text-gray-600">
+                Aucun projet {{ statusFilter !== 'all' ? 'avec ce statut' : '' }}
+              </p>
             </div>
           </div>
         </div>
-      </div>
-    </UCard>
-
-    <!-- Message si aucun projet -->
-    <UCard v-else>
-      <div class="text-center py-8">
-        <UIcon
-          name="i-lucide-folder-open"
-          class="text-4xl text-gray-400 mb-2"
-        />
-        <p class="text-gray-600">
-          Aucun projet {{ statusFilter !== 'all' ? 'avec ce statut' : '' }}
-        </p>
       </div>
     </UCard>
   </div>

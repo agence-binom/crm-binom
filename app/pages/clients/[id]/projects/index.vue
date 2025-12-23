@@ -88,6 +88,14 @@
 
             <div class="flex gap-2">
               <UButton
+                icon="i-lucide-list-checks"
+                variant="soft"
+                size="sm"
+                @click="navigateTo(`/projects/${project.id}/tasks`)"
+              >
+                Tâches
+              </UButton>
+              <UButton
                 icon="i-lucide-pencil"
                 variant="soft"
                 size="sm"
