@@ -1,76 +1,170 @@
 <script setup lang="ts">
-const links = [
-  {
-    icon: 'i-lucide-users',
-    label: 'Clients',
-    description: 'Gérer vos clients',
-    to: '/clients',
-    color: 'blue'
-  },
-  {
-    icon: 'i-lucide-contact',
-    label: 'Contacts',
-    description: 'Gérer vos contacts',
-    to: '/contacts',
-    color: 'green'
-  },
-  {
-    icon: 'i-lucide-folder',
-    label: 'Projets',
-    description: 'Gérer vos projets web',
-    to: '/projects',
-    color: 'orange'
-  },
-  {
-    icon: 'i-lucide-user',
-    label: 'Utilisateurs',
-    description: 'Gérer les utilisateurs',
-    to: '/users',
-    color: 'purple'
+const { data, refresh } = await useFetch('/api/tasks')
+
+const tasksByStatus = computed(() => {
+  if (!data.value?.tasks) return { todo: [], in_progress: [], done: [] }
+
+  return {
+    todo: data.value.tasks.filter(t => t.status === 'todo'),
+    in_progress: data.value.tasks.filter(t => t.status === 'in_progress'),
+    done: data.value.tasks.filter(t => t.status === 'done')
   }
-]
+})
+
+console.log(tasksByStatus)
+
+const stats = computed(() => ({
+  total: data.value?.tasks.length || 0,
+  todo: tasksByStatus.value.todo.length,
+  inProgress: tasksByStatus.value.in_progress.length,
+  done: tasksByStatus.value.done.length
+}))
+
+const onDeleteTask = async (taskId: number) => {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) return
+
+  try {
+    await $fetch(`/api/tasks/${taskId}`, {
+      method: 'DELETE'
+    })
+    await refresh()
+  } catch (error) {
+    console.error('Erreur lors de la suppression de la tâche:', error)
+  }
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <div class="container mx-auto p-6">
-      <div class="max-w-4xl mx-auto">
-        <div class="text-center mb-12 mt-8">
-          <h1 class="text-4xl font-bold mb-4">
-            CRM Binom
-          </h1>
-          <p class="text-xl text-gray-600">
-            Gérez vos clients et contacts efficacement
-          </p>
-        </div>
+  <div class="container mx-auto p-6">
+    <!-- En-tête -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold mb-2">
+        To Do List globale
+      </h1>
+      <TaskForm />
+    </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <UCard
-            v-for="link in links"
-            :key="link.to"
-            class="hover:shadow-lg transition-shadow cursor-pointer"
-            @click="navigateTo(link.to)"
+    <!-- Statistiques -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <UCard>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-gray-600">
+            {{ stats.total }}
+          </div>
+
+          <div class="text-sm text-gray-500">
+            Total
+          </div>
+        </div>
+      </UCard>
+      <UCard>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-yellow-600">
+            {{ stats.todo }}
+          </div>
+          <div class="text-sm text-gray-500">
+            À faire
+          </div>
+        </div>
+      </UCard>
+
+      <UCard>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-blue-600">
+            {{ stats.inProgress }}
+          </div>
+          <div class="text-sm text-gray-500">
+            En cours
+          </div>
+        </div>
+      </UCard>
+
+      <UCard>
+        <div class="text-center">
+          <div class="text-3xl font-bold text-green-600">
+            {{ stats.done }}
+          </div>
+          <div class="text-sm text-gray-500">
+            Terminées
+          </div>
+        </div>
+      </UCard>
+    </div>
+
+    <!-- Liste des tâches par statut -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- À faire -->
+      <div>
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <UIcon
+            name="i-lucide-circle"
+            class="text-yellow-500"
+          />
+          À faire ({{ tasksByStatus.todo.length }})
+        </h3>
+        <div class="space-y-3">
+          <TaskCard
+            v-for="task in tasksByStatus.todo"
+            :key="task.id"
+            :task="task"
+            @delete="onDeleteTask"
+          />
+          <div
+            v-if="tasksByStatus.todo.length === 0"
+            class="text-center py-8 text-gray-400"
           >
-            <div class="text-center py-8">
-              <div class="flex justify-center mb-4">
-                <div
-                  class="p-4 rounded-full"
-                  :class="`bg-${link.color}-100`"
-                >
-                  <UIcon
-                    :name="link.icon"
-                    :class="`text-4xl text-${link.color}-600`"
-                  />
-                </div>
-              </div>
-              <h3 class="text-xl font-semibold mb-2">
-                {{ link.label }}
-              </h3>
-              <p class="text-gray-600">
-                {{ link.description }}
-              </p>
-            </div>
-          </UCard>
+            Aucune tâche à faire
+          </div>
+        </div>
+      </div>
+
+      <!-- En cours -->
+      <div>
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <UIcon
+            name="i-lucide-loader"
+            class="text-blue-500"
+          />
+          En cours ({{ tasksByStatus.in_progress.length }})
+        </h3>
+        <div class="space-y-3">
+          <TaskCard
+            v-for="task in tasksByStatus.in_progress"
+            :key="task.id"
+            :task="task"
+            @delete="onDeleteTask"
+          />
+          <div
+            v-if="tasksByStatus.in_progress.length === 0"
+            class="text-center py-8 text-gray-400"
+          >
+            Aucune tâche en cours
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminées -->
+      <div>
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+          <UIcon
+            name="i-lucide-check-circle"
+            class="text-green-500"
+          />
+          Terminées ({{ tasksByStatus.done.length }})
+        </h3>
+        <div class="space-y-3">
+          <TaskCard
+            v-for="task in tasksByStatus.done"
+            :key="task.id"
+            :task="task"
+            @delete="onDeleteTask"
+          />
+          <div
+            v-if="tasksByStatus.done.length === 0"
+            class="text-center py-8 text-gray-400"
+          >
+            Aucune tâche terminée
+          </div>
         </div>
       </div>
     </div>

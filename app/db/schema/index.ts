@@ -58,7 +58,7 @@ export const projectsTable = pgTable('projects', {
 
 export const tasksTable = pgTable('tasks', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  projectId: integer().notNull().references(() => projectsTable.id, { onDelete: 'cascade' }),
+  projectId: integer().references(() => projectsTable.id, { onDelete: 'cascade' }),
   assignedTo: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   title: varchar({ length: 255 }).notNull(),
   description: text(),

@@ -92,7 +92,7 @@ interface Task {
   status: string
   priority: string
   dueDate?: Date | string | null
-  projectId: number
+  projectId: number | null
   assignedTo?: number | null
   createdAt: Date | string
   updatedAt: Date | string
