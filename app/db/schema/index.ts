@@ -4,8 +4,11 @@ import { relations } from 'drizzle-orm'
 export const usersTable = pgTable('users', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: varchar({ length: 255 }).notNull(),
-  age: integer().notNull(),
-  email: varchar({ length: 255 }).notNull().unique()
+  email: varchar({ length: 255 }).notNull().unique(),
+  password: varchar({ length: 255 }).notNull(),
+  role: varchar({ length: 50 }).notNull().default('client'), // 'admin' | 'employee' | 'client'
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().defaultNow()
 })
 
 export const clientsTable = pgTable('clients', {
@@ -26,6 +29,7 @@ export const clientsTable = pgTable('clients', {
 export const contactsTable = pgTable('contacts', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   clientId: integer().notNull().references(() => clientsTable.id, { onDelete: 'cascade' }),
+  userId: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   firstName: varchar({ length: 100 }).notNull(),
   lastName: varchar({ length: 100 }).notNull(),
   email: varchar({ length: 255 }),
@@ -45,5 +49,9 @@ export const contactsRelations = relations(contactsTable, ({ one }) => ({
   client: one(clientsTable, {
     fields: [contactsTable.clientId],
     references: [clientsTable.id]
+  }),
+  user: one(usersTable, {
+    fields: [contactsTable.userId],
+    references: [usersTable.id]
   })
 }))

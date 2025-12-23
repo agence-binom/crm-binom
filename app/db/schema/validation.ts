@@ -4,13 +4,19 @@ import * as z from 'zod'
 export const userCreateSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
   email: z.string().email('Email invalide').max(255, 'Email trop long'),
-  age: z.number().int('L\'âge doit être un entier').positive('L\'âge doit être positif')
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères').max(255, 'Le mot de passe est trop long'),
+  role: z.enum(['admin', 'employee', 'client'], {
+    message: 'Le rôle doit être "admin", "employee" ou "client"'
+  }).default('client')
 })
 
 export const userUpdateSchema = z.object({
   name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional(),
   email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
-  age: z.number().int('L\'âge doit être un entier').positive('L\'âge doit être positif').optional()
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères').max(255, 'Le mot de passe est trop long').optional(),
+  role: z.enum(['admin', 'employee', 'client'], {
+    message: 'Le rôle doit être "admin", "employee" ou "client"'
+  }).optional()
 }).refine(
   data => Object.keys(data).length > 0,
   { message: 'Au moins un champ doit être fourni' }
@@ -68,6 +74,7 @@ export type ClientId = z.infer<typeof clientIdSchema>
 // ========== CONTACTS ==========
 export const contactCreateSchema = z.object({
   clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif'),
+  userId: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional(),
   firstName: z.string().min(1, 'Le prénom est requis').max(100, 'Le prénom est trop long'),
   lastName: z.string().min(1, 'Le nom est requis').max(100, 'Le nom est trop long'),
   email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
@@ -79,6 +86,7 @@ export const contactCreateSchema = z.object({
 
 export const contactUpdateSchema = z.object({
   clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif').optional(),
+  userId: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional().nullable(),
   firstName: z.string().min(1, 'Le prénom ne peut pas être vide').max(100, 'Le prénom est trop long').optional(),
   lastName: z.string().min(1, 'Le nom ne peut pas être vide').max(100, 'Le nom est trop long').optional(),
   email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
