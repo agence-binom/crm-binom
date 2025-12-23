@@ -19,6 +19,11 @@ export const userQuerySchema = z.object({
   email: z.string().email('Email invalide').optional()
 })
 
+export const userIdSchema = z.object({
+  id: z.coerce.number().int('L\'ID doit être un entier').positive('L\'ID doit être positif')
+})
+
 export type UserCreate = z.infer<typeof userCreateSchema>
 export type UserUpdate = z.infer<typeof userUpdateSchema>
 export type UserQuery = z.infer<typeof userQuerySchema>
+export type UserId = z.infer<typeof userIdSchema>

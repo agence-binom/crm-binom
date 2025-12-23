@@ -1,23 +1,17 @@
 import { db } from '~/db/index'
 import { usersTable } from '~/db/schema/index'
 import { eq } from 'drizzle-orm'
-import { userUpdateSchema } from '~/db/schema/validation'
+import { userUpdateSchema, userIdSchema } from '~/db/schema/validation'
 
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
-  if (!id) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'ID manquant'
-    })
-  }
+  const { id } = await getValidatedRouterParams(event, userIdSchema.parse)
 
   const body = await readValidatedBody(event, userUpdateSchema.parse)
 
   const user = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.id, parseInt(id)))
+    .where(eq(usersTable.id, id))
 
   if (user.length === 0) {
     throw createError({
@@ -29,7 +23,7 @@ export default defineEventHandler(async (event) => {
   const userUpdated = await db
     .update(usersTable)
     .set(body)
-    .where(eq(usersTable.id, parseInt(id)))
+    .where(eq(usersTable.id, id))
     .returning()
 
   return {
