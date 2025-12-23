@@ -8,7 +8,7 @@ const collapsed = ref(false)
       v-model:collapsed="collapsed"
       collapsible
       :ui="{ footer: 'border-t border-default' }"
-      class="py-4 px-2"
+      class="py-4"
     >
       <template #default="{ }">
         <!-- <UDashboardSearchButton
@@ -67,11 +67,13 @@ const collapsed = ref(false)
             icon="i-lucide-bell"
             color="neutral"
             variant="ghost"
+            disabled
           />
           <UButton
             icon="i-lucide-settings"
             color="neutral"
             variant="ghost"
+            disabled
           />
         </template>
       </UDashboardNavbar>
