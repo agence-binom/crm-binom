@@ -67,19 +67,30 @@ const onDeleteClient = async (clientId: number) => {
               {{ client.email || 'Pas d\'email' }}
             </p>
           </div>
-          <div class="text-right">
-            <p class="text-sm text-gray-500">
-              {{ client.phone || 'Pas de téléphone' }}
-            </p>
-            <p class="text-sm text-gray-400">
-              {{ client.city || '' }}
-            </p>
-            <UButton
-              label="Supprimer le client"
-              color="error"
-              loading-auto
-              @click="onDeleteClient(client.id)"
-            />
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <p class="text-sm text-gray-500">
+                {{ client.phone || 'Pas de téléphone' }}
+              </p>
+              <p class="text-sm text-gray-400">
+                {{ client.city || '' }}
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <UButton
+                size="sm"
+                variant="ghost"
+                icon="i-lucide-users"
+                :to="`/clients/${client.id}/contacts`"
+              />
+              <UButton
+                size="sm"
+                variant="ghost"
+                color="error"
+                icon="i-lucide-trash"
+                @click="onDeleteClient(client.id)"
+              />
+            </div>
           </div>
         </div>
       </li>
