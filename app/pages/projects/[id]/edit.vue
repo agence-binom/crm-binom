@@ -204,7 +204,7 @@ const breadcrumbItems = [
 
 const onSubmit = async () => {
   isSubmitting.value = true
-  
+
   try {
     // Convertir les dates en objets Date si nécessaire
     const submitData: ProjectUpdate = {
@@ -212,12 +212,12 @@ const onSubmit = async () => {
       startDate: formState.startDate ? new Date(formState.startDate) : undefined,
       endDate: formState.endDate ? new Date(formState.endDate) : undefined
     }
-    
+
     await $fetch(`/api/projects/${projectId.value}`, {
       method: 'PUT',
       body: submitData
     })
-    
+
     goBack()
   } catch (error) {
     console.error('Erreur lors de la modification du projet:', error)

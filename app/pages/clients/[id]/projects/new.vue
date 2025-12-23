@@ -196,7 +196,7 @@ const breadcrumbItems = [
 
 const onSubmit = async () => {
   isSubmitting.value = true
-  
+
   try {
     // Convertir les dates en objets Date si nécessaire
     const submitData: ProjectCreate = {
@@ -204,12 +204,12 @@ const onSubmit = async () => {
       startDate: formState.startDate ? new Date(formState.startDate) : undefined,
       endDate: formState.endDate ? new Date(formState.endDate) : undefined
     }
-    
+
     await $fetch('/api/projects', {
       method: 'POST',
       body: submitData
     })
-    
+
     navigateTo(`/clients/${clientId.value}/projects`)
   } catch (error) {
     console.error('Erreur lors de la création du projet:', error)
