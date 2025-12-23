@@ -1,5 +1,5 @@
 import { db } from '~/db/index'
-import { usersTable } from '~/db/schema/index'
+import { usersTable } from '~/db/schema'
 import { eq } from 'drizzle-orm'
 import { userUpdateSchema, userIdSchema } from '~/db/schema/validation'
 
