@@ -1,4 +1,6 @@
 <script setup>
+import AgencyLayout from './layouts/AgencyLayout'
+
 useHead({
   meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
   link: [{ rel: 'icon', href: '/favicon.ico' }],
@@ -19,5 +21,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <NuxtPage />
+  <AgencyLayout>
+    <NuxtPage />
+  </AgencyLayout>
 </template>
