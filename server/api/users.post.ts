@@ -1,15 +1,9 @@
 import { db } from '~/db/index'
 import { usersTable } from '~/db/schema/index'
+import { userCreateSchema } from '~/db/schema/validation'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-
-  if (!body.name || !body.email || !body.age) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Nom, email et âge requis'
-    })
-  }
+  const body = await readValidatedBody(event, userCreateSchema.parse)
 
   const newUser = await db
     .insert(usersTable)

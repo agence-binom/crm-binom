@@ -1,17 +1,18 @@
 import { db } from '~/db/index'
 import { usersTable } from '~/db/schema/index'
 import { eq } from 'drizzle-orm'
+import { userUpdateSchema } from '~/db/schema/validation'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
-  const body = await readBody(event)
-
   if (!id) {
     throw createError({
       statusCode: 400,
       statusMessage: 'ID manquant'
     })
   }
+
+  const body = await readValidatedBody(event, userUpdateSchema.parse)
 
   const user = await db
     .select()
@@ -25,20 +26,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  if (!body.name || !body.email || !body.age) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Nom, email et âge requis'
-    })
-  }
-
   const userUpdated = await db
     .update(usersTable)
-    .set({
-      name: body.name,
-      email: body.email,
-      age: body.age
-    })
+    .set(body)
     .where(eq(usersTable.id, parseInt(id)))
     .returning()
 
