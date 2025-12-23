@@ -41,8 +41,24 @@ export const contactsTable = pgTable('contacts', {
   updatedAt: timestamp().notNull().defaultNow()
 })
 
+export const projectsTable = pgTable('projects', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  clientId: integer().notNull().references(() => clientsTable.id, { onDelete: 'cascade' }),
+  name: varchar({ length: 255 }).notNull(),
+  description: text(),
+  status: varchar({ length: 50 }).notNull().default('en_cours'),
+  budget: integer(),
+  startDate: timestamp(),
+  endDate: timestamp(),
+  url: varchar({ length: 255 }),
+  notes: text(),
+  createdAt: timestamp().notNull().defaultNow(),
+  updatedAt: timestamp().notNull().defaultNow()
+})
+
 export const clientsRelations = relations(clientsTable, ({ many }) => ({
-  contacts: many(contactsTable)
+  contacts: many(contactsTable),
+  projects: many(projectsTable)
 }))
 
 export const contactsRelations = relations(contactsTable, ({ one }) => ({
@@ -53,5 +69,12 @@ export const contactsRelations = relations(contactsTable, ({ one }) => ({
   user: one(usersTable, {
     fields: [contactsTable.userId],
     references: [usersTable.id]
+  })
+}))
+
+export const projectsRelations = relations(projectsTable, ({ one }) => ({
+  client: one(clientsTable, {
+    fields: [projectsTable.clientId],
+    references: [clientsTable.id]
   })
 }))

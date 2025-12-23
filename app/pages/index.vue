@@ -15,6 +15,13 @@ const links = [
     color: 'green'
   },
   {
+    icon: 'i-lucide-folder',
+    label: 'Projets',
+    description: 'Gérer vos projets web',
+    to: '/projects',
+    color: 'orange'
+  },
+  {
     icon: 'i-lucide-user',
     label: 'Utilisateurs',
     description: 'Gérer les utilisateurs',
@@ -37,7 +44,7 @@ const links = [
           </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <UCard
             v-for="link in links"
             :key="link.to"

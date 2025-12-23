@@ -86,6 +86,12 @@ const onDeleteClient = async (clientId: number) => {
               <UButton
                 size="sm"
                 variant="ghost"
+                icon="i-lucide-folder"
+                :to="`/clients/${client.id}/projects`"
+              />
+              <UButton
+                size="sm"
+                variant="ghost"
                 color="error"
                 icon="i-lucide-trash"
                 @click="onDeleteClient(client.id)"
