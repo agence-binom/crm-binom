@@ -18,7 +18,7 @@ export const clientsTable = pgTable('clients', {
   phone: varchar({ length: 50 }),
   address: text(),
   city: varchar({ length: 100 }),
-  postalCode: varchar({ length: 20 }),
+  postalCode: integer(),
   country: varchar({ length: 100 }),
   website: varchar({ length: 255 }),
   notes: text(),

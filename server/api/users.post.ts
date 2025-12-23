@@ -7,11 +7,7 @@ export default defineEventHandler(async (event) => {
 
   const newUser = await db
     .insert(usersTable)
-    .values({
-      name: body.name,
-      email: body.email,
-      age: body.age
-    })
+    .values(body)
     .returning()
 
   return {
