@@ -38,26 +38,26 @@ export type UserId = z.infer<typeof userIdSchema>
 // ========== CLIENTS ==========
 export const clientCreateSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
-  email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
-  phone: z.string().max(50, 'Téléphone trop long').optional(),
-  address: z.string().optional(),
-  city: z.string().max(100, 'Ville trop longue').optional(),
-  postalCode: z.number().int('Le code postal doit être un entier').positive('Le code postal doit être positif').max(5, 'Code postal trop long').optional(),
-  country: z.string().max(100, 'Pays trop long').optional(),
-  website: z.string().url('URL invalide').max(255, 'URL trop longue').optional(),
-  notes: z.string().optional()
+  email: z.string().email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
+  phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
+  city: z.string().max(100, 'Ville trop longue').optional().or(z.literal('')),
+  postalCode: z.string().regex(/^\d*$/, 'Le code postal doit contenir uniquement des chiffres').max(5, 'Code postal trop long').optional().or(z.literal('')),
+  country: z.string().max(100, 'Pays trop long').optional().or(z.literal('')),
+  website: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal(''))
 })
 
 export const clientUpdateSchema = z.object({
-  name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional(),
-  email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
-  phone: z.string().max(50, 'Téléphone trop long').optional(),
-  address: z.string().optional(),
-  city: z.string().max(100, 'Ville trop longue').optional(),
-  postalCode: z.number().int('Le code postal doit être un entier').positive('Le code postal doit être positif').max(5, 'Code postal trop long').optional(),
-  country: z.string().max(100, 'Pays trop long').optional(),
-  website: z.string().url('URL invalide').max(255, 'URL trop longue').optional(),
-  notes: z.string().optional()
+  name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional().or(z.literal('')),
+  email: z.string().email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
+  phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
+  city: z.string().max(100, 'Ville trop longue').optional().or(z.literal('')),
+  postalCode: z.string().regex(/^\d*$/, 'Le code postal doit contenir uniquement des chiffres').max(5, 'Code postal trop long').optional().or(z.literal('')),
+  country: z.string().max(100, 'Pays trop long').optional().or(z.literal('')),
+  website: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal(''))
 }).refine(
   data => Object.keys(data).length > 0,
   { message: 'Au moins un champ doit être fourni' }
@@ -77,23 +77,23 @@ export const contactCreateSchema = z.object({
   userId: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional(),
   firstName: z.string().min(1, 'Le prénom est requis').max(100, 'Le prénom est trop long'),
   lastName: z.string().min(1, 'Le nom est requis').max(100, 'Le nom est trop long'),
-  email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
-  phone: z.string().max(50, 'Téléphone trop long').optional(),
-  position: z.string().max(100, 'Poste trop long').optional(),
-  mobile: z.string().max(50, 'Mobile trop long').optional(),
-  notes: z.string().optional()
+  email: z.string().email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
+  phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
+  position: z.string().max(100, 'Poste trop long').optional().or(z.literal('')),
+  mobile: z.string().max(50, 'Mobile trop long').optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal(''))
 })
 
 export const contactUpdateSchema = z.object({
   clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif').optional(),
   userId: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional().nullable(),
-  firstName: z.string().min(1, 'Le prénom ne peut pas être vide').max(100, 'Le prénom est trop long').optional(),
-  lastName: z.string().min(1, 'Le nom ne peut pas être vide').max(100, 'Le nom est trop long').optional(),
-  email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
-  phone: z.string().max(50, 'Téléphone trop long').optional(),
-  position: z.string().max(100, 'Poste trop long').optional(),
-  mobile: z.string().max(50, 'Mobile trop long').optional(),
-  notes: z.string().optional()
+  firstName: z.string().min(1, 'Le prénom ne peut pas être vide').max(100, 'Le prénom est trop long').optional().or(z.literal('')),
+  lastName: z.string().min(1, 'Le nom ne peut pas être vide').max(100, 'Le nom est trop long').optional().or(z.literal('')),
+  email: z.string().email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
+  phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
+  position: z.string().max(100, 'Poste trop long').optional().or(z.literal('')),
+  mobile: z.string().max(50, 'Mobile trop long').optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal(''))
 }).refine(
   data => Object.keys(data).length > 0,
   { message: 'Au moins un champ doit être fourni' }

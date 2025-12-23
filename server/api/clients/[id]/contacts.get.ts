@@ -6,7 +6,6 @@ import { clientIdSchema } from '~/db/schema/validation'
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, clientIdSchema.parse)
 
-  // Vérifier que le client existe
   const client = await db
     .select()
     .from(clientsTable)
@@ -19,7 +18,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Récupérer tous les contacts du client
   const contacts = await db
     .select()
     .from(contactsTable)
