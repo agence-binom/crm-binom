@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { taskCreateSchema, type TaskCreate } from '~/db/schema/validation'
+import { taskCreateSchema, type TaskCreate } from '~/validation/tasks'
 
 const showCreateModal = ref(false)
 

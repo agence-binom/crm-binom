@@ -1,7 +1,7 @@
 import { db } from '~/db/index'
 import { usersTable } from '~/db/schema'
 import { eq } from 'drizzle-orm'
-import { userQuerySchema } from '~/db/schema/validation'
+import { userQuerySchema } from '~/validation/users'
 
 export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, userQuerySchema.parse)

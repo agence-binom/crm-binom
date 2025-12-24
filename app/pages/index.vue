@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { data, refresh } = await useFetch('/api/tasks')
+const { data } = await useFetch('/api/tasks')
 
 const tasksByStatus = computed(() => {
   if (!data.value?.tasks) return { todo: [], in_progress: [], done: [] }
@@ -11,32 +11,11 @@ const tasksByStatus = computed(() => {
   }
 })
 
-console.log(tasksByStatus)
-
-const stats = computed(() => ({
-  total: data.value?.tasks.length || 0,
-  todo: tasksByStatus.value.todo.length,
-  inProgress: tasksByStatus.value.in_progress.length,
-  done: tasksByStatus.value.done.length
-}))
-
-const onDeleteTask = async (taskId: number) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) return
-
-  try {
-    await $fetch(`/api/tasks/${taskId}`, {
-      method: 'DELETE'
-    })
-    await refresh()
-  } catch (error) {
-    console.error('Erreur lors de la suppression de la tâche:', error)
-  }
-}
+console.log('Tasks by status:', tasksByStatus.value)
 </script>
 
 <template>
   <div class="container mx-auto p-6">
-    <!-- En-tête -->
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold mb-2">
         To Do List globale
@@ -44,9 +23,8 @@ const onDeleteTask = async (taskId: number) => {
       <TaskForm />
     </div>
 
-    <!-- Liste des tâches par statut -->
+    <!-- Liste des tâches par statut
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <!-- À faire -->
       <div>
         <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
           <UIcon
@@ -71,7 +49,6 @@ const onDeleteTask = async (taskId: number) => {
         </div>
       </div>
 
-      <!-- En cours -->
       <div>
         <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
           <UIcon
@@ -96,7 +73,6 @@ const onDeleteTask = async (taskId: number) => {
         </div>
       </div>
 
-      <!-- Terminées -->
       <div>
         <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
           <UIcon
@@ -120,6 +96,20 @@ const onDeleteTask = async (taskId: number) => {
           </div>
         </div>
       </div>
+    </div> -->
+    <div class="w-full flex gap-8">
+      <KanbanTable
+        status="todo"
+        :tasks="tasksByStatus.todo"
+      />
+      <KanbanTable
+        status="in_progress"
+        :tasks="tasksByStatus.in_progress"
+      />
+      <KanbanTable
+        status="done"
+        :tasks="tasksByStatus.done"
+      />
     </div>
   </div>
 </template>

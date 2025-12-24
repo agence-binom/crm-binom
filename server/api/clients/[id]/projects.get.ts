@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~/db'
 import { clientsTable, projectsTable } from '~/db/schema'
-import { clientIdSchema } from '~/db/schema/validation'
+import { clientIdSchema } from '~/validation/clients'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, clientIdSchema.parse)

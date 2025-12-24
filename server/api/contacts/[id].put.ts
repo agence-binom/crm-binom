@@ -1,7 +1,7 @@
 import { db } from '~/db/index'
 import { contactsTable } from '~/db/schema/index'
 import { eq } from 'drizzle-orm'
-import { contactUpdateSchema, contactIdSchema } from '~/db/schema/validation'
+import { contactUpdateSchema, contactIdSchema } from '~/validation/contacts'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, contactIdSchema.parse)

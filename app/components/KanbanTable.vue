@@ -1,0 +1,53 @@
+<script setup lang="ts">
+import type { Task } from '~/validation'
+
+const props = withDefaults(defineProps<{
+  status: 'todo' | 'in_progress' | 'done'
+  tasks?: Task[]
+}>(), { tasks: () => [] })
+
+const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bgClass: string, badgeClass: string }> = {
+  todo: { label: 'À faire', bgClass: 'bg-elevated', badgeClass: 'bg-accented' },
+  in_progress: { label: 'En cours', bgClass: 'bg-blue-50', badgeClass: 'bg-blue-100' },
+  done: { label: 'Terminées', bgClass: 'bg-orange-50', badgeClass: 'bg-orange-100' }
+}
+
+const { bgClass, badgeClass, label } = statuSettings[props.status]
+
+const onDeleteTask = async (taskId: number) => {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) return
+
+  try {
+    await useFetch(`/api/tasks/${taskId}`, {
+      method: 'DELETE'
+    })
+  } catch (error) {
+    console.error('Erreur lors de la suppression de la tâche:', error)
+  }
+}
+</script>
+
+<template>
+  <div :class="['flex-1 p-3 flex flex-col items-start gap-8', bgClass, 'rounded-lg']">
+    <div
+      :class="['font-medium inline-flex items-center text-base px-2.5 py-1 gap-1.5 rounded-md',
+               badgeClass]"
+    >
+      <span>{{ label }}</span>
+    </div>
+    <div class="w-full flex-1 flex flex-col gap-6 overflow-y-auto">
+      <TaskCard
+        v-for="task in tasks"
+        :key="task.id"
+        :task="task"
+        @delete="onDeleteTask"
+      />
+      <div
+        v-if="tasks.length === 0"
+        class="text-center py-8 text-gray-400"
+      >
+        Aucune tâche {{ label.toLowerCase() }}
+      </div>
+    </div>
+  </div>
+</template>

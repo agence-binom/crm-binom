@@ -1,6 +1,6 @@
 import { db } from '~/db'
 import { tasksTable } from '~/db/schema'
-import { taskCreateSchema } from '~/db/schema/validation'
+import { taskCreateSchema } from '~/validation/tasks'
 
 export default defineEventHandler(async (event) => {
   const body = await readValidatedBody(event, taskCreateSchema.parse)

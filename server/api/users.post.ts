@@ -1,6 +1,6 @@
 import { db } from '~/db/index'
 import { usersTable } from '~/db/schema'
-import { userCreateSchema } from '~/db/schema/validation'
+import { userCreateSchema } from '~/validation/users'
 
 export default defineEventHandler(async (event) => {
   const body = await readValidatedBody(event, userCreateSchema.parse)
