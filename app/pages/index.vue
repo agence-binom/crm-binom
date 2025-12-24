@@ -44,53 +44,6 @@ const onDeleteTask = async (taskId: number) => {
       <TaskForm />
     </div>
 
-    <!-- Statistiques -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <UCard>
-        <div class="text-center">
-          <div class="text-3xl font-bold text-gray-600">
-            {{ stats.total }}
-          </div>
-
-          <div class="text-sm text-gray-500">
-            Total
-          </div>
-        </div>
-      </UCard>
-      <UCard>
-        <div class="text-center">
-          <div class="text-3xl font-bold text-yellow-600">
-            {{ stats.todo }}
-          </div>
-          <div class="text-sm text-gray-500">
-            À faire
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="text-center">
-          <div class="text-3xl font-bold text-blue-600">
-            {{ stats.inProgress }}
-          </div>
-          <div class="text-sm text-gray-500">
-            En cours
-          </div>
-        </div>
-      </UCard>
-
-      <UCard>
-        <div class="text-center">
-          <div class="text-3xl font-bold text-green-600">
-            {{ stats.done }}
-          </div>
-          <div class="text-sm text-gray-500">
-            Terminées
-          </div>
-        </div>
-      </UCard>
-    </div>
-
     <!-- Liste des tâches par statut -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- À faire -->
