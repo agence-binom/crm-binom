@@ -7,7 +7,7 @@ export const tasksTable = pgTable('tasks', {
   projectId: integer().references(() => projectsTable.id, { onDelete: 'cascade' }),
   assignedTo: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   title: varchar({ length: 255 }).notNull(),
-  description: text(),
+  notes: text(),
   status: varchar({ length: 50 }).notNull().default('todo'), // 'todo' | 'in_progress' | 'done'
   priority: varchar({ length: 50 }).notNull().default('medium'), // 'low' | 'medium' | 'high'
   dueDate: timestamp(),

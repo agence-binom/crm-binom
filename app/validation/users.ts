@@ -39,5 +39,6 @@ export type User = {
   id: number
   name: string
   email: string
-  role: 'admin' | 'employee' | 'client'
+  password: string
+  role: string
 }
