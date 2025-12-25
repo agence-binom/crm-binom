@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~/db'
-import { tasksTable } from '~/db/schema'
+import { tasksTable } from '~/db/schema/tasks'
 import { taskIdSchema } from '~/validation/tasks'
 
 export default defineEventHandler(async (event) => {

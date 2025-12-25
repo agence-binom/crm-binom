@@ -1,5 +1,5 @@
 import { db } from '~/db/index'
-import { clientsTable } from '~/db/schema/index'
+import { clientsTable } from '~/db/schema/clients'
 import { clientCreateSchema } from '~/validation/clients'
 
 export default defineEventHandler(async (event) => {

@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~/db'
-import { clientsTable, projectsTable } from '~/db/schema'
+import { clientsTable } from '~/db/schema/clients'
+import { projectsTable } from '~/db/schema/projects'
 import { clientIdSchema } from '~/validation/clients'
 
 export default defineEventHandler(async (event) => {

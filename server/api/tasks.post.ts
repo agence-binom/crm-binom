@@ -1,5 +1,5 @@
 import { db } from '~/db'
-import { tasksTable } from '~/db/schema'
+import { tasksTable } from '~/db/schema/tasks'
 import { taskCreateSchema } from '~/validation/tasks'
 
 export default defineEventHandler(async (event) => {

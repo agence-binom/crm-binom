@@ -1,5 +1,5 @@
 import { db } from '~/db/index'
-import { clientsTable } from '~/db/schema/index'
+import { clientsTable } from '~/db/schema/clients'
 import { eq } from 'drizzle-orm'
 import { clientIdSchema } from '~/validation/clients'
 

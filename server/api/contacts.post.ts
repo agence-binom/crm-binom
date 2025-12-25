@@ -1,5 +1,5 @@
 import { db } from '~/db/index'
-import { contactsTable } from '~/db/schema/index'
+import { contactsTable } from '~/db/schema/contacts'
 import { contactCreateSchema } from '~/validation/contacts'
 
 export default defineEventHandler(async (event) => {

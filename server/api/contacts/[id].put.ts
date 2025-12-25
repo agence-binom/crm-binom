@@ -1,5 +1,5 @@
 import { db } from '~/db/index'
-import { contactsTable } from '~/db/schema/index'
+import { contactsTable } from '~/db/schema/contacts'
 import { eq } from 'drizzle-orm'
 import { contactUpdateSchema, contactIdSchema } from '~/validation/contacts'
 

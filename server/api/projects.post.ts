@@ -1,5 +1,5 @@
 import { db } from '~/db'
-import { projectsTable } from '~/db/schema'
+import { projectsTable } from '~/db/schema/projects'
 import { projectCreateSchema } from '~/validation/projects'
 
 export default defineEventHandler(async (event) => {
