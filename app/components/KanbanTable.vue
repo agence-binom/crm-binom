@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDragAndDrop } from '@formkit/drag-and-drop/vue'
 import type { Task } from '~/validation'
 
 const props = withDefaults(defineProps<{
@@ -9,6 +10,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   taskDeleted: []
   taskToUpdated: [taskId: number]
+  taskMoved: [taskId: number, newStatus: string]
 }>()
 
 const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bgClass: string, badgeClass: string }> = {
@@ -18,6 +20,19 @@ const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bg
 }
 
 const { bgClass, badgeClass, label } = statuSettings[props.status]
+
+const [parent, taskList] = useDragAndDrop(props.tasks, {
+  group: 'kanban-tasks',
+  onDragend: (data) => {
+    const draggedTask = data.draggedNode.data.value as Task
+    const targetParent = data.parent.el as HTMLElement
+    const targetStatus = targetParent.dataset.status as 'todo' | 'in_progress' | 'done'
+
+    if (draggedTask && targetStatus && draggedTask.status !== targetStatus) {
+      emit('taskMoved', draggedTask.id, targetStatus)
+    }
+  }
+})
 
 const onDeleteTask = async (taskId: number) => {
   try {
@@ -39,16 +54,25 @@ const onDeleteTask = async (taskId: number) => {
     >
       <span>{{ label }}</span>
     </div>
-    <div class="w-full flex-1 flex flex-col gap-2 overflow-y-auto">
+    <div
+      v-if="taskList.length !== 0"
+      ref="parent"
+      :data-status="props.status"
+      class="w-full flex-1 flex flex-col gap-2 overflow-y-auto"
+    >
       <TaskCard
-        v-for="task in tasks"
+        v-for="task in taskList"
         :key="task.id"
         :task="task"
         @delete="onDeleteTask"
         @update="emit('taskToUpdated', $event)"
       />
+    </div>
+    <div
+      v-if="taskList.length === 0"
+      class="w-full flex-1 flex flex-col gap-2 overflow-y-auto"
+    >
       <div
-        v-if="tasks.length === 0"
         class="text-center py-8 text-gray-400"
       >
         Aucune tâche {{ label.toLowerCase() }}

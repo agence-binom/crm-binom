@@ -28,6 +28,18 @@ const handleTaskToUpdate = (taskId: number) => {
   isTaskModalOpen.value = true
 }
 
+const handleTaskMoved = async (taskId: number, newStatus: string) => {
+  try {
+    await $fetch(`/api/tasks/${taskId}`, {
+      method: 'PUT',
+      body: { status: newStatus }
+    })
+    await refresh()
+  } catch (error) {
+    console.error('Erreur lors du déplacement de la tâche:', error)
+  }
+}
+
 const taskToEdit = computed(() => {
   if (!selectedTaskId.value) return null
   return data.value?.tasks?.find(t => t.id === selectedTaskId.value) ?? null
@@ -90,18 +102,21 @@ const taskToEdit = computed(() => {
         :tasks="tasksByStatus.todo"
         @task-deleted="handleTaskChange"
         @task-to-updated="handleTaskToUpdate"
+        @task-moved="handleTaskMoved"
       />
       <KanbanTable
         status="in_progress"
         :tasks="tasksByStatus.in_progress"
         @task-deleted="handleTaskChange"
         @task-to-updated="handleTaskToUpdate"
+        @task-moved="handleTaskMoved"
       />
       <KanbanTable
         status="done"
         :tasks="tasksByStatus.done"
         @task-deleted="handleTaskChange"
         @task-to-updated="handleTaskToUpdate"
+        @task-moved="handleTaskMoved"
       />
     </div>
   </div>
