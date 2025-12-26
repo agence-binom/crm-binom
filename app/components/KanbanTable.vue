@@ -8,6 +8,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   taskDeleted: []
+  taskToUpdated: [taskId: number]
 }>()
 
 const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bgClass: string, badgeClass: string }> = {
@@ -44,6 +45,7 @@ const onDeleteTask = async (taskId: number) => {
         :key="task.id"
         :task="task"
         @delete="onDeleteTask"
+        @update="emit('taskToUpdated', $event)"
       />
       <div
         v-if="tasks.length === 0"

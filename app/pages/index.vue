@@ -1,6 +1,9 @@
 <script setup lang="ts">
 const { data, refresh } = await useFetch('/api/tasks')
 
+const isTaskModalOpen = ref(false)
+const selectedTaskId = ref<number | null>(null)
+
 const tasksByStatus = computed(() => {
   if (!data.value?.tasks) return { todo: [], in_progress: [], done: [] }
 
@@ -14,6 +17,21 @@ const tasksByStatus = computed(() => {
 const handleTaskChange = async () => {
   await refresh()
 }
+
+const openCreateTask = () => {
+  selectedTaskId.value = null
+  isTaskModalOpen.value = true
+}
+
+const handleTaskToUpdate = (taskId: number) => {
+  selectedTaskId.value = taskId
+  isTaskModalOpen.value = true
+}
+
+const taskToEdit = computed(() => {
+  if (!selectedTaskId.value) return null
+  return data.value?.tasks?.find(t => t.id === selectedTaskId.value) ?? null
+})
 </script>
 
 <template>
@@ -22,10 +40,21 @@ const handleTaskChange = async () => {
       <h1 class="text-3xl font-bold mb-2">
         To Do List globale
       </h1>
-      <TaskForm
-        @task-created="handleTaskChange"
-      />
+
+      <UButton
+        icon="i-lucide-plus"
+        @click="openCreateTask"
+      >
+        Ajouter une tâche
+      </UButton>
     </div>
+
+    <TaskModal
+      v-model:open="isTaskModalOpen"
+      :task-id="selectedTaskId"
+      :task="taskToEdit"
+      @saved="handleTaskChange"
+    />
 
     <!-- Liste des tâches par statut
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -53,69 +82,26 @@ const handleTaskChange = async () => {
         </div>
       </div>
 
-      <div>
-        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-          <UIcon
-            name="i-lucide-loader"
-            class="text-blue-500"
-          />
-          En cours ({{ tasksByStatus.in_progress.length }})
-        </h3>
-        <div class="space-y-3">
-          <TaskCard
-            v-for="task in tasksByStatus.in_progress"
-            :key="task.id"
-            :task="task"
-            @delete="onDeleteTask"
-          />
-          <div
-            v-if="tasksByStatus.in_progress.length === 0"
-            class="text-center py-8 text-gray-400"
-          >
-            Aucune tâche en cours
-          </div>
-        </div>
-      </div>
+    -->
 
-      <div>
-        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-          <UIcon
-            name="i-lucide-check-circle"
-            class="text-green-500"
-          />
-          Terminées ({{ tasksByStatus.done.length }})
-        </h3>
-        <div class="space-y-3">
-          <TaskCard
-            v-for="task in tasksByStatus.done"
-            :key="task.id"
-            :task="task"
-            @delete="onDeleteTask"
-          />
-          <div
-            v-if="tasksByStatus.done.length === 0"
-            class="text-center py-8 text-gray-400"
-          >
-            Aucune tâche terminée
-          </div>
-        </div>
-      </div>
-    </div> -->
     <div class="w-full flex gap-8">
       <KanbanTable
         status="todo"
         :tasks="tasksByStatus.todo"
         @task-deleted="handleTaskChange"
+        @task-to-updated="handleTaskToUpdate"
       />
       <KanbanTable
         status="in_progress"
         :tasks="tasksByStatus.in_progress"
         @task-deleted="handleTaskChange"
+        @task-to-updated="handleTaskToUpdate"
       />
       <KanbanTable
         status="done"
         :tasks="tasksByStatus.done"
         @task-deleted="handleTaskChange"
+        @task-to-updated="handleTaskToUpdate"
       />
     </div>
   </div>

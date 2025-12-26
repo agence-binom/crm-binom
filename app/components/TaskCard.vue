@@ -6,7 +6,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  update: [taskId: number, updates: Record<string, unknown>]
+  update: [taskId: number]
   delete: [taskId: number]
 }>()
 
@@ -63,13 +63,14 @@ const emit = defineEmits<{
           size="xs"
           color="neutral"
           variant="ghost"
+          @click="emit('update', props.task.id)"
         />
         <UButton
           icon="i-lucide-trash-2"
           size="xs"
           color="error"
           variant="ghost"
-          @click="emit('delete', task.id)"
+          @click="emit('delete', props.task.id)"
         />
       </div>
     </template>
