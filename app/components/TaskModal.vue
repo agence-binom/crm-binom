@@ -121,6 +121,7 @@ const onSubmit = async () => {
   <UModal
     v-model:open="isOpen"
     :title="modalTitle"
+    :aria-describedby="isEditing ? 'Modifier les informations de la tâche' : 'Créer une nouvelle tâche'"
     :close="{
       color: 'error',
       variant: 'solid',
