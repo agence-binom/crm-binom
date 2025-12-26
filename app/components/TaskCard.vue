@@ -53,7 +53,7 @@ const emit = defineEmits<{
         {{ props.task.title }}
       </h4>
       <p class="text-xs ui-text-muted mt-1">
-        {{ props.task.description }}
+        {{ props.task.notes }}
       </p>
     </template>
     <template #footer>

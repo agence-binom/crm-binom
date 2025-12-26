@@ -3,9 +3,14 @@ import { taskCreateSchema, type TaskCreate } from '~/validation/tasks'
 import type { User } from '~/validation/users'
 import type { Project } from '~/validation/projects'
 
-const showCreateModal = ref(false)
+const emit = defineEmits<{
+  taskCreated: []
+}>()
+
+const isOpen = ref(false)
 
 const isCreating = ref(false)
+
 const createFormState = reactive({
   title: '',
   notes: '',
@@ -32,6 +37,16 @@ const projectsOptions = computed(() =>
   })) || []
 )
 
+const resetForm = () => {
+  Object.assign(createFormState, {
+    title: '',
+    notes: '',
+    dueDate: '',
+    projectId: undefined,
+    assignedTo: undefined
+  })
+}
+
 const onCreateTask = async () => {
   isCreating.value = true
 
@@ -39,8 +54,8 @@ const onCreateTask = async () => {
     const submitData: TaskCreate = {
       title: createFormState.title,
       notes: createFormState.notes,
-      assignedTo: createFormState.assignedTo,
-      dueDate: createFormState.dueDate ? new Date(createFormState.dueDate) : undefined
+      projectId: createFormState.projectId,
+      assignedTo: createFormState.assignedTo
     }
 
     await $fetch('/api/tasks', {
@@ -48,15 +63,11 @@ const onCreateTask = async () => {
       body: submitData
     })
 
-    showCreateModal.value = false
-    Object.assign(createFormState, {
-      title: '',
-      description: '',
-      dueDate: '',
-      assignedTo: undefined
-    })
+    resetForm()
+    isOpen.value = false
+    emit('taskCreated')
   } catch (error) {
-    console.error('Erreur lors de la création de la tâche:', error)
+    console.error('❌ ERREUR CAPTURÉE:', error)
   } finally {
     isCreating.value = false
   }
@@ -76,87 +87,98 @@ const onCreateTask = async () => {
 </script>
 
 <template>
-  <UModal>
+  <UModal
+    v-model:open="isOpen"
+    title="Nouvelle tâche"
+
+    :close="{
+      color: 'error',
+      variant: 'solid',
+      icon: 'i-lucide-x',
+      size: 'xs',
+      label: 'Fermer'
+    }"
+  >
     <UButton
       icon="i-lucide-plus"
-      @click="showCreateModal = true"
     >
       Ajouter une tâche
     </UButton>
 
-    <template #content>
-      <UCard>
-        <template #header>
-          <div class="flex justify-between">
-            <h2 class="text-xl font-bold">
-              Nouvelle tâche
-            </h2>
-            <UButton
-              label="Fermer"
-              icon="i-lucide-x"
-              variant="solid"
-              color="error"
-              size="xs"
-              @click="showCreateModal = false"
-            />
-          </div>
-        </template>
-        <UForm
-          :schema="taskCreateSchema"
-          :state="createFormState"
-          class="space-y-4"
-          @submit="onCreateTask"
+    <template #body>
+      <UForm
+        :schema="taskCreateSchema"
+        :state="createFormState"
+        class="space-y-4"
+        @submit="onCreateTask"
+      >
+        <UFormField
+          label="Titre de la tâche"
+          name="title"
         >
-          <UFormField
-            label="Titre de la tâche"
-            name="title"
-          >
-            <UInput
-              v-model="createFormState.title"
-              class="w-full"
-            />
-          </UFormField>
+          <UInput
+            v-model="createFormState.title"
+            class="w-full"
+          />
+        </UFormField>
 
-          <UFormField
-            label="Projet"
-            name="projectId"
-          >
-            <USelect
-              v-model="createFormState.projectId"
-              :items="projectsOptions"
-              placeholder="Sélectionner un projet"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            label="Assigner à"
-            name="assignedTo"
-          >
-            <USelect
-              v-model="createFormState.assignedTo"
-              :items="userOptions"
-              placeholder="Sélectionner un utilisateur"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            label="Notes"
-            name="notes"
-          >
-            <UTextarea
-              v-model="createFormState.notes"
-              :rows="3"
-              class="w-full"
-            />
-          </UFormField>
-          <UButton
-            type="submit"
-            :loading="isCreating"
-          >
-            Créer la tâche
-          </UButton>
-        </UForm>
-      </UCard>
+        <UFormField
+          label="Projet"
+          name="projectId"
+        >
+          <USelect
+            v-model="createFormState.projectId"
+            :items="projectsOptions"
+            placeholder="Sélectionner un projet"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="Assigner à"
+          name="assignedTo"
+        >
+          <USelect
+            v-model="createFormState.assignedTo"
+            :items="userOptions"
+            placeholder="Sélectionner un utilisateur"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="Date d'échéance"
+          name="dueDate"
+        >
+          <UInput
+            v-model="createFormState.dueDate"
+            type="date"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          label="Notes"
+          name="notes"
+        >
+          <UTextarea
+            v-model="createFormState.notes"
+            :rows="3"
+            class="w-full"
+          />
+        </UFormField>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          :disabled="isCreating"
+          @click="isOpen = false"
+        >
+          Annuler
+        </UButton>
+        <UButton
+          type="submit"
+          :loading="isCreating"
+        >
+          Créer la tâche
+        </UButton>
+      </UForm>
     </template>
   </UModal>
 </template>

@@ -43,6 +43,13 @@
       "when": 1766524451983,
       "tag": "0005_perpetual_kitty_pryde",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766702607901,
+      "tag": "0006_slippery_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

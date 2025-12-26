@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { data } = await useFetch('/api/tasks')
+const { data, refresh } = await useFetch('/api/tasks')
 
 const tasksByStatus = computed(() => {
   if (!data.value?.tasks) return { todo: [], in_progress: [], done: [] }
@@ -11,7 +11,9 @@ const tasksByStatus = computed(() => {
   }
 })
 
-console.log('Tasks by status:', tasksByStatus.value)
+const handleTaskChange = async () => {
+  await refresh()
+}
 </script>
 
 <template>
@@ -20,7 +22,9 @@ console.log('Tasks by status:', tasksByStatus.value)
       <h1 class="text-3xl font-bold mb-2">
         To Do List globale
       </h1>
-      <TaskForm />
+      <TaskForm
+        @task-created="handleTaskChange"
+      />
     </div>
 
     <!-- Liste des tâches par statut
@@ -101,14 +105,17 @@ console.log('Tasks by status:', tasksByStatus.value)
       <KanbanTable
         status="todo"
         :tasks="tasksByStatus.todo"
+        @task-deleted="handleTaskChange"
       />
       <KanbanTable
         status="in_progress"
         :tasks="tasksByStatus.in_progress"
+        @task-deleted="handleTaskChange"
       />
       <KanbanTable
         status="done"
         :tasks="tasksByStatus.done"
+        @task-deleted="handleTaskChange"
       />
     </div>
   </div>

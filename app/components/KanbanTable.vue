@@ -6,6 +6,10 @@ const props = withDefaults(defineProps<{
   tasks?: Task[]
 }>(), { tasks: () => [] })
 
+const emit = defineEmits<{
+  taskDeleted: []
+}>()
+
 const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bgClass: string, badgeClass: string }> = {
   todo: { label: 'À faire', bgClass: 'bg-elevated', badgeClass: 'bg-accented' },
   in_progress: { label: 'En cours', bgClass: 'bg-blue-50', badgeClass: 'bg-blue-100' },
@@ -15,12 +19,11 @@ const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bg
 const { bgClass, badgeClass, label } = statuSettings[props.status]
 
 const onDeleteTask = async (taskId: number) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) return
-
   try {
     await useFetch(`/api/tasks/${taskId}`, {
       method: 'DELETE'
     })
+    emit('taskDeleted')
   } catch (error) {
     console.error('Erreur lors de la suppression de la tâche:', error)
   }
@@ -35,7 +38,7 @@ const onDeleteTask = async (taskId: number) => {
     >
       <span>{{ label }}</span>
     </div>
-    <div class="w-full flex-1 flex flex-col gap-6 overflow-y-auto">
+    <div class="w-full flex-1 flex flex-col gap-2 overflow-y-auto">
       <TaskCard
         v-for="task in tasks"
         :key="task.id"
