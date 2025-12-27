@@ -55,10 +55,9 @@ const onDeleteTask = async (taskId: number) => {
       <span>{{ label }}</span>
     </div>
     <div
-      v-if="taskList.length !== 0"
       ref="parent"
       :data-status="props.status"
-      class="w-full flex-1 flex flex-col gap-2 overflow-y-auto"
+      class="w-full h-full flex flex-col items-stretch gap-2 overflow-y-auto pr-1 scrollbar-custom"
     >
       <TaskCard
         v-for="task in taskList"
@@ -67,12 +66,8 @@ const onDeleteTask = async (taskId: number) => {
         @delete="onDeleteTask"
         @update="emit('taskToUpdated', $event)"
       />
-    </div>
-    <div
-      v-if="taskList.length === 0"
-      class="w-full flex-1 flex flex-col gap-2 overflow-y-auto"
-    >
       <div
+        v-if="taskList.length === 0"
         class="text-center py-8 text-gray-400"
       >
         Aucune tâche {{ label.toLowerCase() }}

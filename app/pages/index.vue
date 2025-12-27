@@ -96,7 +96,7 @@ const taskToEdit = computed(() => {
 
     -->
 
-    <div class="w-full flex gap-8">
+    <div class="w-full flex gap-8 h-[calc(100vh-12rem)]">
       <KanbanTable
         status="todo"
         :tasks="tasksByStatus.todo"

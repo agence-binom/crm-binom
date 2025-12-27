@@ -47,7 +47,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UCard class="hover:shadow-md transition-shadow cursor-pointer">
+  <UCard class="shrink-0 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing">
     <template #header>
       <h4 class="font-semibold text-sm ui-text-highlighted">
         {{ props.task.title }}
