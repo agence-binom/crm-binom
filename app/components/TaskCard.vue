@@ -47,14 +47,22 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <UCard class="shrink-0 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing">
+  <UCard class="shrink-0 hover:shadow-md transition-shadow">
     <template #header>
-      <h4 class="font-semibold text-sm ui-text-highlighted">
-        {{ props.task.title }}
-      </h4>
-      <p class="text-xs ui-text-muted mt-1">
-        {{ props.task.notes }}
-      </p>
+      <div class="flex items-start gap-2">
+        <UIcon
+          name="i-lucide-grip-vertical"
+          class="kanban-handle text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing shrink-0 mt-0.5"
+        />
+        <div class="flex-1 min-w-0">
+          <h4 class="font-semibold text-sm ui-text-highlighted">
+            {{ props.task.title }}
+          </h4>
+          <p class="text-xs ui-text-muted mt-1">
+            {{ props.task.notes }}
+          </p>
+        </div>
+      </div>
     </template>
     <template #footer>
       <div class="flex justify-end gap-2">

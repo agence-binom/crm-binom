@@ -23,6 +23,7 @@ const { bgClass, badgeClass, label } = statuSettings[props.status]
 
 const [parent, taskList] = useDragAndDrop(props.tasks, {
   group: 'kanban-tasks',
+  dragHandle: '.kanban-handle',
   onDragend: (data) => {
     const draggedTask = data.draggedNode.data.value as Task
     const targetParent = data.parent.el as HTMLElement
