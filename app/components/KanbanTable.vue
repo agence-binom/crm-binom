@@ -49,11 +49,17 @@ const onDeleteTask = async (taskId: number) => {
 
 <template>
   <div :class="['flex-1 p-3 flex flex-col items-start gap-8', bgClass, 'rounded-lg']">
-    <div
-      :class="['font-medium inline-flex items-center text-base px-2.5 py-1 gap-1.5 rounded-md',
-               badgeClass]"
-    >
-      <span>{{ label }}</span>
+    <div class="w-full flex justify-between items-center mb-4">
+      <div
+        :class="['font-medium inline-flex items-center text-base px-2.5 py-1 gap-1.5 rounded-md',
+                 badgeClass]"
+      >
+        <span>{{ label }}</span>
+      </div>
+
+      <span class="text-sm text-gray-500 font-medium">
+        {{ taskList.length }} tâche{{ taskList.length > 1 ? 's' : '' }}
+      </span>
     </div>
     <div
       ref="parent"
