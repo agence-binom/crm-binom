@@ -68,34 +68,6 @@ const taskToEdit = computed(() => {
       @saved="handleTaskChange"
     />
 
-    <!-- Liste des tâches par statut
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div>
-        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-          <UIcon
-            name="i-lucide-circle"
-            class="text-yellow-500"
-          />
-          À faire ({{ tasksByStatus.todo.length }})
-        </h3>
-        <div class="space-y-3">
-          <TaskCard
-            v-for="task in tasksByStatus.todo"
-            :key="task.id"
-            :task="task"
-            @delete="onDeleteTask"
-          />
-          <div
-            v-if="tasksByStatus.todo.length === 0"
-            class="text-center py-8 text-gray-400"
-          >
-            Aucune tâche à faire
-          </div>
-        </div>
-      </div>
-
-    -->
-
     <div class="w-full flex gap-8 h-[calc(100vh-12rem)]">
       <KanbanTable
         status="todo"
