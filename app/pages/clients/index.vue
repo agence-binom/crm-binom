@@ -1,6 +1,16 @@
 <script setup lang="ts">
 const { data, refresh } = await useFetch('/api/clients')
 const clients = computed(() => data.value?.clients || [])
+
+const isClientModalOpen = ref(false)
+
+const openCreateClient = () => {
+  isClientModalOpen.value = true
+}
+
+const handleClientChange = async () => {
+  await refresh()
+}
 </script>
 
 <template>
@@ -9,10 +19,18 @@ const clients = computed(() => data.value?.clients || [])
       <h1 class="text-3xl font-bold">
         Clients
       </h1>
-      <UButton to="/clients/new">
+      <UButton
+        icon="i-lucide-plus"
+        @click="openCreateClient"
+      >
         Nouveau client
       </UButton>
     </div>
+
+    <ClientModal
+      v-model:open="isClientModalOpen"
+      @saved="handleClientChange"
+    />
 
     <div
       v-if="!data"
@@ -28,7 +46,10 @@ const clients = computed(() => data.value?.clients || [])
       <p class="text-gray-500 mb-4">
         Aucun client
       </p>
-      <UButton to="/clients/new">
+      <UButton
+        icon="i-lucide-plus"
+        @click="openCreateClient"
+      >
         Créer un client
       </UButton>
     </div>

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Client } from '~/validation/clients'
-import { clientUpdateSchema } from '~/validation/clients'
+import { clientCreateSchema, clientUpdateSchema } from '~/validation/clients'
 
 const props = defineProps<{
   open: boolean
+  clientId?: number | null
   client?: Client | null
 }>()
 
@@ -18,25 +19,81 @@ const isOpen = computed({
 })
 
 const isSaving = ref(false)
-console.log('Client', props.client)
+const isEditing = computed(() => props.clientId != null)
+
+const schema = computed(() => (isEditing.value ? clientUpdateSchema : clientCreateSchema))
+const modalTitle = computed(() => (isEditing.value ? 'Modifier le client' : 'Nouveau client'))
+const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer le client'))
 
 const formState = reactive({
-  email: props.client?.email || '',
-  phone: props.client?.phone || '',
-  address: props.client?.address || '',
-  city: props.client?.city || '',
-  postalCode: props.client?.postalCode || '',
-  country: props.client?.country || '',
-  website: props.client?.website || '',
-  notes: props.client?.notes || '',
-  icon: props.client?.icon || '',
-  description: props.client?.description || ''
+  name: '',
+  email: '',
+  phone: '',
+  address: '',
+  city: '',
+  postalCode: '',
+  country: '',
+  website: '',
+  notes: '',
+  icon: '',
+  description: ''
 })
+
+const resetForm = () => {
+  Object.assign(formState, {
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    country: '',
+    website: '',
+    notes: '',
+    icon: '',
+    description: ''
+  })
+}
+
+const fillFromClient = (client: Client) => {
+  Object.assign(formState, {
+    name: client.name ?? '',
+    email: client.email ?? '',
+    phone: client.phone ?? '',
+    address: client.address ?? '',
+    city: client.city ?? '',
+    postalCode: client.postalCode ?? '',
+    country: client.country ?? '',
+    website: client.website ?? '',
+    notes: client.notes ?? '',
+    icon: client.icon ?? '',
+    description: client.description ?? ''
+  })
+}
+
+watch(
+  () => props.open,
+  (open) => {
+    if (!open) return
+    if (isEditing.value && props.client) fillFromClient(props.client)
+    else resetForm()
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.client,
+  (client) => {
+    if (!props.open) return
+    if (isEditing.value && client) fillFromClient(client)
+  }
+)
 
 const onSubmit = async () => {
   isSaving.value = true
   try {
     const body = {
+      name: formState.name,
       email: formState.email,
       phone: formState.phone,
       address: formState.address,
@@ -49,12 +106,17 @@ const onSubmit = async () => {
       description: formState.description
     }
 
-    await $fetch(`/api/clients/${props.client?.id}`, { method: 'PUT', body })
+    if (isEditing.value) {
+      if (!props.clientId) throw new Error('clientId manquant pour la mise à jour')
+      await $fetch(`/api/clients/${props.clientId}`, { method: 'PUT', body })
+    } else {
+      await $fetch('/api/clients', { method: 'POST', body })
+    }
 
     emit('saved')
     isOpen.value = false
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde de la tâche:', error)
+    console.error('Erreur lors de la sauvegarde du client:', error)
   } finally {
     isSaving.value = false
   }
@@ -64,8 +126,8 @@ const onSubmit = async () => {
 <template>
   <UModal
     v-model:open="isOpen"
-    title="Informations du client"
-    aria-describedby="Modifier les informations du client"
+    :title="modalTitle"
+    :aria-describedby="isEditing ? 'Modifier les informations du client' : 'Créer un nouveau client'"
     class="w-full max-w-3xl"
     :close="{
       color: 'error',
@@ -77,11 +139,22 @@ const onSubmit = async () => {
   >
     <template #body>
       <UForm
-        :schema="clientUpdateSchema"
+        :schema="schema"
         :state="formState"
         class="space-y-4"
         @submit="onSubmit"
       >
+        <UFormField
+          label="Nom de l'entreprise"
+          name="name"
+          required
+        >
+          <UInput
+            v-model="formState.name"
+            placeholder="Ex: Entreprise ABC"
+          />
+        </UFormField>
+
         <UFormField
           label="Icône"
           name="icon"
@@ -206,7 +279,7 @@ const onSubmit = async () => {
             type="submit"
             :loading="isSaving"
           >
-            Valider
+            {{ submitLabel }}
           </UButton>
         </div>
       </UForm>

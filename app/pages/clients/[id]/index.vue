@@ -1,77 +1,157 @@
 <script setup lang="ts">
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
-const { data, refresh } = await useFetch(`/api/clients/${clientId.value}`)
-const client = computed(() => data.value?.client)
+
+// Données du client
+const { data: clientData, refresh: refreshClient } = await useFetch(`/api/clients/${clientId.value}`)
+const client = computed(() => clientData.value?.client)
+
+// Données des contacts
+const { data: contactsData, refresh: refreshContacts } = await useFetch(`/api/clients/${clientId.value}/contacts`)
+const contacts = computed(() => contactsData.value?.contacts || [])
+
+// Données des projets
+const { data: projectsData, refresh: refreshProjects } = await useFetch(`/api/clients/${clientId.value}/projects`)
+const projects = computed(() => projectsData.value?.projects || [])
 
 const isClientInfoModalOpen = ref(false)
+const isContactModalOpen = ref(false)
+const isProjectModalOpen = ref(false)
+const selectedContactId = ref<number | null>(null)
+const selectedProjectId = ref<number | null>(null)
 
 const onDeleteClient = async (clientId: number) => {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) return
+
   try {
-    const { error } = await useFetch(`/api/clients/${clientId}`, {
+    await $fetch(`/api/clients/${clientId}`, {
       method: 'DELETE'
     })
-
-    if (error.value) {
-      console.error('Erreur lors de la suppression du client:', error.value)
-      return
-    }
-    await refresh()
+    await navigateTo('/clients')
   } catch (err) {
     console.error('Erreur lors de la suppression du client:', err)
   }
 }
 
 const handleClientChange = async () => {
-  await refresh()
+  await refreshClient()
 }
+
+const openCreateContact = () => {
+  selectedContactId.value = null
+  isContactModalOpen.value = true
+}
+
+const openEditContact = (contactId: number) => {
+  selectedContactId.value = contactId
+  isContactModalOpen.value = true
+}
+
+const handleContactChange = async () => {
+  await refreshContacts()
+}
+
+const openCreateProject = () => {
+  selectedProjectId.value = null
+  isProjectModalOpen.value = true
+}
+
+const openEditProject = (projectId: number) => {
+  selectedProjectId.value = projectId
+  isProjectModalOpen.value = true
+}
+
+const handleProjectChange = async () => {
+  await refreshProjects()
+}
+
+const onDeleteContact = async (contactId: number) => {
+  if (!confirm('Voulez-vous vraiment supprimer ce contact ?')) return
+
+  try {
+    await $fetch(`/api/contacts/${contactId}`, {
+      method: 'DELETE'
+    })
+    await refreshContacts()
+  } catch (err) {
+    console.error('Erreur lors de la suppression du contact:', err)
+  }
+}
+
+const onDeleteProject = async (projectId: number) => {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) return
+
+  try {
+    await $fetch(`/api/projects/${projectId}`, {
+      method: 'DELETE'
+    })
+    await refreshProjects()
+  } catch (error) {
+    console.error('Erreur lors de la suppression du projet:', error)
+  }
+}
+
+const contactToEdit = computed(() => {
+  if (!selectedContactId.value) return null
+  return contacts.value.find(c => c.id === selectedContactId.value) ?? null
+})
+
+const projectToEdit = computed(() => {
+  if (!selectedProjectId.value) return null
+  return projects.value.find(p => p.id === selectedProjectId.value) ?? null
+})
 </script>
 
 <template>
-  <div class="container mx-auto p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold mb-6">
-        {{ client?.name }}
-      </h1>
-      <UButton
-        variant="soft"
-        icon="i-lucide-info"
-        color="info"
-        @click="isClientInfoModalOpen = true"
-      >
-        Informations
-      </UButton>
-      <ClientModal
-        v-model:open="isClientInfoModalOpen"
-        :client="client"
-        @saved="handleClientChange"
+  <div
+    v-if="client"
+    class="container mx-auto p-6"
+  >
+    <ClientHeader
+      :client="client"
+      @open-info="isClientInfoModalOpen = true"
+      @delete="onDeleteClient"
+    />
+
+    <ClientModal
+      v-model:open="isClientInfoModalOpen"
+      :client-id="client.id"
+      :client="client"
+      @saved="handleClientChange"
+    />
+
+    <ContactModal
+      v-model:open="isContactModalOpen"
+      :contact-id="selectedContactId"
+      :contact="contactToEdit"
+      :client-id="clientId"
+      @saved="handleContactChange"
+    />
+
+    <ProjectModal
+      v-model:open="isProjectModalOpen"
+      :project-id="selectedProjectId"
+      :project="projectToEdit"
+      :client-id="clientId"
+      @saved="handleProjectChange"
+    />
+    <div class="flex flex-col gap-8">
+      <ClientProjects
+        :projects="projects"
+        :client-id="clientId"
+        @create="openCreateProject"
+        @edit="openEditProject"
+        @delete="onDeleteProject"
+        @view-tasks="(projectId) => navigateTo(`/projects/${projectId}/tasks`)"
       />
-    </div>
-    <div
-      v-if="client"
-      class="flex flex-col gap-2"
-    >
-      <div class="flex items-center gap-2 w-full justify-end">
-        <UButton
-          size="sm"
-          variant="ghost"
-          icon="i-lucide-users"
-          :to="`/clients/${client.id}/contacts`"
-        />
-        <UButton
-          size="sm"
-          variant="ghost"
-          icon="i-lucide-folder"
-          :to="`/clients/${client.id}/projects`"
-        />
-        <UButton
-          size="sm"
-          variant="ghost"
-          color="error"
-          icon="i-lucide-trash"
-          @click="onDeleteClient(client.id)"
-        />
-      </div>
+
+      <ClientContacts
+        :contacts="contacts"
+        :client-id="clientId"
+        @create="openCreateContact"
+        @edit="openEditContact"
+        @delete="onDeleteContact"
+      />
     </div>
   </div>
 </template>
