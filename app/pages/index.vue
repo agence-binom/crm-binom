@@ -13,12 +13,35 @@ const selectedUser = computed({
 })
 
 const { data: usersData } = await useFetch('/api/users')
+
+const taskCountByUser = computed(() => {
+  if (!data.value?.tasks) return new Map()
+
+  const counts = new Map<number | null, number>()
+
+  data.value.tasks.forEach((task) => {
+    const userId = task.assignedTo ?? null
+    counts.set(userId, (counts.get(userId) ?? 0) + 1)
+  })
+
+  return counts
+})
+
 const userOptions = computed(() => {
-  const options: { label: string, value: number | null }[] = [{ label: 'Tous les utilisateurs', value: null }]
-  options.push(...usersData.value?.users?.map((user: User) => ({
-    label: user.name,
-    value: user.id
-  })) ?? [])
+  const totalTasks = data.value?.tasks?.length ?? 0
+  const options: { label: string, value: number | null }[] = [{ label: `Tous les utilisateurs (${totalTasks})`, value: null }]
+  options.push(...usersData.value?.users?.map((user: User) => {
+    const count = taskCountByUser.value.get(user.id) ?? 0
+
+    return {
+      label: `${user.name} (${count})`,
+      value: user.id
+    }
+  }) ?? [])
+  const unassignedCount = taskCountByUser.value.get(null) ?? 0
+  if (unassignedCount > 0) {
+    options.push({ label: `Non assigné (${unassignedCount})`, value: 0 })
+  }
 
   return options
 })
