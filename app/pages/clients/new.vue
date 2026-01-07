@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '#ui/types'
-import { clientCreateSchema, type ClientCreate } from '~/db/schema/validation'
+import { clientCreateSchema, type ClientCreate } from '~/validation/clients'
 
 const router = useRouter()
 const toast = useToast()

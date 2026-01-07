@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '#ui/types'
-import { contactCreateSchema, type ContactCreate } from '~/db/schema/validation'
+import { contactCreateSchema, type ContactCreate } from '~/validation/contacts'
 
 const route = useRoute()
 const router = useRouter()

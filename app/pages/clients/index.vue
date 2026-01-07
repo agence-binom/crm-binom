@@ -1,22 +1,6 @@
 <script setup lang="ts">
 const { data, refresh } = await useFetch('/api/clients')
 const clients = computed(() => data.value?.clients || [])
-
-const onDeleteClient = async (clientId: number) => {
-  try {
-    const { error } = await useFetch(`/api/clients/${clientId}`, {
-      method: 'DELETE'
-    })
-
-    if (error.value) {
-      console.error('Erreur lors de la suppression du client:', error.value)
-      return
-    }
-    await refresh()
-  } catch (err) {
-    console.error('Erreur lors de la suppression du client:', err)
-  }
-}
 </script>
 
 <template>
@@ -51,54 +35,20 @@ const onDeleteClient = async (clientId: number) => {
 
     <ul
       v-else
-      class="divide-y divide-gray-200 bg-white rounded-lg shadow"
+      class="flex gap-8"
     >
       <li
         v-for="client in clients"
         :key="client.id"
-        class="p-4 hover:bg-gray-50"
       >
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-lg font-medium text-gray-900">
-              {{ client.name }}
-            </h3>
-            <p class="text-sm text-gray-500">
-              {{ client.email || 'Pas d\'email' }}
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="text-right">
-              <p class="text-sm text-gray-500">
-                {{ client.phone || 'Pas de téléphone' }}
-              </p>
-              <p class="text-sm text-gray-400">
-                {{ client.city || '' }}
-              </p>
-            </div>
-            <div class="flex gap-2">
-              <UButton
-                size="sm"
-                variant="ghost"
-                icon="i-lucide-users"
-                :to="`/clients/${client.id}/contacts`"
-              />
-              <UButton
-                size="sm"
-                variant="ghost"
-                icon="i-lucide-folder"
-                :to="`/clients/${client.id}/projects`"
-              />
-              <UButton
-                size="sm"
-                variant="ghost"
-                color="error"
-                icon="i-lucide-trash"
-                @click="onDeleteClient(client.id)"
-              />
-            </div>
-          </div>
-        </div>
+        <UPageCard
+          :title="client.name"
+          :description="client.description || ''"
+          :icon="client.icon || 'i-lucide-briefcase'"
+          variant="soft"
+          :to="`/clients/${client.id}`"
+          class="w-96"
+        />
       </li>
     </ul>
   </div>
