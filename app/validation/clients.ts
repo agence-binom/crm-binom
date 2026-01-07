@@ -9,7 +9,9 @@ export const clientCreateSchema = z.object({
   postalCode: z.string().regex(/^\d*$/, 'Le code postal doit contenir uniquement des chiffres').max(5, 'Code postal trop long').optional().or(z.literal('')),
   country: z.string().max(100, 'Pays trop long').optional().or(z.literal('')),
   website: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
-  notes: z.string().optional().or(z.literal(''))
+  notes: z.string().optional().or(z.literal('')),
+  icon: z.string().max(100, 'Icône trop longue').optional().or(z.literal('')),
+  description: z.string().optional().or(z.literal(''))
 })
 
 export const clientUpdateSchema = z.object({
@@ -21,7 +23,9 @@ export const clientUpdateSchema = z.object({
   postalCode: z.string().regex(/^\d*$/, 'Le code postal doit contenir uniquement des chiffres').max(5, 'Code postal trop long').optional().or(z.literal('')),
   country: z.string().max(100, 'Pays trop long').optional().or(z.literal('')),
   website: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
-  notes: z.string().optional().or(z.literal(''))
+  notes: z.string().optional().or(z.literal('')),
+  icon: z.string().max(100, 'Icône trop longue').optional().or(z.literal('')),
+  description: z.string().optional().or(z.literal(''))
 }).refine(
   data => Object.keys(data).length > 0,
   { message: 'Au moins un champ doit être fourni' }
@@ -47,4 +51,6 @@ export type Client = {
   country?: string | null
   website?: string | null
   notes?: string | null
+  icon?: string | null
+  description?: string | null
 }

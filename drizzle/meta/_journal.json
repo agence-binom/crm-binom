@@ -50,6 +50,13 @@
       "when": 1766702607901,
       "tag": "0006_slippery_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1767792915865,
+      "tag": "0007_workable_victor_mancha",
+      "breakpoints": true
     }
   ]
 }

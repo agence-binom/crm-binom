@@ -11,6 +11,8 @@ export const clientsTable = pgTable('clients', {
   country: varchar({ length: 100 }),
   website: varchar({ length: 255 }),
   notes: text(),
+  icon: varchar({ length: 100 }),
+  description: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 })
