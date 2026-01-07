@@ -13,29 +13,6 @@ const usersMap = computed(() => {
   return new Map(usersData.value.users.map(user => [user.id, user.name]))
 })
 
-const tasksByUser = computed(() => {
-  if (!props.tasks) return []
-
-  const grouped = props.tasks.reduce((acc, task) => {
-    const userId = task.assignedTo || 0
-    if (!acc[userId]) {
-      acc[userId] = {
-        userId,
-        userName: userId === 0 ? 'Non assigné' : usersMap.value.get(userId) || 'Utilisateur inconnu',
-        tasks: []
-      }
-    }
-    acc[userId].tasks.push(task)
-    return acc
-  }, {} as Record<number, { userId: number, userName: string, tasks: Task[] }>)
-
-  return Object.values(grouped).sort((a, b) => {
-    if (a.userId === 0) return 1
-    if (b.userId === 0) return -1
-    return a.userId - b.userId
-  })
-})
-
 const emit = defineEmits<{
   taskDeleted: []
   taskToUpdated: [taskId: number]
@@ -50,14 +27,13 @@ const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bg
 
 const { bgClass, badgeClass, label } = statuSettings[props.status]
 
-const [parent, taskList] = useDragAndDrop(props.tasks, {
+const [parent, taskList] = useDragAndDrop<Task>(props.tasks, {
   group: 'kanban-tasks',
   dragHandle: '.kanban-handle',
   draggable: (el) => {
     return !el.hasAttribute('data-no-drag')
   },
   onDragend: (data) => {
-    console.log('Drag ended', data)
     const draggedTask = data.draggedNode.data.value as Task
     const targetParent = data.parent.el as HTMLElement
     const targetStatus = targetParent.dataset.status as 'todo' | 'in_progress' | 'done'
@@ -67,6 +43,10 @@ const [parent, taskList] = useDragAndDrop(props.tasks, {
     }
   }
 })
+
+watch(() => props.tasks, (newTasks) => {
+  taskList.value = [...newTasks]
+}, { deep: true })
 
 const onDeleteTask = async (taskId: number) => {
   try {
@@ -100,25 +80,15 @@ const onDeleteTask = async (taskId: number) => {
       :data-status="props.status"
       class="w-full h-full flex flex-col items-stretch gap-4 overflow-y-auto pr-1 scrollbar-custom"
     >
-      <template v-if="tasksByUser.length > 0">
-        <template
-          v-for="userGroup in tasksByUser"
-          :key="userGroup.userId"
-        >
-          <div
-            class="text-xs font-semibold text-gray-600 px-2 py-1 bg-gray-100 rounded"
-            data-no-drag
-          >
-            {{ userGroup.userName }}
-          </div>
-          <TaskCard
-            v-for="task in userGroup.tasks"
-            :key="task.id"
-            :task="task"
-            @delete="onDeleteTask"
-            @update="emit('taskToUpdated', $event)"
-          />
-        </template>
+      <template v-if="taskList.length > 0">
+        <TaskCard
+          v-for="task in taskList"
+          :key="task.id"
+          :task="task"
+          :user-name="task.assignedTo ? usersMap.get(task.assignedTo) : 'Non assigné'"
+          @delete="onDeleteTask"
+          @update="emit('taskToUpdated', $event)"
+        />
       </template>
       <div
         v-else

@@ -3,6 +3,7 @@ import type { Task } from '~/validation/tasks'
 
 const props = defineProps<{
   task: Task
+  userName?: string
 }>()
 
 const emit = defineEmits<{
@@ -59,9 +60,19 @@ const emit = defineEmits<{
             <h4 class="font-semibold text-sm ui-text-highlighted">
               {{ props.task.title }}
             </h4>
-            <p class="text-xs ui-text-muted mt-1">
+            <p
+              v-if="props.task.notes"
+              class="text-xs ui-text-muted mt-1"
+            >
               {{ props.task.notes }}
             </p>
+            <div
+              v-if="props.userName"
+              class="text-xs text-gray-500 mt-1 flex items-center gap-1"
+            >
+              <UIcon name="i-lucide-user" />
+              <span>{{ props.userName }}</span>
+            </div>
           </div>
         </div>
       </template>

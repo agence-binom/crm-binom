@@ -35,19 +35,29 @@ const formState = reactive({
   assignedTo: undefined as number | undefined
 })
 
-const { data: userData } = await useFetch('/api/users')
-const userOptions = computed(() =>
-  userData.value?.users?.map((user: User) => ({
-    label: user.name,
-    value: user.id
-  })) ?? []
-)
+const selectedProject = computed({
+  get: () => projectsOptions.value.find(p => p.value === formState.projectId),
+  set: (val) => { formState.projectId = val?.value }
+})
 
 const { data: projectData } = await useFetch('/api/projects')
 const projectsOptions = computed(() =>
   projectData.value?.projects?.map((project: Project) => ({
     label: project.name,
     value: project.id
+  })) ?? []
+)
+
+const selectedUser = computed({
+  get: () => userOptions.value.find(u => u.value === formState.assignedTo),
+  set: (val) => { formState.assignedTo = val?.value }
+})
+
+const { data: usersData } = await useFetch('/api/users')
+const userOptions = computed(() =>
+  usersData.value?.users?.map((user: User) => ({
+    label: user.name,
+    value: user.id
   })) ?? []
 )
 
@@ -151,8 +161,8 @@ const onSubmit = async () => {
           label="Projet"
           name="projectId"
         >
-          <USelect
-            v-model="formState.projectId"
+          <USelectMenu
+            v-model="selectedProject"
             :items="projectsOptions"
             placeholder="Sélectionner un projet"
             class="w-full"
@@ -163,8 +173,8 @@ const onSubmit = async () => {
           label="Assigner à"
           name="assignedTo"
         >
-          <USelect
-            v-model="formState.assignedTo"
+          <USelectMenu
+            v-model="selectedUser"
             :items="userOptions"
             placeholder="Sélectionner un utilisateur"
             class="w-full"
