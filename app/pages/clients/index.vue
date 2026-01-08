@@ -15,12 +15,14 @@ const handleClientChange = async () => {
 
 <template>
   <div class="container mx-auto p-6">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
       <h1 class="text-3xl font-bold">
         Clients
       </h1>
       <UButton
-        icon="i-lucide-plus"
+        icon="i-lucide-circle-plus"
+        variant="outline"
+        color="neutral"
         @click="openCreateClient"
       >
         Nouveau client
@@ -47,7 +49,9 @@ const handleClientChange = async () => {
         Aucun client
       </p>
       <UButton
-        icon="i-lucide-plus"
+        icon="i-lucide-circle-plus"
+        variant="outline"
+        color="neutral"
         @click="openCreateClient"
       >
         Créer un client

@@ -18,7 +18,7 @@ const contactInfos = computed(() => [
 </script>
 
 <template>
-  <div class="flex justify-between items-start mb-6">
+  <div class="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
     <div class="flex flex-col gap-2 flex-1">
       <h1 class="text-3xl font-bold">
         {{ client.name }}

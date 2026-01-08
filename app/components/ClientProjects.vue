@@ -36,7 +36,7 @@ const getStatusLabel = (status: string) => {
 
 <template>
   <div>
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center mb-4 ">
       <h2 class="text-2xl font-bold flex items-center gap-2">
         <UIcon name="i-lucide-folder" />
         Projets
