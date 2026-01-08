@@ -7,7 +7,6 @@ export const projectsTable = pgTable('projects', {
   name: varchar({ length: 255 }).notNull(),
   description: text(),
   status: varchar({ length: 50 }).notNull().default('en_cours'),
-  budget: integer(),
   startDate: timestamp(),
   endDate: timestamp(),
   url: varchar({ length: 255 }),

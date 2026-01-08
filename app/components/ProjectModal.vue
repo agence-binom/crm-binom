@@ -156,20 +156,24 @@ const onSubmit = async () => {
           <UFormField
             label="Date de début"
             name="startDate"
+            class="flex-1"
           >
             <UInput
               v-model="formState.startDate"
               type="date"
+              class="w-full"
             />
           </UFormField>
 
           <UFormField
             label="Date de fin"
             name="endDate"
+            class="flex-1"
           >
             <UInput
               v-model="formState.endDate"
               type="date"
+              class="w-full"
             />
           </UFormField>
         </div>
@@ -177,17 +181,20 @@ const onSubmit = async () => {
         <UFormField
           label="URL du projet"
           name="url"
+          class="w-full"
         >
           <UInput
             v-model="formState.url"
             type="url"
             placeholder="https://example.com"
+            class="w-full"
           />
         </UFormField>
 
         <div class="flex justify-end gap-3">
           <UButton
             variant="soft"
+            color="neutral"
             @click="isOpen = false"
           >
             Annuler
