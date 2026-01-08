@@ -266,10 +266,10 @@ const onSubmit = async () => {
           />
         </UFormField>
 
-        <div class="flex gap-2">
+        <div class="flex justify-end gap-2">
           <UButton
             color="neutral"
-            variant="ghost"
+            variant="soft"
             :disabled="isSaving"
             @click="isOpen = false"
           >

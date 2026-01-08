@@ -142,7 +142,6 @@ const projectToEdit = computed(() => {
         @create="openCreateProject"
         @edit="openEditProject"
         @delete="onDeleteProject"
-        @view-tasks="(projectId) => navigateTo(`/projects/${projectId}/tasks`)"
       />
 
       <ClientContacts

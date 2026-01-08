@@ -192,7 +192,7 @@ const onSubmit = async () => {
           />
         </UFormField>
 
-        <div class="flex justify-end gap-3">
+        <div class="flex justify-end gap-2">
           <UButton
             variant="soft"
             color="neutral"

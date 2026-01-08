@@ -45,82 +45,23 @@
     </div>
 
     <!-- Liste des projets -->
-    <UCard v-if="filteredProjects && filteredProjects.length > 0">
-      <div class="space-y-4">
-        <div
-          v-for="project in filteredProjects"
-          :key="project.id"
-          class="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        >
-          <div class="flex justify-between items-start">
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-2">
-                <h3 class="text-xl font-semibold">
-                  {{ project.name }}
-                </h3>
-                <UBadge :color="getStatusColor(project.status)">
-                  {{ getStatusLabel(project.status) }}
-                </UBadge>
-              </div>
+    <ProjectsList
+      v-if="filteredProjects && filteredProjects.length > 0"
+      :projects="filteredProjects"
+      :show-header="false"
+      :show-create-button="false"
+      :show-delete-button="false"
+    />
 
-              <p
-                v-if="project.description"
-                class="text-gray-600 dark:text-gray-400 mb-2"
-              >
-                {{ project.description }}
-              </p>
-
-              <div class="flex gap-4 text-sm text-gray-500">
-                <span v-if="project.startDate">
-                  <UIcon
-                    name="i-lucide-calendar"
-                    class="inline"
-                  />
-                  Début: {{ formatDate(project.startDate) }}
-                </span>
-                <span v-if="project.endDate">
-                  <UIcon
-                    name="i-lucide-calendar-check"
-                    class="inline"
-                  />
-                  Fin: {{ formatDate(project.endDate) }}
-                </span>
-              </div>
-
-              <a
-                v-if="project.url"
-                :href="project.url"
-                target="_blank"
-                class="text-blue-600 hover:underline text-sm mt-2 inline-flex items-center gap-1"
-              >
-                <UIcon name="i-lucide-external-link" />
-                Voir le site
-              </a>
-            </div>
-
-            <div class="flex gap-2">
-              <UButton
-                icon="i-lucide-list-checks"
-                variant="soft"
-                size="sm"
-                @click="navigateTo(`/projects/${project.id}/tasks`)"
-              >
-                Tâches
-              </UButton>
-              <UButton
-                icon="i-lucide-pencil"
-                variant="soft"
-                size="sm"
-                @click="navigateTo(`/projects/${project.id}/edit`)"
-              >
-                Modifier
-              </UButton>
-              <p class="text-gray-600">
-                Aucun projet {{ statusFilter !== 'all' ? 'avec ce statut' : '' }}
-              </p>
-            </div>
-          </div>
-        </div>
+    <UCard v-else>
+      <div class="text-center py-8">
+        <UIcon
+          name="i-lucide-folder-open"
+          class="text-4xl text-gray-400 mb-2"
+        />
+        <p class="text-gray-600">
+          Aucun projet {{ statusFilter !== 'all' ? 'avec ce statut' : '' }}
+        </p>
       </div>
     </UCard>
   </div>
@@ -138,28 +79,4 @@ const filteredProjects = computed(() => {
   }
   return projects.value.filter(p => p.status === statusFilter.value)
 })
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'en_cours': return 'primary'
-    case 'termine': return 'success'
-    case 'en_attente': return 'warning'
-    case 'annule': return 'error'
-    default: return 'neutral'
-  }
-}
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case 'en_cours': return 'En cours'
-    case 'termine': return 'Terminé'
-    case 'en_attente': return 'En attente'
-    case 'annule': return 'Annulé'
-    default: return status
-  }
-}
-
-const formatDate = (date: string | Date) => {
-  return new Date(date).toLocaleDateString('fr-FR')
-}
 </script>

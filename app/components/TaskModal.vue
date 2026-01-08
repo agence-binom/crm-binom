@@ -8,6 +8,7 @@ const props = defineProps<{
   open: boolean
   taskId?: number | null
   task?: Task | null
+  projectId?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -31,7 +32,7 @@ const formState = reactive({
   title: '',
   notes: '',
   dueDate: '',
-  projectId: undefined as number | undefined,
+  projectId: props.projectId ?? undefined as number | undefined,
   assignedTo: undefined as number | undefined
 })
 
@@ -66,7 +67,7 @@ const resetForm = () => {
     title: '',
     notes: '',
     dueDate: '',
-    projectId: undefined,
+    projectId: props.projectId ?? undefined,
     assignedTo: undefined
   })
 }
@@ -204,10 +205,10 @@ const onSubmit = async () => {
           />
         </UFormField>
 
-        <div class="flex gap-2">
+        <div class="flex justify-end gap-2">
           <UButton
+            variant="soft"
             color="neutral"
-            variant="ghost"
             :disabled="isSaving"
             @click="isOpen = false"
           >
