@@ -1,0 +1,68 @@
+import type { User } from '~/validation/users'
+import type { Task } from '~/validation/tasks'
+
+export function useUserFilter(tasks: Ref<Task[]>) {
+  const selectedUserId = ref<number | null>(null)
+  const { data: usersData } = useFetch('/api/users')
+
+  const taskCountByUser = computed(() => {
+    if (!tasks.value) return new Map()
+
+    const counts = new Map<number | null, number>()
+
+    tasks.value.forEach((task) => {
+      const userId = task.assignedTo ?? null
+      counts.set(userId, (counts.get(userId) ?? 0) + 1)
+    })
+
+    return counts
+  })
+
+  const userOptions = computed(() => {
+    const totalTasks = tasks.value?.length ?? 0
+    const options: { label: string, value: number | null }[] = [
+      { label: `Tous les utilisateurs (${totalTasks})`, value: null }
+    ]
+
+    options.push(...usersData.value?.users?.map((user: User) => {
+      const count = taskCountByUser.value.get(user.id) ?? 0
+      return {
+        label: `${user.name} (${count})`,
+        value: user.id
+      }
+    }) ?? [])
+
+    const unassignedCount = taskCountByUser.value.get(null) ?? 0
+    if (unassignedCount > 0) {
+      options.push({ label: `Non assigné (${unassignedCount})`, value: 0 })
+    }
+
+    return options
+  })
+
+  const selectedUser = computed({
+    get: () => userOptions.value.find(u => u.value === selectedUserId.value),
+    set: (val) => { selectedUserId.value = val?.value ?? null }
+  })
+
+  const filteredTasks = computed(() => {
+    if (!tasks.value) return []
+
+    if (selectedUserId.value === null) {
+      return tasks.value
+    }
+
+    if (selectedUserId.value === 0) {
+      return tasks.value.filter(t => !t.assignedTo)
+    }
+
+    return tasks.value.filter(t => t.assignedTo === selectedUserId.value)
+  })
+
+  return {
+    selectedUser,
+    selectedUserId,
+    userOptions,
+    filteredTasks
+  }
+}
