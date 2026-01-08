@@ -63,7 +63,6 @@ const collapsed = ref(false)
         </template>
 
         <template #right>
-          <ColorModeButton />
           <UButton
             icon="i-lucide-bell"
             color="neutral"
