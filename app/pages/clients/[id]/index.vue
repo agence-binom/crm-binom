@@ -105,7 +105,7 @@ const projectToEdit = computed(() => {
 <template>
   <div
     v-if="client"
-    class="container mx-auto p-6"
+    class="container mx-auto p-6 overflow-scroll"
   >
     <ClientHeader
       :client="client"
