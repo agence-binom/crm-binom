@@ -71,17 +71,18 @@
       :show-delete-button="false"
     />
 
-    <UCard v-else>
-      <div class="text-center py-8">
-        <UIcon
-          name="i-lucide-folder-open"
-          class="text-4xl text-gray-400 mb-2"
-        />
-        <p class="text-gray-600">
-          Aucun projet {{ statusFilter !== 'all' ? 'avec ce statut' : '' }}
-        </p>
-      </div>
-    </UCard>
+    <div
+      v-else
+      class="text-center py-8"
+    >
+      <UIcon
+        name="i-lucide-folder-open"
+        class="text-4xl text-gray-400 mb-2"
+      />
+      <p class="text-gray-600">
+        Aucun projet {{ statusFilter !== 'all' ? 'avec ce statut' : '' }}
+      </p>
+    </div>
   </div>
 </template>
 
