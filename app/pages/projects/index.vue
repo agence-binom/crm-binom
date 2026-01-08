@@ -1,22 +1,39 @@
 <template>
   <div class="container mx-auto p-6">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
       <h1 class="text-3xl font-bold">
         Tous les projets
       </h1>
+      <UButton
+        icon="i-lucide-circle-plus"
+        variant="outline"
+        color="neutral"
+        @click="openCreateProject"
+      >
+        Nouveau projet
+      </UButton>
     </div>
 
+    <ProjectModal
+      v-model:open="isProjectModalOpen"
+      :client-id="0"
+      @saved="handleProjectChange"
+    />
+
     <!-- Filtres par statut -->
-    <div class="mb-6 flex gap-2">
+    <div class="mb-6 flex flex-wrap gap-2">
       <UButton
         :variant="statusFilter === 'all' ? 'solid' : 'soft'"
+        color="neutral"
+        class="transition-all duration-200"
         @click="statusFilter = 'all'"
       >
         Tous
       </UButton>
       <UButton
         :variant="statusFilter === 'en_cours' ? 'solid' : 'soft'"
-        color="primary"
+        color="info"
+        class="transition-all duration-200"
         @click="statusFilter = 'en_cours'"
       >
         En cours
@@ -24,6 +41,7 @@
       <UButton
         :variant="statusFilter === 'termine' ? 'solid' : 'soft'"
         color="success"
+        class="transition-all duration-200"
         @click="statusFilter = 'termine'"
       >
         Terminés
@@ -68,10 +86,11 @@
 </template>
 
 <script setup lang="ts">
-const { data } = await useFetch('/api/projects')
+const { data, refresh } = await useFetch('/api/projects')
 const projects = computed(() => data.value?.projects || [])
 
 const statusFilter = ref('all')
+const isProjectModalOpen = ref(false)
 
 const filteredProjects = computed(() => {
   if (statusFilter.value === 'all') {
@@ -79,4 +98,12 @@ const filteredProjects = computed(() => {
   }
   return projects.value.filter(p => p.status === statusFilter.value)
 })
+
+const openCreateProject = () => {
+  isProjectModalOpen.value = true
+}
+
+const handleProjectChange = async () => {
+  await refresh()
+}
 </script>

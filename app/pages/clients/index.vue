@@ -60,7 +60,7 @@ const handleClientChange = async () => {
 
     <ul
       v-else
-      class="flex gap-8"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
     >
       <li
         v-for="client in clients"
@@ -72,7 +72,7 @@ const handleClientChange = async () => {
           :icon="client.icon || 'i-lucide-briefcase'"
           variant="soft"
           :to="`/clients/${client.id}`"
-          class="w-96"
+          class="h-full"
         />
       </li>
     </ul>

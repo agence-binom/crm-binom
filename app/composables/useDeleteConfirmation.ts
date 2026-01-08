@@ -1,4 +1,6 @@
 export function useDeleteConfirmation() {
+  const toast = useToast()
+
   const deleteResource = async (
     resourceName: string,
     resourceId: number,
@@ -14,11 +16,24 @@ export function useDeleteConfirmation() {
         method: 'DELETE'
       })
 
+      toast.add({
+        title: 'Suppression réussie',
+        description: `Le ${resourceName} a été supprimé avec succès`,
+        color: 'primary',
+        icon: 'i-lucide-check-circle'
+      })
+
       if (onSuccess) {
         await onSuccess()
       }
     } catch (error) {
       console.error(`Erreur lors de la suppression du ${resourceName}:`, error)
+      toast.add({
+        title: 'Erreur',
+        description: `Impossible de supprimer le ${resourceName}`,
+        color: 'error',
+        icon: 'i-lucide-x-circle'
+      })
       throw error
     }
   }

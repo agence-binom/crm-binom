@@ -60,7 +60,7 @@ const taskToEdit = computed(() => {
 
 <template>
   <div>
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
       <h2 class="text-2xl font-bold">
         {{ title }}
       </h2>
@@ -87,7 +87,7 @@ const taskToEdit = computed(() => {
       @saved="handleTaskChange"
     />
 
-    <div class="w-full flex gap-8 h-[calc(100vh-20rem)]">
+    <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-16rem)] min-h-[500px]">
       <KanbanTable
         status="todo"
         :tasks="tasksByStatus.todo"

@@ -1,13 +1,28 @@
 <script setup lang="ts">
-const { data, refresh } = await useFetch('/api/tasks')
+const { data, refresh, status } = await useFetch('/api/tasks')
 const allTasks = computed(() => data.value?.tasks || [])
 
 const { selectedUser, userOptions, filteredTasks } = useUserFilter(allTasks)
+const isLoading = computed(() => status.value === 'pending')
 </script>
 
 <template>
   <div class="container mx-auto p-6">
+    <div
+      v-if="isLoading"
+      class="space-y-4"
+    >
+      <USkeleton class="h-10 w-64" />
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <USkeleton
+          v-for="i in 3"
+          :key="i"
+          class="h-96"
+        />
+      </div>
+    </div>
     <ToDoList
+      v-else
       :tasks="filteredTasks"
       title="To Do List globale"
       @refresh="refresh"

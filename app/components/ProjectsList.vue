@@ -21,7 +21,7 @@ const { getStatusColor, getStatusLabel } = useStatusHelpers()
   <div>
     <div
       v-if="showHeader"
-      class="flex justify-between items-center mb-4"
+      class="flex justify-between items-center mb-6"
     >
       <h2 class="text-2xl font-bold flex items-center gap-2">
         <UIcon name="i-lucide-folder" />
@@ -45,49 +45,51 @@ const { getStatusColor, getStatusLabel } = useStatusHelpers()
       </UButton>
     </div>
 
-    <ul
-      v-if="projects.length > 0"
-      class="flex items-stretch gap-4 flex-wrap"
-    >
-      <li
-        v-for="project in projects"
-        :key="project.id"
-        class="min-w-sm"
+    <UCard v-if="projects.length > 0">
+      <TransitionGroup
+        name="list"
+        tag="ul"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        <NuxtLink :to="`/projects/${project.id}`">
-          <UCard
-            variant="soft"
-            class="h-full hover:bg-gray-100 transition-bg"
-          >
-            <div class="flex gap-4 mb-2">
-              <h3 class="text-xl font-semibold">
-                {{ project.name }}
-              </h3>
-              <UBadge
-                v-if="project.status"
-                variant="soft"
-                class="rounded-full px-3 w-fit"
-                :color="getStatusColor(project.status)"
-              >
-                {{ getStatusLabel(project.status) }}
-              </UBadge>
-            </div>
-            <p class="text-gray-600">
-              {{ project.description }}
-            </p>
-            <UButton
-              v-if="showDeleteButton"
-              size="sm"
+        <li
+          v-for="project in projects"
+          :key="project.id"
+        >
+          <NuxtLink :to="`/projects/${project.id}`">
+            <UCard
               variant="soft"
-              color="error"
-              icon="i-lucide-trash"
-              class="mt-4"
-              @click.prevent="emit('delete', project.id)"
-            />
-          </UCard>
-        </NuxtLink>
-      </li>
-    </ul>
+              class="h-full hover:bg-elevated transition-all duration-200 cursor-pointer"
+            >
+              <div class="flex gap-4 mb-2">
+                <h3 class="text-xl font-semibold">
+                  {{ project.name }}
+                </h3>
+                <UBadge
+                  v-if="project.status"
+                  variant="soft"
+                  class="rounded-full px-3 w-fit"
+                  :color="getStatusColor(project.status)"
+                >
+                  {{ getStatusLabel(project.status) }}
+                </UBadge>
+              </div>
+              <p class="text-gray-600">
+                {{ project.description }}
+              </p>
+              <UButton
+                v-if="showDeleteButton"
+                size="sm"
+                variant="soft"
+                color="error"
+                icon="i-lucide-trash"
+                class="mt-4"
+                @click.prevent="emit('delete', project.id)"
+              />
+            </UCard>
+          </NuxtLink>
+        </li>
+      </TransitionGroup>
+    </UCard>
 
     <UCard v-else>
       <div class="text-center py-8">
@@ -100,7 +102,8 @@ const { getStatusColor, getStatusLabel } = useStatusHelpers()
         </p>
         <UButton
           v-if="showCreateButton"
-          icon="i-lucide-plus"
+          icon="i-lucide-circle-plus"
+          variant="soft"
           @click="emit('create')"
         >
           Créer le premier projet

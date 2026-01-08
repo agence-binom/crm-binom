@@ -33,7 +33,18 @@ const [parent, taskList] = useDragAndDrop<Task>(props.tasks, {
   draggable: (el) => {
     return !el.hasAttribute('data-no-drag')
   },
+  onDragstart: (_data) => {
+    // Ajouter classe sur toutes les zones de drop
+    document.querySelectorAll('[data-status]').forEach((zone) => {
+      zone.setAttribute('data-drop-zone-active', 'true')
+    })
+  },
   onDragend: (data) => {
+    // Retirer classe des zones de drop
+    document.querySelectorAll('[data-status]').forEach((zone) => {
+      zone.removeAttribute('data-drop-zone-active')
+    })
+
     const draggedTask = data.draggedNode.data.value as Task
     const targetParent = data.parent.el as HTMLElement
     const targetStatus = targetParent.dataset.status as 'todo' | 'in_progress' | 'done'
@@ -61,7 +72,7 @@ const onDeleteTask = async (taskId: number) => {
 </script>
 
 <template>
-  <div :class="['flex-1 p-3 flex flex-col items-start gap-8', bgClass, 'rounded-lg']">
+  <div :class="['flex-1 p-3 flex flex-col items-start gap-4', bgClass, 'rounded-lg']">
     <div class="w-full flex justify-between items-center mb-4">
       <div
         :class="['font-medium inline-flex items-center text-base px-2.5 py-1 gap-1.5 rounded-md',
@@ -78,7 +89,7 @@ const onDeleteTask = async (taskId: number) => {
     <div
       ref="parent"
       :data-status="props.status"
-      class="w-full h-full flex flex-col items-stretch gap-4 overflow-y-auto pr-1 scrollbar-custom"
+      class="w-full h-full flex flex-col items-stretch gap-4 overflow-y-auto pr-1 scrollbar-custom pt-1 rounded-lg transition-all duration-300"
     >
       <template v-if="taskList.length > 0">
         <TaskCard

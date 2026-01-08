@@ -14,8 +14,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="mb-4">
-    <div class="flex justify-between items-center mb-4">
+  <div class="mb-6">
+    <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold flex items-center gap-2">
         <UIcon name="i-lucide-users" />
         Contacts
@@ -37,78 +37,83 @@ const emit = defineEmits<{
       </UButton>
     </div>
 
-    <ul
-      v-if="contacts.length > 0"
-      class="flex items-stretch gap-4 flex-wrap"
-    >
-      <li
-        v-for="contact in contacts"
-        :key="contact.id"
-        class="min-w-sm"
+    <UCard v-if="contacts.length > 0">
+      <ul
+
+        class="flex items-stretch gap-4 flex-wrap"
       >
-        <UCard
-          variant="soft"
-          class="h-full"
+        <li
+          v-for="contact in contacts"
+          :key="contact.id"
+          class="min-w-sm"
         >
-          <div>
-            <h3 class="text-xl font-semibold">
-              {{ contact.firstName }} {{ contact.lastName }}
-              <span class="text-sm text-gray-500">({{ contact.position }})</span>
-            </h3>
-            <div class="flex gap-2 mt-2">
-              <UBadge
-                v-if="contact.email"
-                variant="soft"
-                color="neutral"
-                class="rounded-full"
-                icon="i-lucide-mail"
+          <UCard
+            variant="soft"
+            class="h-full"
+          >
+            <div>
+              <h3 class="text-xl font-semibold">
+                {{ contact.firstName }} {{ contact.lastName }}
+                <span
+                  v-if="contact.position"
+                  class="text-sm text-gray-500"
+                >({{ contact.position }})</span>
+              </h3>
+              <div class="flex gap-2 mt-2">
+                <UBadge
+                  v-if="contact.email"
+                  variant="soft"
+                  color="neutral"
+                  class="rounded-full"
+                  icon="i-lucide-mail"
+                >
+                  {{ contact.email }}
+                </UBadge>
+                <UBadge
+                  v-if="contact.phone"
+                  variant="soft"
+                  color="neutral"
+                  class="rounded-full"
+                  icon="i-lucide-phone"
+                >
+                  {{ contact.phone }}
+                </UBadge>
+                <UBadge
+                  v-if="contact.mobile"
+                  variant="soft"
+                  color="neutral"
+                  class="rounded-full"
+                  icon="i-lucide-smartphone"
+                >
+                  {{ contact.mobile }}
+                </UBadge>
+              </div>
+              <div
+                v-if="contact.notes"
+                class="mt-2"
               >
-                {{ contact.email }}
-              </UBadge>
-              <UBadge
-                v-if="contact.phone"
-                variant="soft"
-                color="neutral"
-                class="rounded-full"
-                icon="i-lucide-phone"
-              >
-                {{ contact.phone }}
-              </UBadge>
-              <UBadge
-                v-if="contact.mobile"
-                variant="soft"
-                color="neutral"
-                class="rounded-full"
-                icon="i-lucide-smartphone"
-              >
-                {{ contact.mobile }}
-              </UBadge>
+                {{ contact.notes }}
+              </div>
+              <div class="flex gap-2 mt-4">
+                <UButton
+                  size="sm"
+                  variant="soft"
+                  icon="i-lucide-pencil"
+                  @click="emit('edit', contact.id)"
+                />
+                <UButton
+                  size="sm"
+                  variant="soft"
+                  color="error"
+                  icon="i-lucide-trash"
+                  @click="emit('delete', contact.id)"
+                />
+              </div>
             </div>
-            <div
-              v-if="contact.notes"
-              class="mt-2"
-            >
-              {{ contact.notes }}
-            </div>
-            <div class="flex gap-2 mt-4">
-              <UButton
-                size="sm"
-                variant="soft"
-                icon="i-lucide-pencil"
-                @click="emit('edit', contact.id)"
-              />
-              <UButton
-                size="sm"
-                variant="soft"
-                color="error"
-                icon="i-lucide-trash"
-                @click="emit('delete', contact.id)"
-              />
-            </div>
-          </div>
-        </UCard>
-      </li>
-    </ul>
+          </UCard>
+        </li>
+      </ul>
+    </UCard>
 
     <UCard v-else>
       <div class="text-center py-8">
@@ -120,7 +125,8 @@ const emit = defineEmits<{
           Aucun contact pour ce client
         </p>
         <UButton
-          icon="i-lucide-plus"
+          icon="i-lucide-circle-plus"
+          variant="soft"
           @click="emit('create')"
         >
           Créer le premier contact
