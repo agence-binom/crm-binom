@@ -120,6 +120,7 @@ const onSubmit = async () => {
       size: 'xs',
       label: 'Fermer'
     }"
+    class="w-full max-w-3xl"
   >
     <template #body>
       <UForm
@@ -152,7 +153,7 @@ const onSubmit = async () => {
           />
         </UFormField>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="flex gap-4">
           <UFormField
             label="Date de début"
             name="startDate"

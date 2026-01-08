@@ -123,6 +123,7 @@ const onSubmit = async () => {
       size: 'xs',
       label: 'Fermer'
     }"
+    class="w-full max-w-3xl"
   >
     <template #body>
       <UForm

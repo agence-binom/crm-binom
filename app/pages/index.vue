@@ -102,7 +102,7 @@ const taskToEdit = computed(() => {
 
 <template>
   <div class="container mx-auto p-6">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
       <h1 class="text-3xl font-bold mb-2">
         To Do List globale
       </h1>
@@ -122,7 +122,9 @@ const taskToEdit = computed(() => {
         </USelectMenu>
 
         <UButton
-          icon="i-lucide-plus"
+          icon="i-lucide-circle-plus"
+          variant="outline"
+          color="neutral"
           @click="openCreateTask"
         >
           Ajouter une tâche
