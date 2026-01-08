@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const user = useSupabaseUser()
 const collapsed = ref(false)
 </script>
 
@@ -11,11 +12,6 @@ const collapsed = ref(false)
       class="py-4"
     >
       <template #default="{ }">
-        <!-- <UDashboardSearchButton
-          :collapsed="collapsed"
-          placeholder="Rechercher..."
-        /> -->
-
         <UNavigationMenu
           :collapsed="collapsed"
           orientation="vertical"
@@ -44,15 +40,29 @@ const collapsed = ref(false)
         />
       </template>
 
-      <template #footer="{ }">
-        <UButton
-          :label="collapsed ? undefined : 'Mon Compte'"
-          icon="i-lucide-user"
-          color="neutral"
-          variant="ghost"
-          class="w-full"
-          :block="collapsed"
-        />
+      <template
+        #footer="{ }"
+      >
+        <div v-if="user?.value">
+          <UButton
+            :label="collapsed ? undefined : user.value.email"
+            icon="i-lucide-user"
+            color="neutral"
+            variant="ghost"
+            class="w-full"
+            :block="collapsed"
+          />
+        </div>
+        <div v-else>
+          <UButton
+            :label="collapsed ? undefined : 'Mon compte'"
+            icon="i-lucide-user"
+            color="neutral"
+            variant="ghost"
+            class="w-full"
+            :block="collapsed"
+          />
+        </div>
       </template>
     </UDashboardSidebar>
 

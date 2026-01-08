@@ -1,7 +1,22 @@
-<script lang="ts">
+<script setup lang="ts">
 definePageMeta({
   layout: false
 })
+
+const user = useSupabaseUser()
+const error = ref(false)
+
+watchEffect(() => {
+  if (user.value) {
+    navigateTo('/')
+  }
+})
+
+setTimeout(() => {
+  if (!user.value) {
+    error.value = true
+  }
+}, 5000)
 </script>
 
 <template>
