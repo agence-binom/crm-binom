@@ -53,24 +53,11 @@
           </UFormField>
         </div>
 
-        <!-- Budget et dates -->
+        <!-- Dates -->
         <div class="space-y-4 mb-6">
           <h3 class="text-lg font-semibold">
-            Budget et planning
+            Planning
           </h3>
-
-          <UFormField
-            label="Budget (€)"
-            name="budget"
-            hint="Montant en euros"
-          >
-            <UInput
-              v-model="budgetEuros"
-              type="number"
-              placeholder="5000"
-              step="0.01"
-            />
-          </UFormField>
 
           <div class="grid grid-cols-2 gap-4">
             <UFormField
@@ -147,7 +134,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { projectUpdateSchema, type ProjectUpdate } from '~/db/schema/validation'
+import { projectUpdateSchema, type ProjectUpdate } from '~/validation/projects'
 
 const route = useRoute()
 const projectId = computed(() => Number(route.params.id))
@@ -167,27 +154,12 @@ const formState = reactive({
   name: project.value.name || '',
   description: project.value.description || '',
   status: (project.value.status as 'en_cours' | 'termine' | 'en_attente' | 'annule') || undefined,
-  budget: project.value.budget || undefined,
   startDate: project.value.startDate ? new Date(project.value.startDate).toISOString().split('T')[0] : '',
   endDate: project.value.endDate ? new Date(project.value.endDate).toISOString().split('T')[0] : '',
   url: project.value.url || '',
   notes: project.value.notes || ''
 })
-
-const budgetEuros = ref(project.value.budget ? (project.value.budget / 100).toString() : '')
 const isSubmitting = ref(false)
-
-// Convertir les euros en centimes quand le budget change
-watch(budgetEuros, (value) => {
-  if (value === '' || value === null) {
-    formState.budget = undefined
-  } else {
-    const euros = parseFloat(value)
-    if (!isNaN(euros)) {
-      formState.budget = Math.round(euros * 100)
-    }
-  }
-})
 
 const statusOptions = [
   { value: 'en_cours', label: 'En cours' },

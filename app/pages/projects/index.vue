@@ -71,13 +71,6 @@
               </p>
 
               <div class="flex gap-4 text-sm text-gray-500">
-                <span v-if="project.budget">
-                  <UIcon
-                    name="i-lucide-euro"
-                    class="inline"
-                  />
-                  {{ formatBudget(project.budget) }}
-                </span>
                 <span v-if="project.startDate">
                   <UIcon
                     name="i-lucide-calendar"
@@ -164,13 +157,6 @@ const getStatusLabel = (status: string) => {
     case 'annule': return 'Annulé'
     default: return status
   }
-}
-
-const formatBudget = (cents: number) => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(cents / 100)
 }
 
 const formatDate = (date: string | Date) => {
