@@ -87,7 +87,7 @@ const taskToEdit = computed(() => {
       @saved="handleTaskChange"
     />
 
-    <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-16rem)] min-h-[500px]">
+    <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] min-h-[600px] overflow-hidden">
       <KanbanTable
         status="todo"
         :tasks="tasksByStatus.todo"

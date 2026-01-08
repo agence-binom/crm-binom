@@ -72,8 +72,8 @@ const onDeleteTask = async (taskId: number) => {
 </script>
 
 <template>
-  <div :class="['flex-1 p-3 flex flex-col items-start gap-4', bgClass, 'rounded-lg']">
-    <div class="w-full flex justify-between items-center mb-4">
+  <div :class="['h-full flex flex-col gap-4', bgClass, 'rounded-lg p-3 overflow-hidden']">
+    <div class="w-full flex justify-between items-center shrink-0">
       <div
         :class="['font-medium inline-flex items-center text-base px-2.5 py-1 gap-1.5 rounded-md',
                  badgeClass]"
@@ -89,7 +89,7 @@ const onDeleteTask = async (taskId: number) => {
     <div
       ref="parent"
       :data-status="props.status"
-      class="w-full h-full flex flex-col items-stretch gap-4 overflow-y-auto pr-1 scrollbar-custom pt-1 rounded-lg transition-all duration-300"
+      class="w-full flex-1 flex flex-col items-stretch gap-4 overflow-y-auto pr-1 scrollbar-custom pt-1 rounded-lg transition-all duration-300 min-h-0"
     >
       <template v-if="taskList.length > 0">
         <TaskCard
