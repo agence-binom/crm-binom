@@ -1,6 +1,5 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui'],
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/supabase'],
 
   devtools: {
     enabled: true
@@ -8,15 +7,8 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  runtimeConfig: {
-    public: {
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY
-    }
-  },
-
   routeRules: {
-    '/': { prerender: true }
+    '/': { prerender: false }
   },
 
   compatibilityDate: '2025-01-15',
@@ -28,5 +20,15 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  supabase: {
+    redirectOptions: {
+      login: '/login',
+      callback: '/confirm',
+      exclude: ['/login', '/confirm']
+    },
+    url: process.env.SUPABASE_URL,
+    key: process.env.SUPABASE_KEY
   }
 })
