@@ -32,6 +32,7 @@ const formState = reactive({
   title: '',
   notes: '',
   dueDate: '',
+  status: 'todo' as 'todo' | 'in_progress' | 'done',
   projectId: props.projectId ?? undefined as number | undefined,
   assignedTo: undefined as number | undefined
 })
@@ -67,6 +68,7 @@ const resetForm = () => {
     title: '',
     notes: '',
     dueDate: '',
+    status: 'todo',
     projectId: props.projectId ?? undefined,
     assignedTo: undefined
   })
@@ -76,6 +78,7 @@ const fillFromTask = (task: Task) => {
   Object.assign(formState, {
     title: task.title ?? '',
     notes: task.notes ?? '',
+    status: task.status ?? 'todo',
     projectId: task.projectId ?? undefined,
     assignedTo: task.assignedTo ?? undefined,
     dueDate: task.dueDate ? task.dueDate.slice(0, 10) : ''
@@ -106,6 +109,7 @@ const onSubmit = async () => {
     const body = {
       title: formState.title,
       notes: formState.notes,
+      status: formState.status,
       projectId: formState.projectId,
       assignedTo: formState.assignedTo,
       dueDate: formState.dueDate ? formState.dueDate : undefined

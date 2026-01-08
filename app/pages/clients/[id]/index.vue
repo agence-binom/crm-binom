@@ -20,17 +20,12 @@ const isProjectModalOpen = ref(false)
 const selectedContactId = ref<number | null>(null)
 const selectedProjectId = ref<number | null>(null)
 
-const onDeleteClient = async (clientId: number) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) return
+const { deleteResource } = useDeleteConfirmation()
 
-  try {
-    await $fetch(`/api/clients/${clientId}`, {
-      method: 'DELETE'
-    })
+const onDeleteClient = async (clientId: number) => {
+  await deleteResource('client', clientId, '/api/clients', async () => {
     await navigateTo('/clients')
-  } catch (err) {
-    console.error('Erreur lors de la suppression du client:', err)
-  }
+  })
 }
 
 const handleClientChange = async () => {
@@ -66,29 +61,11 @@ const handleProjectChange = async () => {
 }
 
 const onDeleteContact = async (contactId: number) => {
-  if (!confirm('Voulez-vous vraiment supprimer ce contact ?')) return
-
-  try {
-    await $fetch(`/api/contacts/${contactId}`, {
-      method: 'DELETE'
-    })
-    await refreshContacts()
-  } catch (err) {
-    console.error('Erreur lors de la suppression du contact:', err)
-  }
+  await deleteResource('contact', contactId, '/api/contacts', refreshContacts)
 }
 
 const onDeleteProject = async (projectId: number) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer ce projet ?')) return
-
-  try {
-    await $fetch(`/api/projects/${projectId}`, {
-      method: 'DELETE'
-    })
-    await refreshProjects()
-  } catch (error) {
-    console.error('Erreur lors de la suppression du projet:', error)
-  }
+  await deleteResource('projet', projectId, '/api/projects', refreshProjects)
 }
 
 const contactToEdit = computed(() => {
