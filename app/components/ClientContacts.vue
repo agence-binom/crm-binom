@@ -27,8 +27,10 @@ const emit = defineEmits<{
         </UBadge>
       </h2>
       <UButton
-        icon="i-lucide-plus"
-        size="lg"
+        icon="i-lucide-circle-plus"
+        size="md"
+        variant="outline"
+        color="neutral"
         @click="emit('create')"
       >
         Nouveau contact
@@ -37,34 +39,19 @@ const emit = defineEmits<{
 
     <ul
       v-if="contacts.length > 0"
-      class="flex items-stretch"
+      class="flex items-stretch gap-4 flex-wrap"
     >
       <li
         v-for="contact in contacts"
         :key="contact.id"
-        class="p-4"
+        class="min-w-sm"
       >
         <UCard
           variant="soft"
           class="h-full"
         >
-          <div class="flex gap-2 mb-4">
-            <UButton
-              size="sm"
-              variant="soft"
-              icon="i-lucide-pencil"
-              @click="emit('edit', contact.id)"
-            />
-            <UButton
-              size="sm"
-              variant="soft"
-              color="error"
-              icon="i-lucide-trash"
-              @click="emit('delete', contact.id)"
-            />
-          </div>
           <div>
-            <h3 class="text-lg font-medium">
+            <h3 class="text-xl font-semibold">
               {{ contact.firstName }} {{ contact.lastName }}
               <span class="text-sm text-gray-500">({{ contact.position }})</span>
             </h3>
@@ -102,6 +89,21 @@ const emit = defineEmits<{
               class="mt-2"
             >
               {{ contact.notes }}
+            </div>
+            <div class="flex gap-2 mt-4">
+              <UButton
+                size="sm"
+                variant="soft"
+                icon="i-lucide-pencil"
+                @click="emit('edit', contact.id)"
+              />
+              <UButton
+                size="sm"
+                variant="soft"
+                color="error"
+                icon="i-lucide-trash"
+                @click="emit('delete', contact.id)"
+              />
             </div>
           </div>
         </UCard>
