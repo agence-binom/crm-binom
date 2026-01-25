@@ -1,15 +1,18 @@
 <script setup lang="ts">
-definePageMeta({
-  layout: false
-})
+definePageMeta({ layout: false })
 
-const user = useSupabaseUser()
+const supabase = useSupabaseClient()
+const email = ref('')
 
-watchEffect(() => {
-  if (user.value) {
-    navigateTo('/')
-  }
-})
+const signInWithOtp = async () => {
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.value,
+    options: {
+      emailRedirectTo: 'http://localhost:3000/confirm'
+    }
+  })
+  if (error) console.log(error)
+}
 </script>
 
 <template>
@@ -25,7 +28,10 @@ watchEffect(() => {
       </div>
 
       <UCard>
-        <AppAuth />
+        <AppAuth
+          v-model:email="email"
+          @sign-in-with-otp="signInWithOtp"
+        />
       </UCard>
     </div>
   </div>
