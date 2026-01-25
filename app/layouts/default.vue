@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const user = useSupabaseUser()
+console.log(user?.value?.email)
 const collapsed = ref(false)
 </script>
 
@@ -43,9 +44,9 @@ const collapsed = ref(false)
       <template
         #footer="{ }"
       >
-        <div v-if="user?.value">
+        <div v-if="user">
           <UButton
-            :label="collapsed ? undefined : user.value.email"
+            :label="collapsed ? undefined : user.email"
             icon="i-lucide-user"
             color="neutral"
             variant="ghost"
