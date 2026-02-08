@@ -7,6 +7,13 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  runtimeConfig: {
+    public: {
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseKey: process.env.SUPABASE_KEY
+    }
+  },
+
   routeRules: {
     '/': { prerender: false }
   },
@@ -27,8 +34,6 @@ export default defineNuxtConfig({
       login: '/login',
       callback: '/confirm',
       exclude: ['/login', '/confirm']
-    },
-    url: process.env.SUPABASE_URL,
-    key: process.env.SUPABASE_KEY
+    }
   }
 })
