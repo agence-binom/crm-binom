@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const user = useSupabaseUser()
-console.log(user?.value?.email)
 const collapsed = ref(false)
 </script>
 
