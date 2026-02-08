@@ -1,9 +1,6 @@
 <script setup lang="ts">
 const user = useSupabaseUser()
 const collapsed = ref(false)
-
-const config = useRuntimeConfig()
-console.log('Config:', config.public.supabaseUrl)
 </script>
 
 <template>
