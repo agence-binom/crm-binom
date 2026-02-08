@@ -3,6 +3,7 @@ import type { Project } from '~/validation/projects'
 
 const _props = defineProps<{
   projects: Project[]
+  clientId?: number
   showHeader?: boolean
   showCreateButton?: boolean
   showDeleteButton?: boolean
@@ -55,7 +56,7 @@ const { getStatusColor, getStatusLabel } = useStatusHelpers()
         v-for="project in projects"
         :key="project.id"
       >
-        <NuxtLink :to="`/projects/${project.id}`">
+        <NuxtLink :to="`/clients/${clientId || project.clientId}/projects/${project.id}`">
           <UCard
             variant="soft"
             class="h-full hover:bg-elevated transition-all duration-200 cursor-pointer"

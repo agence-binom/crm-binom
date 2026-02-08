@@ -64,6 +64,20 @@
       "when": 1770573756339,
       "tag": "0008_dark_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1770574909832,
+      "tag": "0009_nosy_deathstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1770577381917,
+      "tag": "0010_polite_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

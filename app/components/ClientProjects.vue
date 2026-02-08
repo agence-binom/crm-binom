@@ -15,6 +15,7 @@ const emit = defineEmits<{
 <template>
   <ProjectsList
     :projects="projects"
+    :client-id="clientId"
     :show-header="true"
     :show-create-button="true"
     :show-delete-button="true"

@@ -18,7 +18,7 @@ const collapsed = ref(false)
           :items="[
             { label: 'Tableau de bord', icon: 'i-lucide-home', to: '/' },
             { label: 'Clients', icon: 'i-lucide-users', to: '/clients' },
-            { label: 'Projects', icon: 'i-lucide-briefcase', to: '/projects' }
+            { label: 'Facturation', icon: 'i-lucide-receipt', to: '/facturation' }
           ]"
         />
 
@@ -30,8 +30,7 @@ const collapsed = ref(false)
               icon: 'i-lucide-building',
               disabled: true,
               children: [
-                { label: 'Administratif', icon: 'i-lucide-pen', to: '/clients', disabled: true },
-                { label: 'Projets internes', icon: 'i-lucide-cloud', to: '/projects', disabled: true }
+                { label: 'Administratif', icon: 'i-lucide-pen', to: '/clients', disabled: true }
               ]
             }
           ]"
