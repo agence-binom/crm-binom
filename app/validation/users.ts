@@ -3,7 +3,6 @@ import { z } from 'zod'
 export const userCreateSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
   email: z.string().email('Email invalide').max(255, 'Email trop long'),
-  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères').max(255, 'Le mot de passe est trop long'),
   role: z.enum(['admin', 'employee', 'client'], {
     message: 'Le rôle doit être "admin", "employee" ou "client"'
   }).default('client')
@@ -12,7 +11,6 @@ export const userCreateSchema = z.object({
 export const userUpdateSchema = z.object({
   name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional(),
   email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
-  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères').max(255, 'Le mot de passe est trop long').optional(),
   role: z.enum(['admin', 'employee', 'client'], {
     message: 'Le rôle doit être "admin", "employee" ou "client"'
   }).optional()
@@ -39,6 +37,5 @@ export type User = {
   id: number
   name: string
   email: string
-  password: string
   role: string
 }

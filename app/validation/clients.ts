@@ -9,8 +9,10 @@ export const clientCreateSchema = z.object({
   postalCode: z.string().regex(/^\d*$/, 'Le code postal doit contenir uniquement des chiffres').max(5, 'Code postal trop long').optional().or(z.literal('')),
   country: z.string().max(100, 'Pays trop long').optional().or(z.literal('')),
   website: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
+  siret: z.string().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   icon: z.string().max(100, 'Icône trop longue').optional().or(z.literal('')),
+  status: z.enum(['active', 'inactive', 'archived']).default('active'),
   description: z.string().optional().or(z.literal(''))
 })
 
@@ -23,8 +25,10 @@ export const clientUpdateSchema = z.object({
   postalCode: z.string().regex(/^\d*$/, 'Le code postal doit contenir uniquement des chiffres').max(5, 'Code postal trop long').optional().or(z.literal('')),
   country: z.string().max(100, 'Pays trop long').optional().or(z.literal('')),
   website: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
+  siret: z.string().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   icon: z.string().max(100, 'Icône trop longue').optional().or(z.literal('')),
+  status: z.enum(['active', 'inactive', 'archived']).optional(),
   description: z.string().optional().or(z.literal(''))
 }).refine(
   data => Object.keys(data).length > 0,
@@ -50,7 +54,9 @@ export type Client = {
   postalCode?: string | null
   country?: string | null
   website?: string | null
+  siret?: string | null
   notes?: string | null
   icon?: string | null
+  status?: string | null
   description?: string | null
 }

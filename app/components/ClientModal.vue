@@ -34,8 +34,10 @@ const formState = reactive({
   postalCode: '',
   country: '',
   website: '',
+  siret: '',
   notes: '',
   icon: '',
+  status: 'active' as 'active' | 'inactive' | 'archived',
   description: ''
 })
 
@@ -49,8 +51,10 @@ const resetForm = () => {
     postalCode: '',
     country: '',
     website: '',
+    siret: '',
     notes: '',
     icon: '',
+    status: 'active',
     description: ''
   })
 }
@@ -65,8 +69,10 @@ const fillFromClient = (client: Client) => {
     postalCode: client.postalCode ?? '',
     country: client.country ?? '',
     website: client.website ?? '',
+    siret: client.siret ?? '',
     notes: client.notes ?? '',
     icon: client.icon ?? '',
+    status: client.status ?? 'active',
     description: client.description ?? ''
   })
 }
@@ -101,8 +107,10 @@ const onSubmit = async () => {
       postalCode: formState.postalCode,
       country: formState.country,
       website: formState.website,
+      siret: formState.siret,
       notes: formState.notes,
       icon: formState.icon,
+      status: formState.status,
       description: formState.description
     }
 
@@ -254,6 +262,38 @@ const onSubmit = async () => {
             class="w-full"
           />
         </UFormField>
+
+        <div class="flex w-full gap-4">
+          <UFormField
+            label="SIRET"
+            name="siret"
+            class="flex-1"
+          >
+            <UInput
+              v-model="formState.siret"
+              type="text"
+              placeholder="12345678901234"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField
+            label="Statut"
+            name="status"
+            class="flex-1"
+          >
+            <USelect
+              v-model="formState.status"
+              :items="[
+                { label: 'Actif', value: 'active' },
+                { label: 'Inactif', value: 'inactive' },
+                { label: 'Archivé', value: 'archived' }
+              ]"
+              value-attribute="value"
+              option-attribute="label"
+            />
+          </UFormField>
+        </div>
 
         <UFormField
           label="Notes"
