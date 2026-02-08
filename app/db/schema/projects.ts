@@ -6,7 +6,7 @@ export const projectsTable = pgTable('projects', {
   clientId: integer().notNull().references(() => clientsTable.id, { onDelete: 'cascade' }),
   name: varchar({ length: 255 }).notNull(),
   description: text(),
-  status: varchar({ length: 50 }).notNull().default('en_cours'),
+  status: varchar({ length: 50 }).notNull().default('in_progress'),
   startDate: timestamp(),
   endDate: timestamp(),
   url: varchar({ length: 255 }),

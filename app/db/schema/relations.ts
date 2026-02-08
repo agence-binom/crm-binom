@@ -14,10 +14,6 @@ export const contactsRelations = relations(contactsTable, ({ one }) => ({
   client: one(clientsTable, {
     fields: [contactsTable.clientId],
     references: [clientsTable.id]
-  }),
-  user: one(usersTable, {
-    fields: [contactsTable.userId],
-    references: [usersTable.id]
   })
 }))
 

@@ -9,7 +9,7 @@ export const tasksTable = pgTable('tasks', {
   title: varchar({ length: 255 }).notNull(),
   notes: text(),
   status: varchar({ length: 50 }).notNull().default('todo'), // 'todo' | 'in_progress' | 'done'
-  priority: varchar({ length: 50 }).notNull().default('medium'), // 'low' | 'medium' | 'high'
+  priority: varchar({ length: 50 }).notNull().default('low'), // 'low' | 'medium' | 'high'
   dueDate: timestamp(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()

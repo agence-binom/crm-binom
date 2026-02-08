@@ -57,6 +57,13 @@
       "when": 1767792915865,
       "tag": "0007_workable_victor_mancha",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1770573756339,
+      "tag": "0008_dark_archangel",
+      "breakpoints": true
     }
   ]
 }

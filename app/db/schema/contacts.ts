@@ -1,11 +1,9 @@
 import { integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
 import { clientsTable } from './clients'
-import { usersTable } from './users'
 
 export const contactsTable = pgTable('contacts', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   clientId: integer().notNull().references(() => clientsTable.id, { onDelete: 'cascade' }),
-  userId: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   firstName: varchar({ length: 100 }).notNull(),
   lastName: varchar({ length: 100 }).notNull(),
   email: varchar({ length: 255 }),
