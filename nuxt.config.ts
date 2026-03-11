@@ -7,6 +7,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  runtimeConfig: {
+    public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL
+    }
+  },
+
   routeRules: {
     '/': { prerender: false }
   },

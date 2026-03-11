@@ -8,7 +8,7 @@ const email = ref('')
 const signInWithOtp = async () => {
   const redirectUrl = config.public.siteUrl
     ? `${config.public.siteUrl}/confirm`
-    : `http://localhost:3000/confirm`
+    : `${window.location.origin}/confirm`
 
   const { error } = await supabase.auth.signInWithOtp({
     email: email.value,
