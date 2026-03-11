@@ -2,13 +2,18 @@
 definePageMeta({ layout: false })
 
 const supabase = useSupabaseClient()
+const config = useRuntimeConfig()
 const email = ref('')
 
 const signInWithOtp = async () => {
+  const redirectUrl = config.public.siteUrl
+    ? `${config.public.siteUrl}/confirm`
+    : `http://localhost:3000/confirm`
+
   const { error } = await supabase.auth.signInWithOtp({
     email: email.value,
     options: {
-      emailRedirectTo: 'http://localhost:3000/confirm'
+      emailRedirectTo: redirectUrl
     }
   })
   if (error) console.log(error)
