@@ -21,18 +21,7 @@ export function useFeedbackToast() {
     })
   }
 
-  const showInfo = (title: string, description: string) => {
-    toast.add({
-      title,
-      description,
-      color: 'info',
-      icon: 'i-lucide-info'
-    })
-  }
-
   return {
     showError,
-    showSuccess,
-    showInfo
-  }
+    showSuccess }
 }

@@ -1,11 +1,26 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
 
+const supabase = useSupabaseClient()
 const user = useSupabaseUser()
+const { showError } = useFeedbackToast()
 
-watch(user, () => {
-  if (user.value) {
-    return navigateTo('/')
+watch(user, async () => {
+  if (!user.value) {
+    return
+  }
+
+  try {
+    await $fetch('/api/auth/session')
+    await navigateTo('/')
+  } catch (error) {
+    showError(
+      'Connexion impossible',
+      error,
+      'Cette adresse email n’est pas autorisée à accéder à l’application.'
+    )
+    await supabase.auth.signOut()
+    await navigateTo('/login', { replace: true })
   }
 }, { immediate: true })
 </script>
