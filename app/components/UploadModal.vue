@@ -24,6 +24,7 @@ const isOpen = computed({
 })
 
 const toast = useToast()
+const { showError, showSuccess } = useFeedbackToast()
 const isUploading = ref(false)
 const selectedFile = ref<File | null>(null)
 const description = ref('')
@@ -38,29 +39,6 @@ const documentTypeOptions = [
   { label: 'Devis', value: 'quote' },
   { label: 'Facture', value: 'invoice' }
 ] satisfies { label: string, value: BillingDocumentType }[]
-
-const getErrorMessage = (error: unknown, fallback: string) => {
-  if (error && typeof error === 'object') {
-    const maybeStatusMessage = Reflect.get(error, 'statusMessage')
-    if (typeof maybeStatusMessage === 'string' && maybeStatusMessage) {
-      return maybeStatusMessage
-    }
-
-    const maybeData = Reflect.get(error, 'data')
-    if (maybeData && typeof maybeData === 'object') {
-      const dataStatusMessage = Reflect.get(maybeData, 'statusMessage')
-      if (typeof dataStatusMessage === 'string' && dataStatusMessage) {
-        return dataStatusMessage
-      }
-    }
-  }
-
-  if (error instanceof Error && error.message) {
-    return error.message
-  }
-
-  return fallback
-}
 
 const clearSelectedFile = () => {
   selectedFile.value = null
@@ -163,19 +141,12 @@ const onUpload = async () => {
     isOpen.value = false
     resetForm()
 
-    toast.add({
-      title: 'Document téléversé',
-      description: 'Le document est disponible au téléchargement.',
-      color: 'primary',
-      icon: 'i-lucide-check-circle'
-    })
+    showSuccess(
+      'Document téléversé',
+      'Le document est disponible au téléchargement.'
+    )
   } catch (error) {
-    toast.add({
-      title: 'Échec du téléversement',
-      description: getErrorMessage(error, 'Impossible de téléverser le document.'),
-      color: 'error',
-      icon: 'i-lucide-circle-alert'
-    })
+    showError('Échec du téléversement', error, 'Impossible de téléverser le document.')
   } finally {
     isUploading.value = false
   }

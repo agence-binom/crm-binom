@@ -3,8 +3,9 @@ definePageMeta({ layout: false })
 
 const supabase = useSupabaseClient()
 const config = useRuntimeConfig()
-const toast = useToast()
+const { showError, showInfo } = useFeedbackToast()
 const loading = ref(false)
+const authError = ref<string | null>(null)
 
 const signInWithOtp = async ({ email }: { email: string }) => {
   const redirectUrl = config.public.siteUrl
@@ -12,6 +13,7 @@ const signInWithOtp = async ({ email }: { email: string }) => {
     : `${window.location.origin}/confirm`
 
   loading.value = true
+  authError.value = null
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -23,14 +25,12 @@ const signInWithOtp = async ({ email }: { email: string }) => {
   loading.value = false
 
   if (error) {
+    authError.value = error.message
+    showError('Connexion impossible', error, 'Impossible d\'envoyer le lien de connexion.')
     return
   }
 
-  toast.add({
-    title: 'Connexion en cours',
-    description: 'Veuillez vérifier votre boîte mail pour le lien de connexion.',
-    color: 'info'
-  })
+  showInfo('Lien envoyé', 'Un lien de connexion a été envoyé à votre adresse email.')
 }
 </script>
 
@@ -48,6 +48,7 @@ const signInWithOtp = async ({ email }: { email: string }) => {
 
       <UCard>
         <AppAuth
+          :error="authError"
           :loading="loading"
           @submit="signInWithOtp"
         />

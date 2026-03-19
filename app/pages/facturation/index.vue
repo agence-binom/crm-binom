@@ -306,7 +306,7 @@ const stats = computed(() => {
           <!-- Pipeline de facturation -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Devis -->
-            <div class="bg-white/50 dark:bg-gray-900/50 rounded-lg p-4">
+            <div class="bg-white/50 rounded-lg p-4">
               <div class="flex items-center justify-between mb-2">
                 <h4 class="font-semibold flex items-center gap-2">
                   <UIcon name="i-lucide-file-text" />
