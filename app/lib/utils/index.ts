@@ -15,3 +15,26 @@ export const formatDate = (date: string | Date) => {
     minute: '2-digit'
   })
 }
+
+export const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === 'object') {
+    const maybeStatusMessage = Reflect.get(error, 'statusMessage')
+    if (typeof maybeStatusMessage === 'string' && maybeStatusMessage) {
+      return maybeStatusMessage
+    }
+
+    const maybeData = Reflect.get(error, 'data')
+    if (maybeData && typeof maybeData === 'object') {
+      const dataStatusMessage = Reflect.get(maybeData, 'statusMessage')
+      if (typeof dataStatusMessage === 'string' && dataStatusMessage) {
+        return dataStatusMessage
+      }
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  return fallback
+}

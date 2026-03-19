@@ -2,6 +2,7 @@ import { db } from '~/db'
 import { documentsTable } from '~/db/schema/documents'
 import { documentUploadMetadataSchema } from '~/validation/documents'
 import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists, assertValidDocumentFile } from '~~/server/utils/documents'
+import { createDocumentInsertValues } from '~~/server/lib/documents-upload'
 
 export default defineEventHandler(async (event) => {
   const formData = await readFormData(event)
@@ -33,17 +34,9 @@ export default defineEventHandler(async (event) => {
   await uploadDocumentFile(event, filepath, fileEntry)
 
   try {
-    const [document] = await db.insert(documentsTable).values({
-      name: metadata.name?.trim() || fileEntry.name,
-      filename: fileEntry.name,
-      filepath,
-      mimetype: fileEntry.type,
-      size: fileEntry.size,
-      entityType: metadata.entityType,
-      entityId: metadata.entityId,
-      documentType: metadata.documentType,
-      description: metadata.description?.trim() || ''
-    }).returning()
+    const [document] = await db.insert(documentsTable)
+      .values(createDocumentInsertValues(fileEntry, filepath, metadata))
+      .returning()
 
     if (!document) {
       throw createError({

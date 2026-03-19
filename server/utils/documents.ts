@@ -9,7 +9,7 @@ import { invoicesTable } from '~/db/schema/invoices'
 import { projectsTable } from '~/db/schema/projects'
 import { quotesTable } from '~/db/schema/quotes'
 import { tasksTable } from '~/db/schema/tasks'
-import { documentAcceptedMimeTypes, documentMaxSizeBytes } from '~/validation/documents'
+import { getDocumentValidationError, sanitizeDocumentFilename, sanitizeDocumentPathSegment } from '~~/server/lib/documents-upload'
 
 const DOCUMENT_SIGNED_URL_TTL_SECONDS = 60 * 60
 
@@ -24,37 +24,6 @@ const isManagedStoragePath = (filepath: string) => (
   && !filepath.startsWith('/')
   && !isExternalUrl(filepath)
 )
-
-const sanitizePathSegment = (value: string) => {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80) || 'document'
-}
-
-const sanitizeFilename = (filename: string) => {
-  const normalized = filename
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-
-  const lastDotIndex = normalized.lastIndexOf('.')
-  const rawName = lastDotIndex > 0 ? normalized.slice(0, lastDotIndex) : normalized
-  const rawExtension = lastDotIndex > 0 ? normalized.slice(lastDotIndex + 1) : ''
-
-  const basename = sanitizePathSegment(rawName)
-
-  const extension = rawExtension
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '')
-    .slice(0, 10)
-
-  return extension
-    ? `${basename}-${randomUUID()}.${extension}`
-    : `${basename}-${randomUUID()}`
-}
 
 const getStorageBucket = (event: H3Event) => useRuntimeConfig(event).documentsBucket
 
@@ -78,24 +47,11 @@ const getPrivilegedStorageClient = (event: H3Event) => {
 }
 
 export const assertValidDocumentFile = (file: File) => {
-  if (!file.size) {
+  const errorMessage = getDocumentValidationError(file)
+  if (errorMessage) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Le fichier est vide'
-    })
-  }
-
-  if (file.size > documentMaxSizeBytes) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Le fichier dépasse la taille maximale autorisée de 10 Mo'
-    })
-  }
-
-  if (!documentAcceptedMimeTypes.includes(file.type as typeof documentAcceptedMimeTypes[number])) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Type de fichier non pris en charge'
+      statusMessage: errorMessage
     })
   }
 }
@@ -168,8 +124,6 @@ export const buildDocumentStoragePath = async (
   filename: string,
   documentType?: string
 ) => {
-  const now = new Date()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
   const clientName = await getClientStorageSegment(entityType, entityId)
 
   if (!clientName) {
@@ -179,11 +133,11 @@ export const buildDocumentStoragePath = async (
     })
   }
 
-  const clientSegment = sanitizePathSegment(clientName)
+  const clientSegment = sanitizeDocumentPathSegment(clientName)
   const effectiveType = documentType || entityType
-  const typeSegment = DOCUMENT_TYPE_FOLDERS[effectiveType] || sanitizePathSegment(effectiveType)
+  const typeSegment = DOCUMENT_TYPE_FOLDERS[effectiveType] || sanitizeDocumentPathSegment(effectiveType)
 
-  return `${clientSegment}/${typeSegment}/${now.getFullYear()}/${month}/${sanitizeFilename(filename)}`
+  return `${clientSegment}/${typeSegment}/${sanitizeDocumentFilename(filename, randomUUID())}`
 }
 
 export const uploadDocumentFile = async (

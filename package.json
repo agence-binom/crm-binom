@@ -8,6 +8,7 @@
     "start": "node .output/server/index.mjs",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "test": "node --import tsx --test tests/**/*.test.ts",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "db:generate": "drizzle-kit generate",

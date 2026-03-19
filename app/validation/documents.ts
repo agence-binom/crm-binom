@@ -4,15 +4,7 @@ export const documentEntityTypes = ['quote', 'invoice', 'project', 'client', 'ta
 export const billingDocumentTypes = ['quote', 'invoice'] as const
 
 export const documentAcceptedMimeTypes = [
-  'application/pdf',
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/plain'
+  'application/pdf'
 ] as const
 
 export const documentMaxSizeBytes = 10 * 1024 * 1024
