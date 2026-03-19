@@ -1,36 +1,50 @@
 <script setup lang="ts">
+import { getErrorMessage } from '~/lib/utils'
+
 definePageMeta({ layout: false })
 
 const supabase = useSupabaseClient()
 const config = useRuntimeConfig()
-const toast = useToast()
+const { showError, showSuccess } = useFeedbackToast()
 const loading = ref(false)
+const authError = ref<string | null>(null)
 
 const signInWithOtp = async ({ email }: { email: string }) => {
   const redirectUrl = config.public.siteUrl
     ? `${config.public.siteUrl}/confirm`
     : `${window.location.origin}/confirm`
+  const successMessage = 'Si cette adresse email est autorisée, un lien de connexion a été envoyé.'
 
   loading.value = true
+  authError.value = null
 
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: redirectUrl
+  try {
+    const response = await $fetch('/api/auth/authorize-email', {
+      method: 'POST',
+      body: { email }
+    })
+
+    if (response.authorized) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: redirectUrl,
+          shouldCreateUser: false
+        }
+      })
+
+      if (error) {
+        throw error
+      }
     }
-  })
 
-  loading.value = false
-
-  if (error) {
-    return
+    showSuccess('Lien envoyé', successMessage)
+  } catch (error) {
+    authError.value = getErrorMessage(error, 'Impossible d\'envoyer le lien de connexion.')
+    showError('Connexion impossible', error, 'Impossible d\'envoyer le lien de connexion.')
+  } finally {
+    loading.value = false
   }
-
-  toast.add({
-    title: 'Connexion en cours',
-    description: 'Veuillez vérifier votre boîte mail pour le lien de connexion.',
-    color: 'info'
-  })
 }
 </script>
 
@@ -48,6 +62,7 @@ const signInWithOtp = async ({ email }: { email: string }) => {
 
       <UCard>
         <AppAuth
+          :error="authError"
           :loading="loading"
           @submit="signInWithOtp"
         />
