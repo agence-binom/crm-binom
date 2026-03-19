@@ -25,3 +25,13 @@ test('findUserByEmail retourne null pour un email inexistant', () => {
 
   assert.equal(user, null)
 })
+
+test('findUserByEmail ignore les utilisateurs sans email exploitable', () => {
+  const user = findUserByEmail([
+    { email: null, id: 1 },
+    { id: 2 },
+    { email: 'admin@binom.fr', id: 3 }
+  ], 'admin@binom.fr')
+
+  assert.deepEqual(user, { email: 'admin@binom.fr', id: 3 })
+})
