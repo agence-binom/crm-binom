@@ -19,6 +19,20 @@ interface Invoice {
   terms?: string | null
 }
 
+interface Document {
+  id: number
+  name: string
+  filename: string
+  filepath: string
+  downloadUrl?: string | null
+  mimetype: string
+  size: number
+  entityType: string
+  entityId: number
+  description?: string | null
+  createdAt: string | Date
+}
+
 const props = defineProps<{
   open: boolean
   invoiceId?: number | null
@@ -44,10 +58,14 @@ const isOpen = computed({
 
 const isSaving = ref(false)
 const isEditing = computed(() => props.invoiceId != null)
+const invoiceDocuments = ref<Document[]>([])
+const isLoadingDocuments = ref(false)
 
 const schema = computed(() => (isEditing.value ? invoiceUpdateSchema : invoiceCreateSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier la facture' : 'Nouvelle facture'))
 const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer la facture'))
+
+const currentInvoiceId = computed(() => props.invoiceId ?? null)
 
 const formState = reactive<{
   clientId: number
@@ -127,12 +145,41 @@ const fillFromInvoice = (invoice: Invoice) => {
   })
 }
 
+const resetDocuments = () => {
+  invoiceDocuments.value = []
+}
+
+const refreshDocuments = async () => {
+  if (!currentInvoiceId.value) {
+    resetDocuments()
+    return
+  }
+
+  isLoadingDocuments.value = true
+
+  try {
+    const response = await $fetch<{ documents: Document[] }>(`/api/documents/invoice/${currentInvoiceId.value}`)
+    invoiceDocuments.value = response.documents
+  } catch (error) {
+    console.error('Erreur lors du chargement des documents de la facture:', error)
+    invoiceDocuments.value = []
+  } finally {
+    isLoadingDocuments.value = false
+  }
+}
+
 watch(
   () => props.open,
   (open) => {
-    if (!open) return
+    if (!open) {
+      resetDocuments()
+      return
+    }
+
     if (isEditing.value && props.invoice) fillFromInvoice(props.invoice)
     else resetForm()
+
+    void refreshDocuments()
   },
   { immediate: true }
 )
@@ -144,6 +191,11 @@ watch(
     if (isEditing.value && invoice) fillFromInvoice(invoice)
   }
 )
+
+watch(currentInvoiceId, () => {
+  if (!props.open) return
+  void refreshDocuments()
+})
 
 const onSubmit = async () => {
   isSaving.value = true
@@ -370,6 +422,44 @@ const statusOptions = [
           </UButton>
         </div>
       </UForm>
+
+      <UDivider class="my-6" />
+
+      <div v-if="isEditing && currentInvoiceId">
+        <div class="mb-4">
+          <h3 class="text-base font-semibold">
+            Documents de la facture
+          </h3>
+          <p class="text-sm text-gray-500">
+            Les documents sont rattachés directement à la facture.
+          </p>
+        </div>
+
+        <div
+          v-if="isLoadingDocuments"
+          class="text-sm text-gray-500 mb-4"
+        >
+          Chargement des documents...
+        </div>
+
+        <DocumentUpload
+          entity-type="invoice"
+          :entity-id="currentInvoiceId"
+          :documents="invoiceDocuments"
+          @uploaded="refreshDocuments"
+          @deleted="refreshDocuments"
+        />
+      </div>
+
+      <UAlert
+        v-else
+        color="neutral"
+        variant="soft"
+        title="Documents disponibles après création"
+        description="Enregistre d'abord la facture pour pouvoir lui rattacher des documents."
+        icon="i-lucide-info"
+        class="mt-2"
+      />
     </template>
   </UModal>
 </template>

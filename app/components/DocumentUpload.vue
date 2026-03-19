@@ -1,13 +1,18 @@
 <script setup lang="ts">
+import { documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes } from '~/validation/documents'
+import { formatFileSize, formatDate } from '~/lib/utils'
+
 interface Document {
   id: number
   name: string
   filename: string
   filepath: string
+  downloadUrl?: string | null
   mimetype: string
   size: number
   entityType: string
   entityId: number
+  documentType?: string | null
   description?: string | null
   createdAt: string | Date
 }
@@ -15,6 +20,10 @@ interface Document {
 const props = defineProps<{
   entityType: 'quote' | 'invoice' | 'project' | 'client' | 'task'
   entityId: number
+  documentType?: 'quote' | 'invoice'
+  title?: string
+  emptyMessage?: string
+  uploadLabel?: string
   documents?: Document[]
 }>()
 
@@ -23,66 +32,135 @@ const emit = defineEmits<{
   deleted: [documentId: number]
 }>()
 
+const toast = useToast()
 const isUploading = ref(false)
 const selectedFile = ref<File | null>(null)
 const description = ref('')
 
 const fileInput = ref<HTMLInputElement>()
 
-const onFileSelected = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (target.files && target.files.length > 0) {
-    selectedFile.value = target.files[0] || null
+const allowedDocumentTypesLabel = 'PDF'
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === 'object') {
+    const maybeStatusMessage = Reflect.get(error, 'statusMessage')
+    if (typeof maybeStatusMessage === 'string' && maybeStatusMessage) {
+      return maybeStatusMessage
+    }
+
+    const maybeData = Reflect.get(error, 'data')
+    if (maybeData && typeof maybeData === 'object') {
+      const dataStatusMessage = Reflect.get(maybeData, 'statusMessage')
+      if (typeof dataStatusMessage === 'string' && dataStatusMessage) {
+        return dataStatusMessage
+      }
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+
+  return fallback
+}
+
+const clearSelectedFile = () => {
+  selectedFile.value = null
+
+  if (fileInput.value) {
+    fileInput.value.value = ''
   }
 }
 
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+const validateSelectedFile = (file: File) => {
+  if (!documentAcceptedMimeTypes.includes(file.type as typeof documentAcceptedMimeTypes[number])) {
+    return `Format non pris en charge. Formats acceptés: ${allowedDocumentTypesLabel}.`
+  }
+
+  if (file.size > documentMaxSizeBytes) {
+    return 'Le fichier dépasse la taille maximale autorisée de 10 Mo.'
+  }
+
+  return null
 }
 
-const formatDate = (date: string | Date) => {
-  return new Date(date).toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+const onFileSelected = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0] || null
+    if (!file) {
+      clearSelectedFile()
+      return
+    }
+
+    const validationError = validateSelectedFile(file)
+    if (validationError) {
+      clearSelectedFile()
+      toast.add({
+        title: 'Fichier refusé',
+        description: validationError,
+        color: 'error',
+        icon: 'i-lucide-circle-alert'
+      })
+      return
+    }
+
+    selectedFile.value = file
+  }
+}
+
+const maxFileSizeLabel = formatFileSize(documentMaxSizeBytes)
+
+const getDownloadHref = (document: Document) => {
+  if (document.downloadUrl) return document.downloadUrl
+  return document.filepath.startsWith('http') ? document.filepath : undefined
 }
 
 const onUpload = async () => {
   if (!selectedFile.value) return
 
+  const validationError = validateSelectedFile(selectedFile.value)
+  if (validationError) {
+    toast.add({
+      title: 'Fichier refusé',
+      description: validationError,
+      color: 'error',
+      icon: 'i-lucide-circle-alert'
+    })
+    return
+  }
+
   isUploading.value = true
   try {
-    // Note: Dans une vraie implémentation, il faudrait gérer l'upload du fichier
-    // vers un service de stockage (S3, etc.) et récupérer le chemin
-    // Pour l'instant, on simule juste la création de l'enregistrement en base
-
-    const body = {
-      name: description.value || selectedFile.value.name,
-      filename: selectedFile.value.name,
-      filepath: `/uploads/${props.entityType}/${props.entityId}/${selectedFile.value.name}`, // Chemin simulé
-      mimetype: selectedFile.value.type,
-      size: selectedFile.value.size,
-      entityType: props.entityType,
-      entityId: props.entityId,
-      description: description.value
+    const formData = new FormData()
+    formData.set('file', selectedFile.value)
+    formData.set('entityType', props.entityType)
+    formData.set('entityId', String(props.entityId))
+    if (props.documentType) {
+      formData.set('documentType', props.documentType)
     }
+    formData.set('name', selectedFile.value.name)
+    formData.set('description', description.value.trim())
 
-    await $fetch('/api/documents', { method: 'POST', body })
+    await $fetch('/api/documents', { method: 'POST', body: formData })
 
-    selectedFile.value = null
+    clearSelectedFile()
     description.value = ''
-    if (fileInput.value) fileInput.value.value = ''
 
     emit('uploaded')
+    toast.add({
+      title: 'Document téléversé',
+      description: 'Le document est disponible au téléchargement.',
+      color: 'primary',
+      icon: 'i-lucide-check-circle'
+    })
   } catch (error) {
-    console.error('Erreur lors de l\'upload du document:', error)
+    toast.add({
+      title: 'Échec du téléversement',
+      description: getErrorMessage(error, 'Impossible de téléverser le document.'),
+      color: 'error',
+      icon: 'i-lucide-circle-alert'
+    })
   } finally {
     isUploading.value = false
   }
@@ -92,8 +170,19 @@ const onDelete = async (documentId: number) => {
   try {
     await $fetch(`/api/documents/${documentId}`, { method: 'DELETE' })
     emit('deleted', documentId)
+    toast.add({
+      title: 'Document supprimé',
+      description: 'Le document a été supprimé avec succès.',
+      color: 'primary',
+      icon: 'i-lucide-check-circle'
+    })
   } catch (error) {
-    console.error('Erreur lors de la suppression du document:', error)
+    toast.add({
+      title: 'Échec de la suppression',
+      description: getErrorMessage(error, 'Impossible de supprimer le document.'),
+      color: 'error',
+      icon: 'i-lucide-circle-alert'
+    })
   }
 }
 
@@ -113,7 +202,7 @@ const getFileIcon = (mimetype: string) => {
       <template #header>
         <h3 class="text-lg font-semibold flex items-center gap-2">
           <UIcon name="i-lucide-upload" />
-          Ajouter un document
+          {{ title || 'Ajouter un document' }}
         </h3>
       </template>
 
@@ -125,9 +214,13 @@ const getFileIcon = (mimetype: string) => {
           <input
             ref="fileInput"
             type="file"
+            :accept="documentFileInputAccept"
             class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
             @change="onFileSelected"
           >
+          <p class="mt-2 text-xs text-gray-500">
+            Formats acceptés: {{ allowedDocumentTypesLabel }}. Taille maximale: {{ maxFileSizeLabel }}.
+          </p>
           <p
             v-if="selectedFile"
             class="mt-2 text-sm text-gray-600"
@@ -153,7 +246,7 @@ const getFileIcon = (mimetype: string) => {
             icon="i-lucide-upload"
             @click="onUpload"
           >
-            Téléverser
+            {{ uploadLabel || 'Téléverser' }}
           </UButton>
         </div>
       </div>
@@ -203,8 +296,10 @@ const getFileIcon = (mimetype: string) => {
                 variant="soft"
                 color="primary"
                 icon="i-lucide-download"
-                :href="doc.filepath"
+                :href="getDownloadHref(doc)"
+                :disabled="!getDownloadHref(doc)"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 Télécharger
               </UButton>
@@ -213,6 +308,7 @@ const getFileIcon = (mimetype: string) => {
                 variant="soft"
                 color="error"
                 icon="i-lucide-trash"
+                aria-label="Supprimer le document"
                 @click="onDelete(doc.id)"
               />
             </div>
@@ -230,6 +326,12 @@ const getFileIcon = (mimetype: string) => {
         class="text-4xl mb-2"
       />
       <p>Aucun document</p>
+      <p
+        v-if="emptyMessage"
+        class="mt-1"
+      >
+        {{ emptyMessage }}
+      </p>
     </div>
   </div>
 </template>

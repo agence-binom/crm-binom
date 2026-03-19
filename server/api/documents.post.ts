@@ -1,9 +1,60 @@
 import { db } from '~/db'
 import { documentsTable } from '~/db/schema/documents'
-import { documentCreateSchema } from '~/validation/documents'
+import { documentUploadMetadataSchema } from '~/validation/documents'
+import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists, assertValidDocumentFile } from '~~/server/utils/documents'
 
 export default defineEventHandler(async (event) => {
-  const body = await readValidatedBody(event, documentCreateSchema.parse)
-  const [document] = await db.insert(documentsTable).values(body).returning()
-  return document
+  const formData = await readFormData(event)
+  const fileEntry = formData.get('file')
+
+  if (!(fileEntry instanceof File)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Aucun fichier fourni'
+    })
+  }
+
+  assertValidDocumentFile(fileEntry)
+
+  const metadata = documentUploadMetadataSchema.parse({
+    entityType: formData.get('entityType'),
+    entityId: formData.get('entityId'),
+    documentType: formData.get('documentType'),
+    name: formData.get('name'),
+    description: formData.get('description')
+  })
+
+  const filepath = await buildDocumentStoragePath(
+    metadata.entityType,
+    metadata.entityId,
+    fileEntry.name,
+    metadata.documentType
+  )
+  await uploadDocumentFile(event, filepath, fileEntry)
+
+  try {
+    const [document] = await db.insert(documentsTable).values({
+      name: metadata.name?.trim() || fileEntry.name,
+      filename: fileEntry.name,
+      filepath,
+      mimetype: fileEntry.type,
+      size: fileEntry.size,
+      entityType: metadata.entityType,
+      entityId: metadata.entityId,
+      documentType: metadata.documentType,
+      description: metadata.description?.trim() || ''
+    }).returning()
+
+    if (!document) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Impossible d\'enregistrer le document en base'
+      })
+    }
+
+    return await withDocumentDownloadUrl(event, document)
+  } catch (error) {
+    await deleteUploadedDocumentIfExists(event, filepath)
+    throw error
+  }
 })

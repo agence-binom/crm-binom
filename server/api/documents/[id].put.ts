@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '~/db'
 import { documentsTable } from '~/db/schema/documents'
 import { documentIdSchema, documentUpdateSchema } from '~/validation/documents'
+import { withDocumentDownloadUrl } from '~~/server/utils/documents'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, documentIdSchema.parse)
@@ -20,5 +21,5 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return document
+  return await withDocumentDownloadUrl(event, document)
 })

@@ -16,6 +16,20 @@ interface Quote {
   terms?: string | null
 }
 
+interface Document {
+  id: number
+  name: string
+  filename: string
+  filepath: string
+  downloadUrl?: string | null
+  mimetype: string
+  size: number
+  entityType: string
+  entityId: number
+  description?: string | null
+  createdAt: string | Date
+}
+
 const props = defineProps<{
   open: boolean
   quoteId?: number | null
@@ -39,10 +53,14 @@ const isOpen = computed({
 
 const isSaving = ref(false)
 const isEditing = computed(() => props.quoteId != null)
+const quoteDocuments = ref<Document[]>([])
+const isLoadingDocuments = ref(false)
 
 const schema = computed(() => (isEditing.value ? quoteUpdateSchema : quoteCreateSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier le devis' : 'Nouveau devis'))
 const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer le devis'))
+
+const currentQuoteId = computed(() => props.quoteId ?? null)
 
 const formState = reactive<{
   clientId: number
@@ -110,12 +128,41 @@ const fillFromQuote = (quote: Quote) => {
   })
 }
 
+const resetDocuments = () => {
+  quoteDocuments.value = []
+}
+
+const refreshDocuments = async () => {
+  if (!currentQuoteId.value) {
+    resetDocuments()
+    return
+  }
+
+  isLoadingDocuments.value = true
+
+  try {
+    const response = await $fetch<{ documents: Document[] }>(`/api/documents/quote/${currentQuoteId.value}`)
+    quoteDocuments.value = response.documents
+  } catch (error) {
+    console.error('Erreur lors du chargement des documents du devis:', error)
+    quoteDocuments.value = []
+  } finally {
+    isLoadingDocuments.value = false
+  }
+}
+
 watch(
   () => props.open,
   (open) => {
-    if (!open) return
+    if (!open) {
+      resetDocuments()
+      return
+    }
+
     if (isEditing.value && props.quote) fillFromQuote(props.quote)
     else resetForm()
+
+    void refreshDocuments()
   },
   { immediate: true }
 )
@@ -127,6 +174,11 @@ watch(
     if (isEditing.value && quote) fillFromQuote(quote)
   }
 )
+
+watch(currentQuoteId, () => {
+  if (!props.open) return
+  void refreshDocuments()
+})
 
 const onSubmit = async () => {
   isSaving.value = true
@@ -325,6 +377,44 @@ const statusOptions = [
           </UButton>
         </div>
       </UForm>
+
+      <UDivider class="my-6" />
+
+      <div v-if="isEditing && currentQuoteId">
+        <div class="mb-4">
+          <h3 class="text-base font-semibold">
+            Documents du devis
+          </h3>
+          <p class="text-sm text-gray-500">
+            Les documents sont rattachés directement au devis.
+          </p>
+        </div>
+
+        <div
+          v-if="isLoadingDocuments"
+          class="text-sm text-gray-500 mb-4"
+        >
+          Chargement des documents...
+        </div>
+
+        <DocumentUpload
+          entity-type="quote"
+          :entity-id="currentQuoteId"
+          :documents="quoteDocuments"
+          @uploaded="refreshDocuments"
+          @deleted="refreshDocuments"
+        />
+      </div>
+
+      <UAlert
+        v-else
+        color="neutral"
+        variant="soft"
+        title="Documents disponibles après création"
+        description="Enregistre d'abord le devis pour pouvoir lui rattacher des documents."
+        icon="i-lucide-info"
+        class="mt-2"
+      />
     </template>
   </UModal>
 </template>
