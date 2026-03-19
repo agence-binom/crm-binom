@@ -1,4 +1,26 @@
 export function useApiHelpers() {
+  const extractCollection = <T>(response: unknown): T[] => {
+    if (Array.isArray(response)) {
+      return response as T[]
+    }
+
+    if (!response || typeof response !== 'object') {
+      return []
+    }
+
+    const dataKey = Object.keys(response).find((key) => {
+      const value = Reflect.get(response, key)
+      return Array.isArray(value)
+    })
+
+    if (!dataKey) {
+      return []
+    }
+
+    const collection = Reflect.get(response, dataKey)
+    return Array.isArray(collection) ? collection as T[] : []
+  }
+
   const fetchOne = async <T>(
     table: string,
     id: number,
@@ -18,12 +40,8 @@ export function useApiHelpers() {
 
   const fetchMany = async <T>(endpoint: string): Promise<T[]> => {
     try {
-      const response = await $fetch(endpoint) as any
-      // Gérer différents formats de réponse
-      if (Array.isArray(response)) return response
-      // Chercher la clé plurielle (clients, projects, tasks, etc.)
-      const dataKey = Object.keys(response).find(key => Array.isArray(response[key]))
-      return dataKey ? response[dataKey] : []
+      const response = await $fetch(endpoint)
+      return extractCollection<T>(response)
     } catch (error) {
       console.error(`Erreur lors de la récupération depuis ${endpoint}:`, error)
       return []

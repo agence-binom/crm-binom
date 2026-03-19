@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
+    documentsBucket: process.env.DOCUMENTS_BUCKET,
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL
     }

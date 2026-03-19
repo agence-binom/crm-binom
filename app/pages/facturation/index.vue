@@ -1,12 +1,10 @@
 <script setup lang="ts">
 const { data: projectsData } = await useFetch('/api/projects')
-const { data: quotesData } = await useFetch('/api/quotes')
-const { data: invoicesData } = await useFetch('/api/invoices')
+const { data: documentsData } = await useFetch('/api/documents')
 const { data: clientsData } = await useFetch('/api/clients')
 
 const projects = computed(() => projectsData.value?.projects || [])
-const quotes = computed(() => quotesData.value?.quotes || [])
-const invoices = computed(() => invoicesData.value?.invoices || [])
+const documents = computed(() => documentsData.value?.documents || [])
 const clients = computed(() => clientsData.value?.clients || [])
 
 // Enrichir les projets avec les infos client
@@ -17,47 +15,28 @@ const projectsWithClients = computed(() => {
   }))
 })
 
-// Calculer l'état de facturation pour chaque projet
+const billingDocuments = computed(() => {
+  return documents.value.filter((document) => {
+    return document.entityType === 'project'
+      && (document.documentType === 'quote' || document.documentType === 'invoice')
+  })
+})
+
 const projectsBillingStatus = computed(() => {
   return projectsWithClients.value.map((project) => {
-    const projectQuotes = quotes.value.filter(q => q.projectId === project.id)
-    const projectInvoices = invoices.value.filter(i => i.projectId === project.id)
+    const projectDocuments = billingDocuments.value.filter(document => document.entityId === project.id)
+    const projectQuotes = projectDocuments.filter(document => document.documentType === 'quote')
+    const projectInvoices = projectDocuments.filter(document => document.documentType === 'invoice')
 
-    // Dernier devis
-    const lastQuote = projectQuotes.length > 0
-      ? projectQuotes.reduce((latest, q) => q.id > latest.id ? q : latest)
-      : null
-
-    // Statut global du devis
-    const quoteStatus = !lastQuote ? 'none' : lastQuote.status
-
-    // Calcul des montants facturés
-    const totalInvoiced = projectInvoices.reduce((sum, inv) => sum + Number(inv.totalTTC), 0)
-    const totalPaid = projectInvoices.reduce((sum, inv) => sum + Number(inv.paidAmount), 0)
-
-    // Statut global de facturation
-    let invoiceStatus = 'none'
-    if (projectInvoices.length > 0) {
-      const allPaid = projectInvoices.every(inv => inv.status === 'paid')
-      const somePaid = projectInvoices.some(inv => inv.status === 'paid')
-      const somePartial = projectInvoices.some(inv => inv.status === 'partial')
-
-      if (allPaid) invoiceStatus = 'paid'
-      else if (somePaid || somePartial) invoiceStatus = 'partial'
-      else if (projectInvoices.some(inv => inv.status === 'sent')) invoiceStatus = 'sent'
-      else invoiceStatus = 'draft'
-    }
+    const quoteStatus = projectQuotes.length > 0 ? 'available' : 'none'
+    const invoiceStatus = projectInvoices.length > 0 ? 'available' : 'none'
 
     return {
       project,
-      lastQuote,
       quoteStatus,
       quotesCount: projectQuotes.length,
       invoicesCount: projectInvoices.length,
-      invoiceStatus,
-      totalInvoiced,
-      totalPaid,
-      projectInvoices
+      invoiceStatus
     }
   })
 })
@@ -84,20 +63,12 @@ const filteredProjects = computed(() => {
       switch (statusFilter.value) {
         case 'no_quote':
           return p.quoteStatus === 'none'
-        case 'quote_draft':
-          return p.quoteStatus === 'draft'
-        case 'quote_sent':
-          return p.quoteStatus === 'sent'
-        case 'quote_accepted':
-          return p.quoteStatus === 'accepted'
+        case 'has_quote':
+          return p.quoteStatus === 'available'
         case 'no_invoice':
           return p.invoiceStatus === 'none'
-        case 'invoice_sent':
-          return p.invoiceStatus === 'sent'
-        case 'invoice_partial':
-          return p.invoiceStatus === 'partial'
-        case 'invoice_paid':
-          return p.invoiceStatus === 'paid'
+        case 'has_invoice':
+          return p.invoiceStatus === 'available'
         default:
           return true
       }
@@ -107,21 +78,10 @@ const filteredProjects = computed(() => {
   return filtered
 })
 
-const formatAmount = (amount: string | number) => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(Number(amount))
-}
-
 const getQuoteStatusColor = (status: string): 'neutral' | 'primary' | 'success' | 'error' | 'warning' => {
   const colors: Record<string, 'neutral' | 'primary' | 'success' | 'error' | 'warning'> = {
     none: 'neutral',
-    draft: 'neutral',
-    sent: 'primary',
-    accepted: 'success',
-    rejected: 'error',
-    expired: 'warning'
+    available: 'success'
   }
   return colors[status] || 'neutral'
 }
@@ -129,11 +89,7 @@ const getQuoteStatusColor = (status: string): 'neutral' | 'primary' | 'success' 
 const getQuoteStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
     none: 'Aucun devis',
-    draft: 'Brouillon',
-    sent: 'Envoyé',
-    accepted: 'Accepté',
-    rejected: 'Refusé',
-    expired: 'Expiré'
+    available: 'Document disponible'
   }
   return labels[status] || status
 }
@@ -141,11 +97,7 @@ const getQuoteStatusLabel = (status: string) => {
 const getInvoiceStatusColor = (status: string): 'neutral' | 'primary' | 'success' | 'warning' | 'error' => {
   const colors: Record<string, 'neutral' | 'primary' | 'success' | 'warning' | 'error'> = {
     none: 'neutral',
-    draft: 'neutral',
-    sent: 'primary',
-    partial: 'warning',
-    paid: 'success',
-    overdue: 'error'
+    available: 'success'
   }
   return colors[status] || 'neutral'
 }
@@ -153,11 +105,7 @@ const getInvoiceStatusColor = (status: string): 'neutral' | 'primary' | 'success
 const getInvoiceStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
     none: 'Aucune facture',
-    draft: 'Brouillon',
-    sent: 'Envoyée',
-    partial: 'Paiement partiel',
-    paid: 'Payée',
-    overdue: 'En retard'
+    available: 'Document disponible'
   }
   return labels[status] || status
 }
@@ -186,21 +134,21 @@ const stats = computed(() => {
   const totalProjects = projects.value.length
   const projectsWithQuotes = projectsBillingStatus.value.filter(p => p.quoteStatus !== 'none').length
   const projectsWithInvoices = projectsBillingStatus.value.filter(p => p.invoiceStatus !== 'none').length
-  const totalRevenue = projectsBillingStatus.value.reduce((sum, p) => sum + p.totalPaid, 0)
-  const totalPending = projectsBillingStatus.value.reduce((sum, p) => sum + (p.totalInvoiced - p.totalPaid), 0)
+  const totalQuoteDocuments = billingDocuments.value.filter(document => document.documentType === 'quote').length
+  const totalInvoiceDocuments = billingDocuments.value.filter(document => document.documentType === 'invoice').length
 
   return {
     totalProjects,
     projectsWithQuotes,
     projectsWithInvoices,
-    totalRevenue,
-    totalPending
+    totalQuoteDocuments,
+    totalInvoiceDocuments
   }
 })
 </script>
 
 <template>
-  <div class="container mx-auto p-6">
+  <div class="container mx-auto p-6 overflow-scroll">
     <!-- En-tête -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold mb-2 flex items-center gap-2">
@@ -239,7 +187,7 @@ const stats = computed(() => {
       <UCard variant="soft">
         <div class="text-center">
           <p class="text-sm text-gray-600 mb-1">
-            Facturés
+            Avec facture
           </p>
           <p class="text-3xl font-bold text-success-600">
             {{ stats.projectsWithInvoices }}
@@ -250,10 +198,10 @@ const stats = computed(() => {
       <UCard variant="soft">
         <div class="text-center">
           <p class="text-sm text-gray-600 mb-1">
-            Encaissé
+            Devis téléversés
           </p>
-          <p class="text-2xl font-bold text-success-600">
-            {{ formatAmount(stats.totalRevenue) }}
+          <p class="text-2xl font-bold text-primary-600">
+            {{ stats.totalQuoteDocuments }}
           </p>
         </div>
       </UCard>
@@ -261,10 +209,10 @@ const stats = computed(() => {
       <UCard variant="soft">
         <div class="text-center">
           <p class="text-sm text-gray-600 mb-1">
-            En attente
+            Factures téléversées
           </p>
-          <p class="text-2xl font-bold text-warning-600">
-            {{ formatAmount(stats.totalPending) }}
+          <p class="text-2xl font-bold text-success-600">
+            {{ stats.totalInvoiceDocuments }}
           </p>
         </div>
       </UCard>
@@ -295,18 +243,11 @@ const stats = computed(() => {
           Sans devis
         </UButton>
         <UButton
-          :variant="statusFilter === 'quote_sent' ? 'solid' : 'soft'"
-          color="primary"
-          @click="statusFilter = 'quote_sent'"
-        >
-          Devis envoyé
-        </UButton>
-        <UButton
-          :variant="statusFilter === 'quote_accepted' ? 'solid' : 'soft'"
+          :variant="statusFilter === 'has_quote' ? 'solid' : 'soft'"
           color="success"
-          @click="statusFilter = 'quote_accepted'"
+          @click="statusFilter = 'has_quote'"
         >
-          Devis accepté
+          Avec devis
         </UButton>
         <UButton
           :variant="statusFilter === 'no_invoice' ? 'solid' : 'soft'"
@@ -316,25 +257,11 @@ const stats = computed(() => {
           Sans facture
         </UButton>
         <UButton
-          :variant="statusFilter === 'invoice_sent' ? 'solid' : 'soft'"
-          color="primary"
-          @click="statusFilter = 'invoice_sent'"
-        >
-          Facture envoyée
-        </UButton>
-        <UButton
-          :variant="statusFilter === 'invoice_partial' ? 'solid' : 'soft'"
-          color="warning"
-          @click="statusFilter = 'invoice_partial'"
-        >
-          Paiement partiel
-        </UButton>
-        <UButton
-          :variant="statusFilter === 'invoice_paid' ? 'solid' : 'soft'"
+          :variant="statusFilter === 'has_invoice' ? 'solid' : 'soft'"
           color="success"
-          @click="statusFilter = 'invoice_paid'"
+          @click="statusFilter = 'has_invoice'"
         >
-          Payée
+          Avec facture
         </UButton>
       </div>
     </div>
@@ -399,17 +326,6 @@ const stats = computed(() => {
               >
                 {{ getQuoteStatusLabel(item.quoteStatus) }}
               </UBadge>
-              <div
-                v-if="item.lastQuote"
-                class="mt-2 text-sm text-gray-600"
-              >
-                <p class="font-semibold">
-                  {{ formatAmount(item.lastQuote.totalTTC) }}
-                </p>
-                <p class="text-xs">
-                  {{ item.lastQuote.number }}
-                </p>
-              </div>
             </div>
 
             <!-- Factures -->
@@ -433,42 +349,32 @@ const stats = computed(() => {
               >
                 {{ getInvoiceStatusLabel(item.invoiceStatus) }}
               </UBadge>
-              <div
-                v-if="item.invoicesCount > 0"
-                class="mt-2 text-sm text-gray-600"
-              >
-                <p class="font-semibold">
-                  {{ formatAmount(item.totalInvoiced) }}
-                </p>
-                <p class="text-xs">
-                  Total facturé
-                </p>
-              </div>
             </div>
 
-            <!-- Paiements -->
+            <!-- État global -->
             <div class="bg-white/50 dark:bg-gray-900/50 rounded-lg p-4">
               <div class="flex items-center justify-between mb-2">
                 <h4 class="font-semibold flex items-center gap-2">
-                  <UIcon name="i-lucide-banknote" />
-                  Paiements
+                  <UIcon name="i-lucide-folders" />
+                  Résumé
                 </h4>
               </div>
               <div class="space-y-2">
                 <div>
                   <p class="text-xs text-gray-600">
-                    Encaissé
+                    Documents de facturation
                   </p>
-                  <p class="text-lg font-bold text-success-600">
-                    {{ formatAmount(item.totalPaid) }}
+                  <p class="text-lg font-bold text-primary-600">
+                    {{ item.quotesCount + item.invoicesCount }}
                   </p>
                 </div>
-                <div v-if="item.totalInvoiced > item.totalPaid">
+                <div>
                   <p class="text-xs text-gray-600">
-                    Reste à payer
+                    Couverture
                   </p>
-                  <p class="text-lg font-bold text-warning-600">
-                    {{ formatAmount(item.totalInvoiced - item.totalPaid) }}
+                  <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    {{ item.quoteStatus !== 'none' ? 'Devis présent' : 'Pas de devis' }} ·
+                    {{ item.invoiceStatus !== 'none' ? 'Facture présente' : 'Pas de facture' }}
                   </p>
                 </div>
               </div>

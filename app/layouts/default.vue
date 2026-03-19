@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 
-// const user = useSupabaseUser()
+const user = useSupabaseUser()
 const supabase = useSupabaseClient()
 
 const collapsed = ref(false)
@@ -16,17 +16,14 @@ const handleLogout = async () => {
 const items = ref<DropdownMenuItem[][]>([
   [
     {
-      label: 'Benjamin',
-      avatar: {
-        src: 'https://github.com/benjamincanac.png',
-        loading: 'lazy'
-      },
+      label: user.value?.email || 'Utilisateur',
       type: 'label'
     }
   ], [
     {
       label: 'Profile',
-      icon: 'i-lucide-user'
+      icon: 'i-lucide-user',
+      disabled: true
     },
     {
       label: 'Déconnexion',

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ProjectDocument } from '~/types'
+
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
 const projectId = computed(() => Number(route.params.projectId))
@@ -9,22 +11,19 @@ const project = computed(() => data.value)
 const { data: tasksData, refresh: refreshTasks } = await useFetch(`/api/projects/${projectId.value}/tasks`)
 const projectTasks = computed(() => tasksData.value?.tasks || [])
 
-// Données de facturation
-const { data: quotesData, refresh: refreshQuotes } = await useFetch(`/api/projects/${projectId.value}/quotes`)
-const quotes = computed(() => quotesData.value?.quotes || [])
-
-const { data: invoicesData, refresh: refreshInvoices } = await useFetch(`/api/projects/${projectId.value}/invoices`)
-const invoices = computed(() => invoicesData.value?.invoices || [])
+const { data: quoteDocumentsData, refresh: refreshQuoteDocuments } = await useFetch(`/api/documents/project/${projectId.value}?documentType=quote`)
+const quoteDocuments = computed<ProjectDocument[]>(() => quoteDocumentsData.value?.documents || [])
+const { data: invoiceDocumentsData, refresh: refreshInvoiceDocuments } = await useFetch(`/api/documents/project/${projectId.value}?documentType=invoice`)
+const invoiceDocuments = computed<ProjectDocument[]>(() => invoiceDocumentsData.value?.documents || [])
+const projectDocuments = computed(() => {
+  return [...quoteDocuments.value, ...invoiceDocuments.value]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+})
 
 const { selectedUser, userOptions, filteredTasks } = useUserFilter(projectTasks)
 
 const isProjectModalOpen = ref(false)
-const isQuoteModalOpen = ref(false)
-const isInvoiceModalOpen = ref(false)
-const isPaymentModalOpen = ref(false)
-const selectedQuoteId = ref<number | null>(null)
-const selectedInvoiceId = ref<number | null>(null)
-const selectedInvoiceForPayment = ref<number | null>(null)
+const isUploadModalOpen = ref(false)
 
 const { deleteResource } = useDeleteConfirmation()
 
@@ -38,62 +37,11 @@ const handleProjectChange = async () => {
   await refresh()
 }
 
-// Handlers pour les devis
-const openCreateQuote = () => {
-  selectedQuoteId.value = null
-  isQuoteModalOpen.value = true
-}
-
-const openEditQuote = (quoteId: number) => {
-  selectedQuoteId.value = quoteId
-  isQuoteModalOpen.value = true
-}
-
-const handleQuoteChange = async () => {
-  await refreshQuotes()
-}
-
-const onDeleteQuote = async (quoteId: number) => {
-  await deleteResource('devis', quoteId, '/api/quotes', refreshQuotes)
-}
-
-const quoteToEdit = computed(() => {
-  if (!selectedQuoteId.value) return null
-  return quotes.value.find(q => q.id === selectedQuoteId.value) ?? null
-})
-
-// Handlers pour les factures
-const openCreateInvoice = () => {
-  selectedInvoiceId.value = null
-  isInvoiceModalOpen.value = true
-}
-
-const openEditInvoice = (invoiceId: number) => {
-  selectedInvoiceId.value = invoiceId
-  isInvoiceModalOpen.value = true
-}
-
-const handleInvoiceChange = async () => {
-  await refreshInvoices()
-}
-
-const onDeleteInvoice = async (invoiceId: number) => {
-  await deleteResource('facture', invoiceId, '/api/invoices', refreshInvoices)
-}
-
-const invoiceToEdit = computed(() => {
-  if (!selectedInvoiceId.value) return null
-  return invoices.value.find(i => i.id === selectedInvoiceId.value) ?? null
-})
-
-// Handlers pour les paiements
-const openPaymentModal = (invoiceId: number) => {
-  selectedInvoiceForPayment.value = invoiceId
-  isPaymentModalOpen.value = true
-}
-
-const handlePaymentChange = async () => {
-  await refreshInvoices()
+const handleDocumentsChange = async () => {
+  await Promise.all([
+    refreshQuoteDocuments(),
+    refreshInvoiceDocuments()
+  ])
 }
 </script>
 
@@ -126,57 +74,14 @@ const handlePaymentChange = async () => {
       :client-id="project.clientId"
       @saved="handleProjectChange"
     />
-
-    <!-- Modals de facturation -->
-    <QuoteModal
-      v-model:open="isQuoteModalOpen"
-      :quote-id="selectedQuoteId"
-      :quote="quoteToEdit"
-      :client-id="project.clientId"
-      :project-id="project.id"
-      @saved="handleQuoteChange"
+    <UploadModal
+      v-model:open="isUploadModalOpen"
+      :entity-id="project.id"
+      entity-type="project"
+      title="Ajouter un document"
+      upload-label="Ajouter le document"
+      @uploaded="handleDocumentsChange"
     />
-
-    <InvoiceModal
-      v-model:open="isInvoiceModalOpen"
-      :invoice-id="selectedInvoiceId"
-      :invoice="invoiceToEdit"
-      :client-id="project.clientId"
-      :project-id="project.id"
-      @saved="handleInvoiceChange"
-    />
-
-    <PaymentModal
-      v-model:open="isPaymentModalOpen"
-      :invoice-id="selectedInvoiceForPayment"
-      @saved="handlePaymentChange"
-    />
-
-    <!-- Facturation -->
-    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div>
-        <QuotesList
-          :quotes="quotes"
-          :show-header="true"
-          :show-create-button="true"
-          @create="openCreateQuote"
-          @edit="openEditQuote"
-          @delete="onDeleteQuote"
-        />
-      </div>
-
-      <div>
-        <InvoicesList
-          :invoices="invoices"
-          :show-header="true"
-          :show-create-button="true"
-          @create="openCreateInvoice"
-          @edit="openEditInvoice"
-          @delete="onDeleteInvoice"
-          @add-payment="openPaymentModal"
-        />
-      </div>
-    </div>
 
     <!-- TodoList Kanban -->
     <div class="mt-8">
@@ -202,5 +107,73 @@ const handlePaymentChange = async () => {
         </template>
       </ToDoList>
     </div>
+
+    <div class="mt-8 flex items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-semibold">
+          Documents du projet
+        </h2>
+        <p class="text-sm text-gray-500">
+          Ajoutez un devis ou une facture depuis la modal.
+        </p>
+      </div>
+
+      <UButton
+        icon="i-lucide-plus"
+        @click="isUploadModalOpen = true"
+      >
+        Ajouter un document
+      </UButton>
+    </div>
+
+    <UCard class="mt-6">
+      <template #header>
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <UIcon
+              name="i-lucide-files"
+              class="text-lg"
+            />
+            <span class="font-semibold">Documents</span>
+          </div>
+
+          <UBadge
+            variant="soft"
+            color="neutral"
+          >
+            {{ projectDocuments.length }}
+          </UBadge>
+        </div>
+      </template>
+
+      <div
+        v-if="projectDocuments.length"
+        class="space-y-3"
+      >
+        <div
+          v-for="document in projectDocuments"
+          :key="document.id"
+          class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
+        >
+          <DocumentItem
+            :document="document"
+            @delete-document="handleDocumentsChange"
+          />
+        </div>
+      </div>
+      <div
+        v-else
+        class="flex flex-col items-center justify-center py-10 text-center text-gray-500"
+      >
+        <UIcon
+          name="i-lucide-file-x"
+          class="mb-2 text-4xl"
+        />
+        <p>Aucun document pour ce projet</p>
+        <p class="mt-1 text-sm">
+          Ajoutez un devis ou une facture depuis la modal.
+        </p>
+      </div>
+    </UCard>
   </div>
 </template>
