@@ -1,17 +1,29 @@
 <script setup lang="ts">
-const email = defineModel<string>('email', { required: true })
+import type { AuthSignIn } from '~/validation/auth'
+import { authSignInSchema } from '~/validation/auth'
+import type { FormSubmitEvent } from '@nuxt/ui'
 
-const emit = defineEmits<{
-  signInWithOtp: []
+const formState = reactive<AuthSignIn>({ email: '' })
+
+const props = defineProps<{
+  error?: string | null
+  loading?: boolean
 }>()
 
-const onSignInWithOtp = () => {
-  emit('signInWithOtp')
+const emit = defineEmits<{
+  submit: [payload: AuthSignIn] }>()
+
+const onSubmit = (event: FormSubmitEvent<AuthSignIn>) => {
+  emit('submit', event.data)
 }
 </script>
 
 <template>
-  <div>
+  <UForm
+    :schema="authSignInSchema"
+    :state="formState"
+    @submit="onSubmit"
+  >
     <UFormField
       label="Email"
       name="email"
@@ -19,17 +31,20 @@ const onSignInWithOtp = () => {
       class="mb-4"
     >
       <UInput
-        v-model="email"
+        v-model="formState.email"
         type="email"
         placeholder="email@example.com"
         size="lg"
+        icon="i-lucide-mail"
       />
     </UFormField>
     <UButton
       color="primary"
-      @click="onSignInWithOtp"
+      :loading="props.loading"
+      type="submit"
+      size="lg"
     >
       Se connecter
     </UButton>
-  </div>
+  </UForm>
 </template>

@@ -10,7 +10,7 @@ export const userCreateSchema = z.object({
 
 export const userUpdateSchema = z.object({
   name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional(),
-  email: z.string().email('Email invalide').max(255, 'Email trop long').optional(),
+  email: z.email('Email invalide').max(255, 'Email trop long').optional(),
   role: z.enum(['admin', 'employee', 'client'], {
     message: 'Le rôle doit être "admin", "employee" ou "client"'
   }).optional()
@@ -20,7 +20,7 @@ export const userUpdateSchema = z.object({
 )
 
 export const userQuerySchema = z.object({
-  email: z.string().email('Email invalide').optional()
+  email: z.email('Email invalide').optional()
 })
 
 export const userIdSchema = z.object({

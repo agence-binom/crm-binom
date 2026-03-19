@@ -1,6 +1,41 @@
 <script setup lang="ts">
-const user = useSupabaseUser()
+import type { DropdownMenuItem } from '@nuxt/ui'
+
+// const user = useSupabaseUser()
+const supabase = useSupabaseClient()
+
 const collapsed = ref(false)
+
+const handleLogout = async () => {
+  const { error } = await supabase.auth.signOut()
+  if (error) return
+
+  await navigateTo('/login', { replace: true })
+}
+
+const items = ref<DropdownMenuItem[][]>([
+  [
+    {
+      label: 'Benjamin',
+      avatar: {
+        src: 'https://github.com/benjamincanac.png',
+        loading: 'lazy'
+      },
+      type: 'label'
+    }
+  ], [
+    {
+      label: 'Profile',
+      icon: 'i-lucide-user'
+    },
+    {
+      label: 'Déconnexion',
+      icon: 'i-lucide-log-out',
+      color: 'error',
+      onSelect: handleLogout
+    }
+  ]
+])
 </script>
 
 <template>
@@ -38,31 +73,6 @@ const collapsed = ref(false)
           class="mt-auto"
         />
       </template>
-
-      <template
-        #footer="{ }"
-      >
-        <div v-if="user">
-          <UButton
-            :label="collapsed ? undefined : user.email"
-            icon="i-lucide-user"
-            color="neutral"
-            variant="ghost"
-            class="w-full"
-            :block="collapsed"
-          />
-        </div>
-        <div v-else>
-          <UButton
-            :label="collapsed ? undefined : 'Mon compte'"
-            icon="i-lucide-user"
-            color="neutral"
-            variant="ghost"
-            class="w-full"
-            :block="collapsed"
-          />
-        </div>
-      </template>
     </UDashboardSidebar>
 
     <UDashboardPanel>
@@ -84,6 +94,15 @@ const collapsed = ref(false)
             variant="ghost"
             disabled
           />
+          <UDropdownMenu
+            :items="items"
+          >
+            <UButton
+              icon="i-lucide-user"
+              color="neutral"
+              variant="ghost"
+            />
+          </UDropdownMenu>
         </template>
       </UDashboardNavbar>
 

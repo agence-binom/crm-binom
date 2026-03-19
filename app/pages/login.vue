@@ -3,20 +3,34 @@ definePageMeta({ layout: false })
 
 const supabase = useSupabaseClient()
 const config = useRuntimeConfig()
-const email = ref('')
+const toast = useToast()
+const loading = ref(false)
 
-const signInWithOtp = async () => {
+const signInWithOtp = async ({ email }: { email: string }) => {
   const redirectUrl = config.public.siteUrl
     ? `${config.public.siteUrl}/confirm`
     : `${window.location.origin}/confirm`
 
+  loading.value = true
+
   const { error } = await supabase.auth.signInWithOtp({
-    email: email.value,
+    email,
     options: {
       emailRedirectTo: redirectUrl
     }
   })
-  if (error) console.log(error)
+
+  loading.value = false
+
+  if (error) {
+    return
+  }
+
+  toast.add({
+    title: 'Connexion en cours',
+    description: 'Veuillez vérifier votre boîte mail pour le lien de connexion.',
+    color: 'info'
+  })
 }
 </script>
 
@@ -34,8 +48,8 @@ const signInWithOtp = async () => {
 
       <UCard>
         <AppAuth
-          v-model:email="email"
-          @sign-in-with-otp="signInWithOtp"
+          :loading="loading"
+          @submit="signInWithOtp"
         />
       </UCard>
     </div>
