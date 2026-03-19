@@ -5,7 +5,7 @@ definePageMeta({ layout: false })
 
 const supabase = useSupabaseClient()
 const config = useRuntimeConfig()
-const { showError, showSuccess } = useFeedbackToast()
+const { showSuccess } = useFeedbackToast()
 const loading = ref(false)
 const authError = ref<string | null>(null)
 
@@ -41,7 +41,6 @@ const signInWithOtp = async ({ email }: { email: string }) => {
     showSuccess('Lien envoyé', successMessage)
   } catch (error) {
     authError.value = getErrorMessage(error, 'Impossible d\'envoyer le lien de connexion.')
-    showError('Connexion impossible', error, 'Impossible d\'envoyer le lien de connexion.')
   } finally {
     loading.value = false
   }

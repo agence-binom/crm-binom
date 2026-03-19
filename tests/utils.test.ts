@@ -16,6 +16,32 @@ test('getErrorMessage retourne statusMessage dans data', () => {
   )
 })
 
+test('getErrorMessage priorise statusMessage à la racine sur celui de data', () => {
+  assert.equal(
+    getErrorMessage(
+      {
+        statusMessage: 'Message racine',
+        data: { statusMessage: 'Message data' }
+      },
+      'Erreur inconnue'
+    ),
+    'Message racine'
+  )
+})
+
+test('getErrorMessage ignore un statusMessage vide et utilise le fallback disponible', () => {
+  assert.equal(
+    getErrorMessage(
+      {
+        statusMessage: '',
+        data: { statusMessage: 'Message data' }
+      },
+      'Erreur inconnue'
+    ),
+    'Message data'
+  )
+})
+
 test('getErrorMessage retourne le message Error en fallback', () => {
   assert.equal(
     getErrorMessage(new Error('Connexion expirée'), 'Erreur inconnue'),
