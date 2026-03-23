@@ -43,6 +43,7 @@ test('documentUploadMetadataSchema parse et normalise les métadonnées', () => 
     entityType: 'project',
     entityId: '42',
     documentType: 'quote',
+    externalUrl: ' https://www.facture.net/376761/quotations/abc123 ',
     name: '  Devis Avril 2026  ',
     description: '  Version signée  '
   })
@@ -51,6 +52,7 @@ test('documentUploadMetadataSchema parse et normalise les métadonnées', () => 
     entityType: 'project',
     entityId: 42,
     documentType: 'quote',
+    externalUrl: 'https://www.facture.net/376761/quotations/abc123',
     name: 'Devis Avril 2026',
     description: 'Version signée'
   })
@@ -61,6 +63,28 @@ test('documentUploadMetadataSchema refuse un type de document invalide', () => {
     entityType: 'project',
     entityId: '42',
     documentType: 'contract'
+  })
+
+  assert.equal(result.success, false)
+})
+
+test('documentUploadMetadataSchema refuse un devis sans lien Facture.net', () => {
+  const result = documentUploadMetadataSchema.safeParse({
+    entityType: 'project',
+    entityId: '42',
+    documentType: 'quote',
+    externalUrl: ''
+  })
+
+  assert.equal(result.success, false)
+})
+
+test('documentUploadMetadataSchema refuse un lien hors Facture.net', () => {
+  const result = documentUploadMetadataSchema.safeParse({
+    entityType: 'project',
+    entityId: '42',
+    documentType: 'invoice',
+    externalUrl: 'https://example.com/invoices/42'
   })
 
   assert.equal(result.success, false)
@@ -86,6 +110,7 @@ test('createDocumentInsertValues construit les valeurs persistées avec fallback
     entityType: 'project',
     entityId: '7',
     documentType: 'invoice',
+    externalUrl: 'https://www.facture.net/376761/invoices/fac-2026-001',
     name: '',
     description: '  facture finale  '
   })
@@ -96,6 +121,7 @@ test('createDocumentInsertValues construit les valeurs persistées avec fallback
       name: 'document-source.pdf',
       filename: 'document-source.pdf',
       filepath: 'acme/factures/document-source.pdf',
+      externalUrl: 'https://www.facture.net/376761/invoices/fac-2026-001',
       mimetype: 'application/pdf',
       size: file.size,
       entityType: 'project',
