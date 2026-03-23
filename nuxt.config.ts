@@ -7,6 +7,11 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  colorMode: {
+    preference: 'light',
+    fallback: 'light'
+  },
+
   runtimeConfig: {
     documentsBucket: process.env.DOCUMENTS_BUCKET,
     public: {

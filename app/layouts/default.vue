@@ -100,7 +100,6 @@ const items = ref<DropdownMenuItem[][]>([
               variant="ghost"
             />
           </UDropdownMenu>
-          <ColorModeButton />
         </template>
       </UDashboardNavbar>
 

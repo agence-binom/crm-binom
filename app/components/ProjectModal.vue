@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getProjectDisplayStatus, toProjectInputDate } from '~/lib/projects'
 import { projectCreateSchema, projectUpdateSchema } from '~/validation/projects'
 import type { Project } from '~/validation/projects'
 
@@ -30,7 +31,6 @@ const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer le
 const formState = reactive({
   name: '',
   description: '',
-  status: 'en_cours' as 'en_cours' | 'termine' | 'en_attente' | 'annule',
   startDate: '',
   endDate: '',
   url: '',
@@ -41,7 +41,6 @@ const resetForm = () => {
   Object.assign(formState, {
     name: '',
     description: '',
-    status: 'en_cours',
     startDate: '',
     endDate: '',
     url: '',
@@ -53,13 +52,33 @@ const fillFromProject = (project: Project) => {
   Object.assign(formState, {
     name: project.name ?? '',
     description: project.description ?? '',
-    status: project.status ?? 'en_cours',
-    startDate: '',
-    endDate: '',
+    startDate: toProjectInputDate(project.startDate),
+    endDate: toProjectInputDate(project.endDate),
     url: project.url ?? '',
     clientId: props.clientId
   })
 }
+
+const displayStatus = computed(() => {
+  return getProjectDisplayStatus({
+    startDate: formState.startDate || null,
+    endDate: formState.endDate || null,
+    status: props.project?.status ?? 'en_cours'
+  })
+})
+
+const displayStatusLabel = computed(() => {
+  switch (displayStatus.value) {
+    case 'termine':
+      return 'Terminé'
+    case 'en_attente':
+      return 'En attente'
+    case 'annule':
+      return 'Annulé'
+    default:
+      return 'En cours'
+  }
+})
 
 watch(
   () => props.open,
@@ -85,7 +104,7 @@ const onSubmit = async () => {
     const body = {
       name: formState.name,
       description: formState.description,
-      status: formState.status,
+      status: displayStatus.value,
       startDate: formState.startDate || undefined,
       endDate: formState.endDate || undefined,
       url: formState.url || undefined,
@@ -184,6 +203,20 @@ const onSubmit = async () => {
             />
           </UFormField>
         </div>
+
+        <UFormField
+          label="Statut affiché"
+          name="statusPreview"
+        >
+          <div class="rounded-lg border border-default bg-elevated/40 px-3 py-2">
+            <p class="font-medium">
+              {{ displayStatusLabel }}
+            </p>
+            <p class="mt-1 text-sm text-gray-500">
+              Le statut est calculé automatiquement à partir des dates du projet.
+            </p>
+          </div>
+        </UFormField>
 
         <UFormField
           label="URL du projet"
