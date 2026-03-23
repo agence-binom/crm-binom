@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
+import { getProjectDisplayStatus } from '~/lib/projects'
 import type { ProjectDocument } from '~/types'
 
 type CoverageStatus = 'none' | 'partial' | 'complete'
@@ -122,6 +123,10 @@ const getProjectStatusColor = (status: string): 'neutral' | 'primary' | 'success
     annule: 'error'
   }
   return colors[status] || 'neutral'
+}
+
+const getProjectStatusLabel = (status: string) => {
+  return status.replace('_', ' ')
 }
 
 const navigateToClient = (clientId: number) => {
@@ -323,9 +328,9 @@ const stats = computed(() => {
                 </h3>
                 <UBadge
                   variant="soft"
-                  :color="getProjectStatusColor(item.project.status)"
+                  :color="getProjectStatusColor(getProjectDisplayStatus(item.project))"
                 >
-                  {{ item.project.status.replace('_', ' ') }}
+                  {{ getProjectStatusLabel(getProjectDisplayStatus(item.project)) }}
                 </UBadge>
               </div>
 

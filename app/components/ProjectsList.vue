@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getProjectDisplayStatus } from '~/lib/projects'
 import type { Project } from '~/validation/projects'
 
 const _props = defineProps<{
@@ -61,17 +62,17 @@ const { getStatusColor, getStatusLabel } = useStatusHelpers()
             variant="soft"
             class="h-full hover:bg-elevated transition-all duration-200 cursor-pointer"
           >
-            <div class="flex gap-4 mb-2">
+            <div class="flex items-start gap-4 mb-2">
               <h3 class="text-xl font-semibold">
                 {{ project.name }}
               </h3>
               <UBadge
-                v-if="project.status"
+                v-if="project.status || project.startDate || project.endDate"
                 variant="soft"
                 class="rounded-full px-3 w-fit"
-                :color="getStatusColor(project.status)"
+                :color="getStatusColor(getProjectDisplayStatus(project))"
               >
-                {{ getStatusLabel(project.status) }}
+                {{ getStatusLabel(getProjectDisplayStatus(project)) }}
               </UBadge>
             </div>
             <p class="text-gray-600">
