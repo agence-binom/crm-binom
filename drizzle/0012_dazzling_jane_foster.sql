@@ -1,0 +1,1 @@
+ALTER TABLE "documents" ADD COLUMN "externalUrl" varchar(2048);

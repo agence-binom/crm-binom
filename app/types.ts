@@ -3,6 +3,7 @@ export type ProjectDocument = {
   name: string
   filename: string
   filepath: string
+  externalUrl?: string | null
   downloadUrl?: string | null
   mimetype: string
   size: number

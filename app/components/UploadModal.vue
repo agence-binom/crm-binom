@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type billingDocumentTypes, documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes } from '~/validation/documents'
+import { type billingDocumentTypes, documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes, isFactureNetUrl } from '~/validation/documents'
 import { formatFileSize } from '~/lib/utils'
 
 type BillingDocumentType = typeof billingDocumentTypes[number]
@@ -28,12 +28,15 @@ const { showError, showSuccess } = useFeedbackToast()
 const isUploading = ref(false)
 const selectedFile = ref<File | null>(null)
 const description = ref('')
+const externalUrl = ref('')
 const selectedDocumentType = ref<BillingDocumentType>(props.documentType ?? 'quote')
 const fileInput = ref<HTMLInputElement>()
 
 const modalTitle = computed(() => props.title || 'Ajouter un document')
 const allowedDocumentTypesLabel = 'PDF'
 const maxFileSizeLabel = formatFileSize(documentMaxSizeBytes)
+const currentDocumentType = computed(() => props.documentType ?? selectedDocumentType.value)
+const requiresFactureNetLink = computed(() => currentDocumentType.value === 'quote' || currentDocumentType.value === 'invoice')
 
 const documentTypeOptions = [
   { label: 'Devis', value: 'quote' },
@@ -51,6 +54,7 @@ const clearSelectedFile = () => {
 const resetForm = () => {
   clearSelectedFile()
   description.value = ''
+  externalUrl.value = ''
   selectedDocumentType.value = props.documentType ?? 'quote'
 }
 
@@ -110,6 +114,24 @@ const onFileSelected = (event: Event) => {
   selectedFile.value = file
 }
 
+const validateExternalUrl = (value: string) => {
+  const normalizedValue = value.trim()
+
+  if (!requiresFactureNetLink.value) {
+    return null
+  }
+
+  if (!normalizedValue) {
+    return 'Le lien Facture.net est requis pour un devis ou une facture.'
+  }
+
+  if (!isFactureNetUrl(normalizedValue)) {
+    return 'Le lien doit pointer vers une page Facture.net valide.'
+  }
+
+  return null
+}
+
 const onUpload = async () => {
   if (!selectedFile.value) return
 
@@ -124,6 +146,17 @@ const onUpload = async () => {
     return
   }
 
+  const externalUrlError = validateExternalUrl(externalUrl.value)
+  if (externalUrlError) {
+    toast.add({
+      title: 'Lien Facture.net invalide',
+      description: externalUrlError,
+      color: 'error',
+      icon: 'i-lucide-circle-alert'
+    })
+    return
+  }
+
   isUploading.value = true
 
   try {
@@ -132,6 +165,7 @@ const onUpload = async () => {
     formData.set('entityType', props.entityType)
     formData.set('entityId', String(props.entityId))
     formData.set('documentType', props.documentType ?? selectedDocumentType.value)
+    formData.set('externalUrl', externalUrl.value.trim())
     formData.set('name', selectedFile.value.name)
     formData.set('description', description.value.trim())
 
@@ -143,7 +177,7 @@ const onUpload = async () => {
 
     showSuccess(
       'Document téléversé',
-      'Le document est disponible au téléchargement.'
+      'Le PDF et le lien Facture.net sont maintenant rattachés au document.'
     )
   } catch (error) {
     showError('Échec du téléversement', error, 'Impossible de téléverser le document.')
@@ -182,6 +216,23 @@ const onUpload = async () => {
             option-attribute="label"
             class="w-full"
           />
+        </UFormField>
+
+        <UFormField
+          v-if="currentDocumentType"
+          label="Lien Facture.net"
+          name="externalUrl"
+          :required="requiresFactureNetLink"
+        >
+          <UInput
+            v-model="externalUrl"
+            type="url"
+            placeholder="https://www.facture.net/..."
+            class="w-full"
+          />
+          <p class="mt-2 text-xs text-gray-500">
+            Collez l'URL de la page dédiée au devis ou à la facture dans Facture.net.
+          </p>
         </UFormField>
 
         <div>

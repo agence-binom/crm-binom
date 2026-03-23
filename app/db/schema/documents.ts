@@ -5,6 +5,7 @@ export const documentsTable = pgTable('documents', {
   name: varchar({ length: 255 }).notNull(),
   filename: varchar({ length: 255 }).notNull(), // Nom du fichier original
   filepath: varchar({ length: 500 }).notNull(), // Chemin de stockage
+  externalUrl: varchar({ length: 2048 }), // URL de la page source sur Facture.net
   mimetype: varchar({ length: 100 }).notNull(), // application/pdf, image/png, etc.
   size: integer().notNull(), // Taille en bytes
   entityType: varchar({ length: 50 }).notNull(), // 'quote', 'invoice', 'project', 'client', etc.

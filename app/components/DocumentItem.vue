@@ -25,6 +25,11 @@ const getDownloadHref = (document: ProjectDocument) => {
   return document.filepath.startsWith('http') ? document.filepath : undefined
 }
 
+const getFactureNetHref = (document: ProjectDocument) => {
+  if (!document.externalUrl) return undefined
+  return document.externalUrl.startsWith('http') ? document.externalUrl : undefined
+}
+
 const getFileIcon = (mimetype: string) => {
   if (mimetype.includes('pdf')) return 'i-lucide-file-text'
   if (mimetype.includes('image')) return 'i-lucide-image'
@@ -74,6 +79,13 @@ const onDeleteDocument = async (documentId: number) => {
         >
           {{ getDocumentTypeLabel(document.documentType) }}
         </UBadge>
+        <UBadge
+          v-if="!getFactureNetHref(document)"
+          variant="soft"
+          color="warning"
+        >
+          Lien Facture.net manquant
+        </UBadge>
       </div>
 
       <p class="mt-1 text-sm text-gray-600">
@@ -94,6 +106,18 @@ const onDeleteDocument = async (documentId: number) => {
   </div>
 
   <div class="flex shrink-0 items-center gap-2">
+    <UButton
+      size="sm"
+      variant="soft"
+      color="neutral"
+      icon="i-lucide-external-link"
+      :href="getFactureNetHref(document)"
+      :disabled="!getFactureNetHref(document)"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Voir sur Facture.net
+    </UButton>
     <UButton
       size="sm"
       variant="soft"

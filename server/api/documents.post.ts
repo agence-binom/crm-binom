@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
     entityType: formData.get('entityType'),
     entityId: formData.get('entityId'),
     documentType: formData.get('documentType'),
+    externalUrl: formData.get('externalUrl'),
     name: formData.get('name'),
     description: formData.get('description')
   })
