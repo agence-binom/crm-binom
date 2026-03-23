@@ -18,12 +18,31 @@ const { showError } = useFeedbackToast()
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<number | null>(null)
+const deletedTaskIds = ref(new Set<number>())
+const taskStatusOverrides = ref(new Map<number, Task['status']>())
+
+const visibleTasks = computed(() => {
+  return props.tasks
+    .filter(task => !deletedTaskIds.value.has(task.id))
+    .map((task) => {
+      const statusOverride = taskStatusOverrides.value.get(task.id)
+
+      if (!statusOverride) {
+        return task
+      }
+
+      return {
+        ...task,
+        status: statusOverride
+      }
+    })
+})
 
 const tasksByStatus = computed(() => {
   return {
-    todo: props.tasks.filter(t => t.status === 'todo'),
-    in_progress: props.tasks.filter(t => t.status === 'in_progress'),
-    done: props.tasks.filter(t => t.status === 'done')
+    todo: visibleTasks.value.filter(t => t.status === 'todo'),
+    in_progress: visibleTasks.value.filter(t => t.status === 'in_progress'),
+    done: visibleTasks.value.filter(t => t.status === 'done')
   }
 })
 
@@ -38,13 +57,26 @@ const handleTaskToUpdate = (taskId: number) => {
 }
 
 const handleTaskMoved = async (taskId: number, newStatus: string) => {
+  const task = visibleTasks.value.find(currentTask => currentTask.id === taskId)
+  const previousStatus = task?.status
+
+  taskStatusOverrides.value = new Map(taskStatusOverrides.value).set(taskId, newStatus as Task['status'])
+
   try {
     await $fetch(`/api/tasks/${taskId}`, {
       method: 'PUT',
       body: { status: newStatus }
     })
-    emit('refresh')
   } catch (error) {
+    const nextOverrides = new Map(taskStatusOverrides.value)
+
+    if (previousStatus) {
+      nextOverrides.set(taskId, previousStatus)
+    } else {
+      nextOverrides.delete(taskId)
+    }
+
+    taskStatusOverrides.value = nextOverrides
     console.error('Erreur lors du déplacement de la tâche:', error)
     showError('Déplacement impossible', error, 'Impossible de déplacer la tâche.')
   }
@@ -54,9 +86,16 @@ const handleTaskChange = () => {
   emit('refresh')
 }
 
+const handleTaskDeleted = (taskId: number) => {
+  deletedTaskIds.value = new Set([
+    ...deletedTaskIds.value,
+    taskId
+  ])
+}
+
 const taskToEdit = computed(() => {
   if (!selectedTaskId.value) return null
-  return props.tasks.find(t => t.id === selectedTaskId.value) ?? null
+  return visibleTasks.value.find(t => t.id === selectedTaskId.value) ?? null
 })
 </script>
 
@@ -93,21 +132,21 @@ const taskToEdit = computed(() => {
       <KanbanTable
         status="todo"
         :tasks="tasksByStatus.todo"
-        @task-deleted="handleTaskChange"
+        @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"
       />
       <KanbanTable
         status="in_progress"
         :tasks="tasksByStatus.in_progress"
-        @task-deleted="handleTaskChange"
+        @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"
       />
       <KanbanTable
         status="done"
         :tasks="tasksByStatus.done"
-        @task-deleted="handleTaskChange"
+        @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"
       />
