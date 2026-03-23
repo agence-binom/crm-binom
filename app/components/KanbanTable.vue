@@ -14,19 +14,24 @@ const usersMap = computed(() => {
 })
 
 const emit = defineEmits<{
-  taskDeleted: []
+  taskDeleted: [taskId: number]
   taskToUpdated: [taskId: number]
   taskMoved: [taskId: number, newStatus: string]
 }>()
-const { showError } = useFeedbackToast()
+const { deleteResource } = useDeleteConfirmation()
 
-const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bgClass: string, badgeClass: string }> = {
-  todo: { label: 'À faire', bgClass: 'bg-elevated', badgeClass: 'bg-accented' },
-  in_progress: { label: 'En cours', bgClass: 'bg-blue-50', badgeClass: 'bg-blue-100' },
-  done: { label: 'Terminées', bgClass: 'bg-orange-50', badgeClass: 'bg-orange-100' }
+const statuSettings: Record<'todo' | 'in_progress' | 'done', {
+  label: string
+  bgClass: string
+  badgeColor: 'neutral' | 'primary' | 'warning' | 'success'
+  badgeIcon: string
+}> = {
+  todo: { label: 'À faire', bgClass: 'bg-slate-50', badgeColor: 'neutral', badgeIcon: 'i-lucide-list-todo' },
+  in_progress: { label: 'En cours', bgClass: 'bg-amber-50', badgeColor: 'warning', badgeIcon: 'i-lucide-loader-circle' },
+  done: { label: 'Terminées', bgClass: 'bg-emerald-50', badgeColor: 'success', badgeIcon: 'i-lucide-check-check' }
 }
 
-const { bgClass, badgeClass, label } = statuSettings[props.status]
+const { bgClass, badgeColor, badgeIcon, label } = statuSettings[props.status]
 
 const [parent, taskList] = useDragAndDrop<Task>(props.tasks, {
   group: 'kanban-tasks',
@@ -62,13 +67,12 @@ watch(() => props.tasks, (newTasks) => {
 
 const onDeleteTask = async (taskId: number) => {
   try {
-    await $fetch(`/api/tasks/${taskId}`, {
-      method: 'DELETE'
+    await deleteResource('tâche', taskId, '/api/tasks', async () => {
+      taskList.value = taskList.value.filter(task => task.id !== taskId)
+      emit('taskDeleted', taskId)
     })
-    emit('taskDeleted')
   } catch (error) {
     console.error('Erreur lors de la suppression de la tâche:', error)
-    showError('Suppression impossible', error, 'Impossible de supprimer la tâche.')
   }
 }
 </script>
@@ -76,12 +80,15 @@ const onDeleteTask = async (taskId: number) => {
 <template>
   <div :class="['h-full flex flex-col gap-4', bgClass, 'rounded-lg p-3 overflow-hidden']">
     <div class="w-full flex justify-between items-center shrink-0">
-      <div
-        :class="['font-medium inline-flex items-center text-base px-2.5 py-1 gap-1.5 rounded-md',
-                 badgeClass]"
+      <UBadge
+        variant="soft"
+        :color="badgeColor"
+        :icon="badgeIcon"
+        size="lg"
+        class="rounded-md px-3 py-1 font-medium"
       >
-        <span>{{ label }}</span>
-      </div>
+        {{ label }}
+      </UBadge>
 
       <span class="text-sm text-gray-500 font-medium">
         {{ taskList.length }} tâche{{ taskList.length > 1 ? 's' : '' }}
