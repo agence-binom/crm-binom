@@ -13,6 +13,7 @@ const emit = defineEmits<{
   'update:open': [open: boolean]
   'saved': []
 }>()
+const { showError } = useFeedbackToast()
 
 const isOpen = computed({
   get: () => props.open,
@@ -105,6 +106,11 @@ const onSubmit = async () => {
     isOpen.value = false
   } catch (error) {
     console.error('Erreur lors de la sauvegarde du contact:', error)
+    showError(
+      'Enregistrement impossible',
+      error,
+      'Impossible de sauvegarder le contact.'
+    )
   } finally {
     isSaving.value = false
   }

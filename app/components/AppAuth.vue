@@ -24,6 +24,15 @@ const onSubmit = (event: FormSubmitEvent<AuthSignIn>) => {
     :state="formState"
     @submit="onSubmit"
   >
+    <UAlert
+      v-if="props.error"
+      color="error"
+      variant="soft"
+      icon="i-lucide-circle-alert"
+      title="Connexion impossible"
+      :description="props.error"
+      class="mb-4"
+    />
     <UFormField
       label="Email"
       name="email"

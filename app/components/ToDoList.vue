@@ -14,6 +14,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   refresh: []
 }>()
+const { showError } = useFeedbackToast()
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<number | null>(null)
@@ -45,6 +46,7 @@ const handleTaskMoved = async (taskId: number, newStatus: string) => {
     emit('refresh')
   } catch (error) {
     console.error('Erreur lors du déplacement de la tâche:', error)
+    showError('Déplacement impossible', error, 'Impossible de déplacer la tâche.')
   }
 }
 

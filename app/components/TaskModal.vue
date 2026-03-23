@@ -15,6 +15,7 @@ const emit = defineEmits<{
   'update:open': [open: boolean]
   'saved': []
 }>()
+const { showError } = useFeedbackToast()
 
 const isOpen = computed({
   get: () => props.open,
@@ -126,6 +127,11 @@ const onSubmit = async () => {
     isOpen.value = false
   } catch (error) {
     console.error('Erreur lors de la sauvegarde de la tâche:', error)
+    showError(
+      'Enregistrement impossible',
+      error,
+      'Impossible de sauvegarder la tâche.'
+    )
   } finally {
     isSaving.value = false
   }

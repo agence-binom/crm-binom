@@ -11,6 +11,7 @@ const emit = defineEmits<{
   'update:open': [open: boolean]
   'saved': []
 }>()
+const { showError } = useFeedbackToast()
 
 const toDateString = (date: Date = new Date()): string => {
   return date.toISOString().substring(0, 10)
@@ -71,6 +72,11 @@ const onSubmit = async () => {
     isOpen.value = false
   } catch (error) {
     console.error('Erreur lors de l\'enregistrement du paiement:', error)
+    showError(
+      'Enregistrement impossible',
+      error,
+      'Impossible d\'enregistrer le paiement.'
+    )
   } finally {
     isSaving.value = false
   }

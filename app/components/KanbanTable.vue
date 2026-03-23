@@ -18,6 +18,7 @@ const emit = defineEmits<{
   taskToUpdated: [taskId: number]
   taskMoved: [taskId: number, newStatus: string]
 }>()
+const { showError } = useFeedbackToast()
 
 const statuSettings: Record<'todo' | 'in_progress' | 'done', { label: string, bgClass: string, badgeClass: string }> = {
   todo: { label: 'À faire', bgClass: 'bg-elevated', badgeClass: 'bg-accented' },
@@ -61,12 +62,13 @@ watch(() => props.tasks, (newTasks) => {
 
 const onDeleteTask = async (taskId: number) => {
   try {
-    await useFetch(`/api/tasks/${taskId}`, {
+    await $fetch(`/api/tasks/${taskId}`, {
       method: 'DELETE'
     })
     emit('taskDeleted')
   } catch (error) {
     console.error('Erreur lors de la suppression de la tâche:', error)
+    showError('Suppression impossible', error, 'Impossible de supprimer la tâche.')
   }
 }
 </script>
