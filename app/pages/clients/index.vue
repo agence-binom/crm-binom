@@ -69,11 +69,17 @@ const handleClientChange = async () => {
         <UPageCard
           :title="client.name"
           :description="client.description || ''"
-          :icon="client.icon || 'i-lucide-briefcase'"
           variant="soft"
           :to="`/clients/${client.id}`"
           class="h-full"
-        />
+        >
+          <template #leading>
+            <UIcon
+              :name="client.icon || 'i-lucide-briefcase'"
+              class="text-lg text-primary"
+            />
+          </template>
+        </UPageCard>
       </li>
     </ul>
   </div>

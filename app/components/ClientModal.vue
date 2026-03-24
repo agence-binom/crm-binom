@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { clientIconOptions } from '~/lib/client-icons'
 import type { Client } from '~/validation/clients'
 import { clientCreateSchema, clientUpdateSchema } from '~/validation/clients'
 
@@ -21,12 +22,33 @@ const isOpen = computed({
 
 const isSaving = ref(false)
 const isEditing = computed(() => props.clientId != null)
+const defaultClientIcon = clientIconOptions[0]?.value ?? 'i-lucide-briefcase'
+type ClientStatus = 'active' | 'inactive' | 'archived'
+
+const clientStatusOptions: Array<{ label: string, value: ClientStatus }> = [
+  { label: 'Actif', value: 'active' },
+  { label: 'Inactif', value: 'inactive' },
+  { label: 'Archivé', value: 'archived' }
+]
 
 const schema = computed(() => (isEditing.value ? clientUpdateSchema : clientCreateSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier le client' : 'Nouveau client'))
 const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer le client'))
+const getOptionValue = (item: unknown) => {
+  if (!item || typeof item !== 'object' || !('value' in item)) {
+    return defaultClientIcon
+  }
 
-const formState = reactive({
+  return typeof item.value === 'string' ? item.value : defaultClientIcon
+}
+const normalizeStatus = (status?: string | null) => {
+  if (status === 'inactive' || status === 'archived') {
+    return status
+  }
+
+  return 'active'
+}
+const createDefaultFormState = () => ({
   name: '',
   email: '',
   phone: '',
@@ -37,53 +59,35 @@ const formState = reactive({
   website: '',
   siret: '',
   notes: '',
-  icon: '',
-  status: 'active' as 'active' | 'inactive' | 'archived',
+  icon: defaultClientIcon,
+  status: 'active' as ClientStatus,
   description: ''
 })
+const createFormStateFromClient = (client?: Client | null) => ({
+  ...createDefaultFormState(),
+  name: client?.name ?? '',
+  email: client?.email ?? '',
+  phone: client?.phone ?? '',
+  address: client?.address ?? '',
+  city: client?.city ?? '',
+  postalCode: client?.postalCode ?? '',
+  country: client?.country ?? '',
+  website: client?.website ?? '',
+  siret: client?.siret ?? '',
+  notes: client?.notes ?? '',
+  icon: client?.icon || defaultClientIcon,
+  status: normalizeStatus(client?.status),
+  description: client?.description ?? ''
+})
+const formState = reactive(createDefaultFormState())
 
-const resetForm = () => {
-  Object.assign(formState, {
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    postalCode: '',
-    country: '',
-    website: '',
-    siret: '',
-    notes: '',
-    icon: '',
-    status: 'active',
-    description: ''
-  })
-}
-
-const fillFromClient = (client: Client) => {
-  Object.assign(formState, {
-    name: client.name ?? '',
-    email: client.email ?? '',
-    phone: client.phone ?? '',
-    address: client.address ?? '',
-    city: client.city ?? '',
-    postalCode: client.postalCode ?? '',
-    country: client.country ?? '',
-    website: client.website ?? '',
-    siret: client.siret ?? '',
-    notes: client.notes ?? '',
-    icon: client.icon ?? '',
-    status: client.status ?? 'active',
-    description: client.description ?? ''
-  })
-}
+const applyFormState = (client?: Client | null) => Object.assign(formState, createFormStateFromClient(client))
 
 watch(
   () => props.open,
   (open) => {
     if (!open) return
-    if (isEditing.value && props.client) fillFromClient(props.client)
-    else resetForm()
+    applyFormState(isEditing.value ? props.client : null)
   },
   { immediate: true }
 )
@@ -92,28 +96,14 @@ watch(
   () => props.client,
   (client) => {
     if (!props.open) return
-    if (isEditing.value && client) fillFromClient(client)
+    if (isEditing.value) applyFormState(client)
   }
 )
 
 const onSubmit = async () => {
   isSaving.value = true
   try {
-    const body = {
-      name: formState.name,
-      email: formState.email,
-      phone: formState.phone,
-      address: formState.address,
-      city: formState.city,
-      postalCode: formState.postalCode,
-      country: formState.country,
-      website: formState.website,
-      siret: formState.siret,
-      notes: formState.notes,
-      icon: formState.icon,
-      status: formState.status,
-      description: formState.description
-    }
+    const body = { ...formState }
 
     if (isEditing.value) {
       if (!props.clientId) throw new Error('clientId manquant pour la mise à jour')
@@ -170,12 +160,30 @@ const onSubmit = async () => {
         </UFormField>
 
         <UFormField
-          label="Icône"
+          label="Icône client"
           name="icon"
         >
-          <UInput
+          <USelect
             v-model="formState.icon"
-          />
+            :items="clientIconOptions"
+            value-attribute="value"
+            option-attribute="label"
+            class="w-full"
+          >
+            <template #leading>
+              <UIcon
+                :name="formState.icon || defaultClientIcon"
+                class="text-base text-dimmed"
+              />
+            </template>
+
+            <template #item-leading="{ item }">
+              <UIcon
+                :name="getOptionValue(item)"
+                class="text-base text-dimmed"
+              />
+            </template>
+          </USelect>
         </UFormField>
 
         <UFormField
@@ -290,11 +298,7 @@ const onSubmit = async () => {
           >
             <USelect
               v-model="formState.status"
-              :items="[
-                { label: 'Actif', value: 'active' },
-                { label: 'Inactif', value: 'inactive' },
-                { label: 'Archivé', value: 'archived' }
-              ]"
+              :items="clientStatusOptions"
               value-attribute="value"
               option-attribute="label"
             />
