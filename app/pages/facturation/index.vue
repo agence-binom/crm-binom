@@ -1,109 +1,91 @@
 <script setup lang="ts">
 import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
+import type { BillingCoverageStatus, BillingProjectStatus } from '~/lib/billing'
 import { getProjectDisplayStatus } from '~/lib/projects'
-import type { ProjectDocument } from '~/types'
+import type { billingDashboardStatuses } from '~/validation/billing'
 
-type CoverageStatus = 'none' | 'partial' | 'complete'
+type BillingStatusFilter = typeof billingDashboardStatuses[number]
 
-const { data: projectsData } = await useFetch('/api/projects')
-const { data: documentsData } = await useFetch('/api/documents')
-const { data: clientsData } = await useFetch('/api/clients')
-
-const projects = computed(() => projectsData.value?.projects || [])
-const documents = computed<ProjectDocument[]>(() => documentsData.value?.documents || [])
-const clients = computed(() => clientsData.value?.clients || [])
-
-const projectsWithClients = computed(() => {
-  return projects.value.map(project => ({
-    ...project,
-    client: clients.value.find(client => client.id === project.clientId)
-  }))
-})
-
-const billingDocuments = computed(() => {
-  return documents.value.filter((document) => {
-    return document.entityType === 'project'
-      && (document.documentType === 'quote' || document.documentType === 'invoice')
-  })
-})
-
-const getCoverage = (projectDocuments: ProjectDocument[]) => {
-  const withLinkCount = projectDocuments.filter(document => Boolean(document.externalUrl)).length
-  const missingLinkCount = projectDocuments.length - withLinkCount
-
-  let status: CoverageStatus = 'none'
-
-  if (projectDocuments.length > 0) {
-    status = missingLinkCount > 0 ? 'partial' : 'complete'
-  }
-
-  return {
-    total: projectDocuments.length,
-    withLinkCount,
-    missingLinkCount,
-    status
-  }
+const PAGE_SIZE = 12
+const emptyStats = {
+  totalProjects: 0,
+  projectsWithQuotePdf: 0,
+  projectsWithInvoicePdf: 0,
+  documentsMissingLink: 0,
+  completeProjects: 0
 }
 
-const projectsBillingStatus = computed(() => {
-  return projectsWithClients.value.map((project) => {
-    const projectDocuments = billingDocuments.value.filter(document => document.entityId === project.id)
-    const quoteCoverage = getCoverage(projectDocuments.filter(document => document.documentType === 'quote'))
-    const invoiceCoverage = getCoverage(projectDocuments.filter(document => document.documentType === 'invoice'))
-    const missingLinkCount = quoteCoverage.missingLinkCount + invoiceCoverage.missingLinkCount
+const emptyPagination = {
+  page: 1,
+  pageSize: PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1
+}
 
-    return {
-      project,
-      quoteCoverage,
-      invoiceCoverage,
-      totalDocuments: quoteCoverage.total + invoiceCoverage.total,
-      missingLinkCount,
-      isComplete: quoteCoverage.status === 'complete' && invoiceCoverage.status === 'complete'
-    }
+const searchInput = ref('')
+const searchQuery = ref('')
+const statusFilter = ref<BillingStatusFilter>('all')
+const page = ref(1)
+
+let searchDebounce: ReturnType<typeof setTimeout> | undefined
+
+watch(searchInput, (value) => {
+  page.value = 1
+
+  if (searchDebounce) {
+    clearTimeout(searchDebounce)
+  }
+
+  searchDebounce = setTimeout(() => {
+    searchQuery.value = value.trim()
+  }, 250)
+})
+
+watch(statusFilter, () => {
+  page.value = 1
+})
+
+onBeforeUnmount(() => {
+  if (searchDebounce) {
+    clearTimeout(searchDebounce)
+  }
+})
+
+const { data, status } = await useFetch('/api/billing/projects', {
+  query: computed(() => ({
+    search: searchQuery.value || undefined,
+    status: statusFilter.value,
+    page: page.value,
+    pageSize: PAGE_SIZE
+  })),
+  default: () => ({
+    items: [],
+    stats: emptyStats,
+    pagination: emptyPagination
   })
 })
 
-const searchQuery = ref('')
-const statusFilter = ref('all')
-
-const filteredProjects = computed(() => {
-  let filtered = projectsBillingStatus.value
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(item =>
-      item.project.name.toLowerCase().includes(query)
-      || item.project.client?.name.toLowerCase().includes(query)
-    )
+watch(
+  () => data.value?.pagination.page,
+  (serverPage) => {
+    if (serverPage && serverPage !== page.value) {
+      page.value = serverPage
+    }
   }
+)
 
-  if (statusFilter.value !== 'all') {
-    filtered = filtered.filter((item) => {
-      switch (statusFilter.value) {
-        case 'missing_quote_pdf':
-          return item.quoteCoverage.status === 'none'
-        case 'missing_invoice_pdf':
-          return item.invoiceCoverage.status === 'none'
-        case 'missing_facturenet_link':
-          return item.missingLinkCount > 0
-        case 'complete':
-          return item.isComplete
-        default:
-          return true
-      }
-    })
-  }
+const billingProjects = computed<BillingProjectStatus[]>(() => data.value?.items || [])
+const stats = computed(() => data.value?.stats || emptyStats)
+const pagination = computed(() => data.value?.pagination || emptyPagination)
+const isLoading = computed(() => status.value === 'pending')
 
-  return filtered
-})
-
-const getCoverageColor = (status: CoverageStatus): 'neutral' | 'success' | 'warning' => {
+const getCoverageColor = (status: BillingCoverageStatus): 'neutral' | 'success' | 'warning' => {
   if (status === 'complete') return 'success'
   if (status === 'partial') return 'warning'
   return 'neutral'
 }
 
-const getCoverageLabel = (status: CoverageStatus, type: 'quote' | 'invoice') => {
+const getCoverageLabel = (status: BillingCoverageStatus, type: 'quote' | 'invoice') => {
   if (status === 'complete') {
     return 'PDF + lien disponibles'
   }
@@ -136,22 +118,6 @@ const navigateToClient = (clientId: number) => {
 const navigateToProject = (clientId: number, projectId: number) => {
   navigateTo(`/clients/${clientId}/projects/${projectId}`)
 }
-
-const stats = computed(() => {
-  const totalProjects = projects.value.length
-  const projectsWithQuotePdf = projectsBillingStatus.value.filter(item => item.quoteCoverage.total > 0).length
-  const projectsWithInvoicePdf = projectsBillingStatus.value.filter(item => item.invoiceCoverage.total > 0).length
-  const documentsMissingLink = projectsBillingStatus.value.reduce((count, item) => count + item.missingLinkCount, 0)
-  const completeProjects = projectsBillingStatus.value.filter(item => item.isComplete).length
-
-  return {
-    totalProjects,
-    projectsWithQuotePdf,
-    projectsWithInvoicePdf,
-    documentsMissingLink,
-    completeProjects
-  }
-})
 </script>
 
 <template>
@@ -264,7 +230,7 @@ const stats = computed(() => {
 
     <div class="mb-6 space-y-4">
       <UInput
-        v-model="searchQuery"
+        v-model="searchInput"
         icon="i-lucide-search"
         placeholder="Rechercher un projet ou client..."
         size="lg"
@@ -307,14 +273,23 @@ const stats = computed(() => {
           Complet
         </UButton>
       </div>
+
+      <div class="flex items-center justify-between gap-4 text-sm text-gray-500">
+        <p>
+          {{ pagination.totalItems }} projet{{ pagination.totalItems > 1 ? 's' : '' }}
+        </p>
+        <p v-if="isLoading">
+          Mise à jour en cours...
+        </p>
+      </div>
     </div>
 
     <div
-      v-if="filteredProjects.length > 0"
+      v-if="billingProjects.length > 0"
       class="space-y-4"
     >
       <UCard
-        v-for="item in filteredProjects"
+        v-for="item in billingProjects"
         :key="item.project.id"
         variant="soft"
         class="transition-all duration-200 hover:bg-elevated"
@@ -491,6 +466,36 @@ const stats = computed(() => {
           </div>
         </div>
       </UCard>
+
+      <div
+        v-if="pagination.totalPages > 1"
+        class="flex flex-col items-center justify-between gap-3 rounded-lg border border-gray-200 p-4 text-sm dark:border-gray-800 md:flex-row"
+      >
+        <p class="text-gray-500">
+          Page {{ pagination.page }} sur {{ pagination.totalPages }}
+        </p>
+
+        <div class="flex gap-2">
+          <UButton
+            variant="soft"
+            color="neutral"
+            icon="i-lucide-chevron-left"
+            :disabled="pagination.page <= 1 || isLoading"
+            @click="page = Math.max(1, pagination.page - 1)"
+          >
+            Précédent
+          </UButton>
+          <UButton
+            variant="soft"
+            color="neutral"
+            trailing-icon="i-lucide-chevron-right"
+            :disabled="pagination.page >= pagination.totalPages || isLoading"
+            @click="page = Math.min(pagination.totalPages, pagination.page + 1)"
+          >
+            Suivant
+          </UButton>
+        </div>
+      </div>
     </div>
 
     <div
@@ -502,10 +507,10 @@ const stats = computed(() => {
         class="mb-4 text-6xl text-gray-400"
       />
       <p class="mb-2 text-xl text-gray-600">
-        Aucun projet trouvé
+        {{ isLoading ? 'Chargement...' : 'Aucun projet trouvé' }}
       </p>
       <p class="text-gray-500">
-        {{ searchQuery || statusFilter !== 'all' ? 'Essayez de modifier vos filtres' : 'Créez votre premier projet depuis la page clients' }}
+        {{ searchInput || statusFilter !== 'all' ? 'Essayez de modifier vos filtres' : 'Créez votre premier projet depuis la page clients' }}
       </p>
     </div>
   </div>

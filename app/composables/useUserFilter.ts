@@ -1,9 +1,10 @@
 import type { User } from '~/validation/users'
 import type { Task } from '~/validation/tasks'
 
-export function useUserFilter(tasks: Ref<Task[]>) {
+export function useUserFilter(tasks: Ref<Task[]>, users?: Ref<User[]>) {
   const selectedUserId = ref<number | null>(null)
-  const { data: usersData } = useFetch('/api/users')
+  const usersData = users ? undefined : useFetch('/api/users').data
+  const availableUsers = computed<User[]>(() => users?.value ?? usersData?.value?.users ?? [])
 
   const taskCountByUser = computed(() => {
     if (!tasks.value) return new Map()
@@ -24,13 +25,13 @@ export function useUserFilter(tasks: Ref<Task[]>) {
       { label: `Tous les utilisateurs (${totalTasks})`, value: null }
     ]
 
-    options.push(...usersData.value?.users?.map((user: User) => {
+    options.push(...availableUsers.value.map((user: User) => {
       const count = taskCountByUser.value.get(user.id) ?? 0
       return {
         label: `${user.name} (${count})`,
         value: user.id
       }
-    }) ?? [])
+    }))
 
     const unassignedCount = taskCountByUser.value.get(null) ?? 0
     if (unassignedCount > 0) {

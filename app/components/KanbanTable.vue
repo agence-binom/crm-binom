@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { useDragAndDrop } from '@formkit/drag-and-drop/vue'
-import type { Task } from '~/validation'
+import type { Task, User } from '~/validation'
 
 const props = withDefaults(defineProps<{
   status: 'todo' | 'in_progress' | 'done'
   tasks?: Task[]
-}>(), { tasks: () => [] })
+  users?: User[]
+}>(), {
+  tasks: () => [],
+  users: () => []
+})
 
-const { data: usersData } = await useFetch('/api/users')
 const usersMap = computed(() => {
-  if (!usersData.value?.users) return new Map()
-  return new Map(usersData.value.users.map(user => [user.id, user.name]))
+  return new Map(props.users.map(user => [user.id, user.name]))
 })
 
 const emit = defineEmits<{

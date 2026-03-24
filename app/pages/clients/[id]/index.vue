@@ -2,17 +2,10 @@
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
 
-// Données du client
-const { data: clientData, refresh: refreshClient } = await useFetch(`/api/clients/${clientId.value}`)
-const client = computed(() => clientData.value?.client)
-
-// Données des contacts
-const { data: contactsData, refresh: refreshContacts } = await useFetch(`/api/clients/${clientId.value}/contacts`)
-const contacts = computed(() => contactsData.value?.contacts || [])
-
-// Données des projets
-const { data: projectsData, refresh: refreshProjects } = await useFetch(`/api/clients/${clientId.value}/projects`)
-const projects = computed(() => projectsData.value?.projects || [])
+const { data, refresh } = await useFetch(`/api/clients/${clientId.value}/dashboard`)
+const client = computed(() => data.value?.client)
+const contacts = computed(() => data.value?.contacts || [])
+const projects = computed(() => data.value?.projects || [])
 
 const isClientInfoModalOpen = ref(false)
 const isContactModalOpen = ref(false)
@@ -29,7 +22,7 @@ const onDeleteClient = async (clientId: number) => {
 }
 
 const handleClientChange = async () => {
-  await refreshClient()
+  await refresh()
 }
 
 const openCreateContact = () => {
@@ -43,7 +36,7 @@ const openEditContact = (contactId: number) => {
 }
 
 const handleContactChange = async () => {
-  await refreshContacts()
+  await refresh()
 }
 
 const openCreateProject = () => {
@@ -57,15 +50,15 @@ const openEditProject = (projectId: number) => {
 }
 
 const handleProjectChange = async () => {
-  await refreshProjects()
+  await refresh()
 }
 
 const onDeleteContact = async (contactId: number) => {
-  await deleteResource('contact', contactId, '/api/contacts', refreshContacts)
+  await deleteResource('contact', contactId, '/api/contacts', refresh)
 }
 
 const onDeleteProject = async (projectId: number) => {
-  await deleteResource('projet', projectId, '/api/projects', refreshProjects)
+  await deleteResource('projet', projectId, '/api/projects', refresh)
 }
 
 const contactToEdit = computed(() => {

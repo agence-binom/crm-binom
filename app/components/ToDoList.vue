@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import type { Task } from '~/validation'
+import type { Task, User } from '~/validation'
+
+type ToDoListProjectOption = {
+  id: number
+  name: string
+}
 
 const props = withDefaults(defineProps<{
   tasks: Task[]
   title?: string
   projectId?: number
   showUserFilter?: boolean
+  availableProjects?: ToDoListProjectOption[]
+  availableUsers?: User[]
 }>(), {
   title: 'To Do List',
   showUserFilter: false
@@ -125,6 +132,8 @@ const taskToEdit = computed(() => {
       :task-id="selectedTaskId"
       :task="taskToEdit"
       :project-id="projectId"
+      :projects="availableProjects"
+      :users="availableUsers"
       @saved="handleTaskChange"
     />
 
@@ -132,6 +141,7 @@ const taskToEdit = computed(() => {
       <KanbanTable
         status="todo"
         :tasks="tasksByStatus.todo"
+        :users="availableUsers"
         @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"
@@ -139,6 +149,7 @@ const taskToEdit = computed(() => {
       <KanbanTable
         status="in_progress"
         :tasks="tasksByStatus.in_progress"
+        :users="availableUsers"
         @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"
@@ -146,6 +157,7 @@ const taskToEdit = computed(() => {
       <KanbanTable
         status="done"
         :tasks="tasksByStatus.done"
+        :users="availableUsers"
         @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"

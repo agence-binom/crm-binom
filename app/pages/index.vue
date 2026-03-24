@@ -1,8 +1,12 @@
 <script setup lang="ts">
-const { data, refresh, status } = await useFetch('/api/tasks')
-const allTasks = computed(() => data.value?.tasks || [])
+import type { User } from '~/validation/users'
 
-const { selectedUser, userOptions, filteredTasks } = useUserFilter(allTasks)
+const { data, refresh, status } = await useFetch('/api/tasks/dashboard')
+const allTasks = computed(() => data.value?.tasks || [])
+const availableUsers = computed<User[]>(() => data.value?.users || [])
+const projectOptions = computed(() => data.value?.projectOptions || [])
+
+const { selectedUser, userOptions, filteredTasks } = useUserFilter(allTasks, availableUsers)
 const isLoading = computed(() => status.value === 'pending')
 </script>
 
@@ -24,6 +28,8 @@ const isLoading = computed(() => status.value === 'pending')
     <ToDoList
       v-else
       :tasks="filteredTasks"
+      :available-users="availableUsers"
+      :available-projects="projectOptions"
       title="To Do List globale"
       @refresh="refresh"
     >
