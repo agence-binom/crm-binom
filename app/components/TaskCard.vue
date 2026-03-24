@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDateOnly } from '~/lib/utils'
 import type { Task } from '~/types'
 
 const props = defineProps<{
@@ -37,6 +38,13 @@ const emit = defineEmits<{
             >
               <UIcon name="i-lucide-user" />
               <span>{{ props.userName }}</span>
+            </div>
+            <div
+              v-if="props.task.dueDate"
+              class="text-xs text-gray-500 mt-1 flex items-center gap-1"
+            >
+              <UIcon name="i-lucide-calendar-days" />
+              <span>Échéance {{ formatDateOnly(props.task.dueDate) }}</span>
             </div>
           </div>
         </div>

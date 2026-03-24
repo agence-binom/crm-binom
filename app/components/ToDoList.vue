@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sortTasksByDueDate } from '~/lib/tasks'
 import type { Task, User } from '~/types'
 
 type ToDoListProjectOption = {
@@ -29,7 +30,7 @@ const deletedTaskIds = ref(new Set<number>())
 const taskStatusOverrides = ref(new Map<number, Task['status']>())
 
 const visibleTasks = computed(() => {
-  return props.tasks
+  const tasks = props.tasks
     .filter(task => !deletedTaskIds.value.has(task.id))
     .map((task) => {
       const statusOverride = taskStatusOverrides.value.get(task.id)
@@ -43,6 +44,8 @@ const visibleTasks = computed(() => {
         status: statusOverride
       }
     })
+
+  return sortTasksByDueDate(tasks)
 })
 
 const tasksByStatus = computed(() => {

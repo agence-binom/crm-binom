@@ -16,6 +16,16 @@ export const formatDate = (date: string | Date) => {
   })
 }
 
+export const formatDateOnly = (date: string | Date | null | undefined) => {
+  if (!date) return '-'
+
+  return new Date(date).toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
 export const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === 'object') {
     const maybeStatusMessage = Reflect.get(error, 'statusMessage')
