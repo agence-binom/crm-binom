@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { contactCreateSchema, contactUpdateSchema } from '~/validation/contacts'
-import type { Contact } from '~/validation/contacts'
+import type { Contact } from '~/types'
 
 const props = defineProps<{
   open: boolean

@@ -1,12 +1,5 @@
 import { z } from 'zod'
-
-export const billingDashboardStatuses = [
-  'all',
-  'missing_quote_pdf',
-  'missing_invoice_pdf',
-  'missing_facturenet_link',
-  'complete'
-] as const
+import { billingDashboardStatuses } from '~/constants/billing'
 
 export const billingDashboardQuerySchema = z.object({
   search: z.string().trim().max(255, 'La recherche est trop longue').optional().default(''),

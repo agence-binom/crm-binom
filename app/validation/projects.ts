@@ -38,17 +38,3 @@ export const projectIdSchema = z.object({
 export type ProjectCreate = z.infer<typeof projectCreateSchema>
 export type ProjectUpdate = z.infer<typeof projectUpdateSchema>
 export type ProjectId = z.infer<typeof projectIdSchema>
-
-// Type léger pour usage client
-export type Project = {
-  id: number
-  clientId: number
-  name: string
-  description?: string | null
-  status?: string | null
-  url?: string | null
-  notes?: string | null
-  startDate?: string | null
-  endDate?: string | null
-  links?: string[] | null
-}

@@ -1,5 +1,4 @@
-import type { User } from '~/validation/users'
-import type { Task } from '~/validation/tasks'
+import type { Task, User } from '~/types'
 
 export function useUserFilter(tasks: Ref<Task[]>, users?: Ref<User[]>) {
   const selectedUserId = ref<number | null>(null)

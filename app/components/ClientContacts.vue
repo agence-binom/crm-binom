@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Contact } from '~/validation/contacts'
+import type { Contact } from '~/types'
 
 const _props = defineProps<{
   contacts: Contact[]

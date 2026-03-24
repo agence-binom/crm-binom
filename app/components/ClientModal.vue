@@ -1,7 +1,13 @@
 <script setup lang="ts">
+import {
+  clientStatusOptions,
+  defaultClientIcon,
+  getClientIcon,
+  normalizeClientStatus
+} from '~/lib/clients'
 import { clientIconOptions } from '~/lib/client-icons'
-import type { Client } from '~/validation/clients'
 import { clientCreateSchema, clientUpdateSchema } from '~/validation/clients'
+import type { Client } from '~/types'
 
 const props = defineProps<{
   open: boolean
@@ -22,14 +28,6 @@ const isOpen = computed({
 
 const isSaving = ref(false)
 const isEditing = computed(() => props.clientId != null)
-const defaultClientIcon = clientIconOptions[0]?.value ?? 'i-lucide-briefcase'
-type ClientStatus = 'active' | 'inactive' | 'archived'
-
-const clientStatusOptions: Array<{ label: string, value: ClientStatus }> = [
-  { label: 'Actif', value: 'active' },
-  { label: 'Inactif', value: 'inactive' },
-  { label: 'Archivé', value: 'archived' }
-]
 
 const schema = computed(() => (isEditing.value ? clientUpdateSchema : clientCreateSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier le client' : 'Nouveau client'))
@@ -40,13 +38,6 @@ const getOptionValue = (item: unknown) => {
   }
 
   return typeof item.value === 'string' ? item.value : defaultClientIcon
-}
-const normalizeStatus = (status?: string | null) => {
-  if (status === 'inactive' || status === 'archived') {
-    return status
-  }
-
-  return 'active'
 }
 const createDefaultFormState = () => ({
   name: '',
@@ -60,7 +51,7 @@ const createDefaultFormState = () => ({
   siret: '',
   notes: '',
   icon: defaultClientIcon,
-  status: 'active' as ClientStatus,
+  status: 'active' as const,
   description: ''
 })
 const createFormStateFromClient = (client?: Client | null) => ({
@@ -75,8 +66,8 @@ const createFormStateFromClient = (client?: Client | null) => ({
   website: client?.website ?? '',
   siret: client?.siret ?? '',
   notes: client?.notes ?? '',
-  icon: client?.icon || defaultClientIcon,
-  status: normalizeStatus(client?.status),
+  icon: getClientIcon(client?.icon),
+  status: normalizeClientStatus(client?.status),
   description: client?.description ?? ''
 })
 const formState = reactive(createDefaultFormState())

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Project } from '~/validation/projects'
+import type { Project } from '~/types'
 
 const _props = defineProps<{
   projects: Project[]

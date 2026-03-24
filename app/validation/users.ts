@@ -31,11 +31,3 @@ export type UserCreate = z.infer<typeof userCreateSchema>
 export type UserUpdate = z.infer<typeof userUpdateSchema>
 export type UserQuery = z.infer<typeof userQuerySchema>
 export type UserId = z.infer<typeof userIdSchema>
-
-// Type léger pour usage client
-export type User = {
-  id: number
-  name: string
-  email: string
-  role: string
-}

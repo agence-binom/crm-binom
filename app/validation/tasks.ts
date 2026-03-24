@@ -30,16 +30,3 @@ export const taskIdSchema = z.object({
 export type TaskCreate = z.infer<typeof taskCreateSchema>
 export type TaskUpdate = z.infer<typeof taskUpdateSchema>
 export type TaskId = z.infer<typeof taskIdSchema>
-
-export type Task = {
-  id: number
-  projectId: number | null
-  assignedTo: number | null
-  title: string
-  notes: string | null
-  status: string
-  priority: string
-  dueDate: string | null
-  createdAt: string
-  updatedAt: string
-}
