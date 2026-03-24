@@ -1,4 +1,18 @@
 import { z } from 'zod'
+import { clientIconValues } from '../lib/client-icons'
+
+const clientIconSchema = z.string()
+  .regex(
+    /^i-[a-z0-9-]+(?:-[a-z0-9-]+)+$/,
+    'Choisissez une icône valide dans la liste'
+  )
+  .max(100, 'Icône trop longue')
+  .refine(
+    value => clientIconValues.some(icon => icon === value) || value.startsWith('i-'),
+    'Choisissez une icône proposée ou conservez une icône Iconify existante'
+  )
+  .optional()
+  .or(z.literal(''))
 
 export const clientCreateSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
@@ -11,7 +25,7 @@ export const clientCreateSchema = z.object({
   website: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
   siret: z.string().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  icon: z.string().max(100, 'Icône trop longue').optional().or(z.literal('')),
+  icon: clientIconSchema,
   status: z.enum(['active', 'inactive', 'archived']).default('active'),
   description: z.string().optional().or(z.literal(''))
 })
@@ -27,7 +41,7 @@ export const clientUpdateSchema = z.object({
   website: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
   siret: z.string().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  icon: z.string().max(100, 'Icône trop longue').optional().or(z.literal('')),
+  icon: clientIconSchema,
   status: z.enum(['active', 'inactive', 'archived']).optional(),
   description: z.string().optional().or(z.literal(''))
 }).refine(
