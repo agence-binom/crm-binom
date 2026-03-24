@@ -141,6 +141,7 @@ const taskToEdit = computed(() => {
       <KanbanTable
         status="todo"
         :tasks="tasksByStatus.todo"
+        :users="availableUsers"
         @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"
@@ -148,6 +149,7 @@ const taskToEdit = computed(() => {
       <KanbanTable
         status="in_progress"
         :tasks="tasksByStatus.in_progress"
+        :users="availableUsers"
         @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"
@@ -155,6 +157,7 @@ const taskToEdit = computed(() => {
       <KanbanTable
         status="done"
         :tasks="tasksByStatus.done"
+        :users="availableUsers"
         @task-deleted="handleTaskDeleted"
         @task-to-updated="handleTaskToUpdate"
         @task-moved="handleTaskMoved"
