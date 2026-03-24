@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import type { Task } from '~/validation'
+import type { Task, User } from '~/validation'
+
+type ToDoListProjectOption = {
+  id: number
+  name: string
+}
 
 const props = withDefaults(defineProps<{
   tasks: Task[]
   title?: string
   projectId?: number
   showUserFilter?: boolean
+  availableProjects?: ToDoListProjectOption[]
+  availableUsers?: User[]
 }>(), {
   title: 'To Do List',
   showUserFilter: false
@@ -125,6 +132,8 @@ const taskToEdit = computed(() => {
       :task-id="selectedTaskId"
       :task="taskToEdit"
       :project-id="projectId"
+      :projects="availableProjects"
+      :users="availableUsers"
       @saved="handleTaskChange"
     />
 

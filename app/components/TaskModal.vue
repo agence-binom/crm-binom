@@ -4,11 +4,18 @@ import type { Task } from '~/validation/tasks'
 import type { User } from '~/validation/users'
 import type { Project } from '~/validation/projects'
 
+type TaskModalProjectOption = {
+  id: number
+  name: string
+}
+
 const props = defineProps<{
   open: boolean
   taskId?: number | null
   task?: Task | null
   projectId?: number | null
+  projects?: TaskModalProjectOption[]
+  users?: User[]
 }>()
 
 const emit = defineEmits<{
@@ -43,12 +50,14 @@ const selectedProject = computed({
   set: (val) => { formState.projectId = val?.value }
 })
 
-const { data: projectData } = await useFetch('/api/projects')
+const { data: projectData, refresh: refreshProjects } = await useFetch('/api/projects', {
+  immediate: false
+})
 const projectsOptions = computed(() =>
-  projectData.value?.projects?.map((project: Project) => ({
+  (props.projects ?? projectData.value?.projects ?? []).map((project: TaskModalProjectOption | Project) => ({
     label: project.name,
     value: project.id
-  })) ?? []
+  }))
 )
 
 const selectedUser = computed({
@@ -56,12 +65,14 @@ const selectedUser = computed({
   set: (val) => { formState.assignedTo = val?.value }
 })
 
-const { data: usersData } = await useFetch('/api/users')
+const { data: usersData, refresh: refreshUsers } = await useFetch('/api/users', {
+  immediate: false
+})
 const userOptions = computed(() =>
-  usersData.value?.users?.map((user: User) => ({
+  (props.users ?? usersData.value?.users ?? []).map((user: User) => ({
     label: user.name,
     value: user.id
-  })) ?? []
+  }))
 )
 
 const resetForm = () => {
@@ -88,8 +99,14 @@ const fillFromTask = (task: Task) => {
 
 watch(
   () => props.open,
-  (open) => {
+  async (open) => {
     if (!open) return
+
+    await Promise.all([
+      props.projects === undefined && !projectData.value ? refreshProjects() : Promise.resolve(),
+      props.users === undefined && !usersData.value ? refreshUsers() : Promise.resolve()
+    ])
+
     if (isEditing.value && props.task) fillFromTask(props.task)
     else resetForm()
   },

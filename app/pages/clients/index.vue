@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { data, refresh } = await useFetch('/api/clients')
+const { data, refresh } = await useFetch('/api/clients/dashboard')
 const clients = computed(() => data.value?.clients || [])
 
 const isClientModalOpen = ref(false)

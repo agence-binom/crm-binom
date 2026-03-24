@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import type { Project } from '~/validation/projects'
 
+type ProjectHeaderClient = {
+  email?: string | null
+  phone?: string | null
+  website?: string | null
+}
+
 const props = defineProps<{
   project: Project
+  client?: ProjectHeaderClient | null
 }>()
 
 const emit = defineEmits<{
@@ -10,11 +17,10 @@ const emit = defineEmits<{
   delete: [projectId: number]
 }>()
 
-const { data: clientData } = await useFetch(`/api/clients/${props.project.clientId}`)
 const clientInfos = computed(() => [
-  { value: clientData?.value?.client?.email, icon: 'i-lucide-mail' },
-  { value: clientData?.value?.client?.phone, icon: 'i-lucide-phone' },
-  { value: clientData?.value?.client?.website, icon: 'i-lucide-globe' }
+  { value: props.client?.email, icon: 'i-lucide-mail' },
+  { value: props.client?.phone, icon: 'i-lucide-phone' },
+  { value: props.client?.website, icon: 'i-lucide-globe' }
 ])
 </script>
 

@@ -1,24 +1,21 @@
 <script setup lang="ts">
 import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
 import type { ProjectDocument } from '~/types'
+import type { User } from '~/validation/users'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
 const projectId = computed(() => Number(route.params.projectId))
 
-const { data, refresh } = await useFetch(`/api/projects/${projectId.value}`)
-const project = computed(() => data.value)
+const { data, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
+const project = computed(() => data.value?.project)
+const projectTasks = computed(() => data.value?.tasks || [])
+const quoteDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.quote || [])
+const invoiceDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.invoice || [])
+const availableUsers = computed<User[]>(() => data.value?.users || [])
+const projectOptions = computed(() => data.value?.projectOptions || [])
 
-const { data: tasksData, refresh: refreshTasks } = await useFetch(`/api/projects/${projectId.value}/tasks`)
-const projectTasks = computed(() => tasksData.value?.tasks || [])
-
-const { data: quoteDocumentsData, refresh: refreshQuoteDocuments } = await useFetch(`/api/documents/project/${projectId.value}?documentType=quote`)
-const quoteDocuments = computed<ProjectDocument[]>(() => quoteDocumentsData.value?.documents || [])
-
-const { data: invoiceDocumentsData, refresh: refreshInvoiceDocuments } = await useFetch(`/api/documents/project/${projectId.value}?documentType=invoice`)
-const invoiceDocuments = computed<ProjectDocument[]>(() => invoiceDocumentsData.value?.documents || [])
-
-const { selectedUser, userOptions, filteredTasks } = useUserFilter(projectTasks)
+const { selectedUser, userOptions, filteredTasks } = useUserFilter(projectTasks, availableUsers)
 
 const isProjectModalOpen = ref(false)
 const isUploadModalOpen = ref(false)
@@ -39,10 +36,7 @@ const handleProjectChange = async () => {
 }
 
 const handleDocumentsChange = async () => {
-  await Promise.all([
-    refreshQuoteDocuments(),
-    refreshInvoiceDocuments()
-  ])
+  await refresh()
 }
 </script>
 
@@ -65,6 +59,7 @@ const handleDocumentsChange = async () => {
 
     <ProjectHeader
       :project="project"
+      :client="project.client"
       @open-info="isProjectModalOpen = true"
       @delete="onDeleteProject"
     />
@@ -91,7 +86,9 @@ const handleDocumentsChange = async () => {
         :tasks="filteredTasks"
         title="Tâches du projet"
         :project-id="projectId"
-        @refresh="refreshTasks"
+        :available-projects="projectOptions"
+        :available-users="availableUsers"
+        @refresh="refresh"
       >
         <template #filters>
           <USelectMenu
