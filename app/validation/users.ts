@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const userCreateSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
-  email: z.string().email('Email invalide').max(255, 'Email trop long'),
+  email: z.email('Email invalide').max(255, 'Email trop long'),
   role: z.enum(['admin', 'employee', 'client'], {
     message: 'Le rôle doit être "admin", "employee" ou "client"'
   }).default('client')

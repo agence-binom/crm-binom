@@ -9,7 +9,7 @@ export const projectCreateSchema = z.object({
   }).default('en_cours'),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
-  url: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
+  url: z.url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   links: z.array(z.string().url('URL invalide')).optional()
 })
@@ -23,9 +23,9 @@ export const projectUpdateSchema = z.object({
   }).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
-  url: z.string().url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
+  url: z.url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  links: z.array(z.string().url('URL invalide')).optional()
+  links: z.array(z.url('URL invalide')).optional()
 }).refine(
   data => Object.keys(data).length > 0,
   { message: 'Au moins un champ doit être fourni' }

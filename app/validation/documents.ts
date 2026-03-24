@@ -10,11 +10,8 @@ export const documentAcceptedMimeTypes = [
 export const documentMaxSizeBytes = 10 * 1024 * 1024
 export const documentFileInputAccept = documentAcceptedMimeTypes.join(',')
 
-const documentExternalUrlSchema = z.string()
-  .trim()
+const documentExternalUrlSchema = z.url('Le lien Facture.net doit être une URL valide')
   .max(2048, 'Le lien Facture.net est trop long')
-  .url('Le lien Facture.net doit être une URL valide')
-  .or(z.literal(''))
   .optional()
 
 export const isFactureNetUrl = (value: string) => {
@@ -38,7 +35,7 @@ const refineBillingDocumentSource = (
 
   if (!externalUrl) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['externalUrl'],
       message: 'Le lien Facture.net est requis pour un devis ou une facture'
     })
@@ -47,7 +44,7 @@ const refineBillingDocumentSource = (
 
   if (!isFactureNetUrl(externalUrl)) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: 'custom',
       path: ['externalUrl'],
       message: 'Le lien doit pointer vers une page Facture.net'
     })
