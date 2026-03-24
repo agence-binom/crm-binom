@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getProjectDisplayStatus, toProjectInputDate } from '~/lib/projects'
 import { projectCreateSchema, projectUpdateSchema } from '~/validation/projects'
-import type { Project } from '~/validation/projects'
+import type { Project } from '~/types'
 
 const props = defineProps<{
   open: boolean

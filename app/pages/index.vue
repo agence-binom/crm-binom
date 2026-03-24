@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from '~/validation/users'
+import type { User } from '~/types'
 
 const { data, refresh, status } = await useFetch('/api/tasks/dashboard')
 const allTasks = computed(() => data.value?.tasks || [])

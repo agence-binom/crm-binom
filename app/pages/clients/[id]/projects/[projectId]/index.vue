@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
-import type { ProjectDocument } from '~/types'
-import type { User } from '~/validation/users'
+import type { ProjectDocument, User } from '~/types'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))

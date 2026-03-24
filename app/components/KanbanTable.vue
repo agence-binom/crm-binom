@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDragAndDrop } from '@formkit/drag-and-drop/vue'
-import type { Task, User } from '~/validation'
+import type { Task, User } from '~/types'
 
 const props = withDefaults(defineProps<{
   status: 'todo' | 'in_progress' | 'done'
