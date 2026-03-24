@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { sortTasksByDueDate } from '~/lib/tasks'
-import type { Task, User } from '~/validation'
+import type { Task, User } from '~/types'
 
 type ToDoListProjectOption = {
   id: number

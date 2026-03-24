@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { formatDateOnly } from '~/lib/utils'
-import type { Task } from '~/validation/tasks'
+import type { Task } from '~/types'
 
 const props = defineProps<{
   task: Task

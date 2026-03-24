@@ -56,21 +56,3 @@ export const clientIdSchema = z.object({
 export type ClientCreate = z.infer<typeof clientCreateSchema>
 export type ClientUpdate = z.infer<typeof clientUpdateSchema>
 export type ClientId = z.infer<typeof clientIdSchema>
-
-// Type léger pour usage client
-export type Client = {
-  id: number
-  name: string
-  email?: string | null
-  phone?: string | null
-  address?: string | null
-  city?: string | null
-  postalCode?: string | null
-  country?: string | null
-  website?: string | null
-  siret?: string | null
-  notes?: string | null
-  icon?: string | null
-  status?: string | null
-  description?: string | null
-}

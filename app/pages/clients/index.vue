@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { getClientIcon } from '~/lib/clients'
+
 const { data, refresh } = await useFetch('/api/clients/dashboard')
 const clients = computed(() => data.value?.clients || [])
 
@@ -75,7 +77,7 @@ const handleClientChange = async () => {
         >
           <template #leading>
             <UIcon
-              :name="client.icon || 'i-lucide-briefcase'"
+              :name="getClientIcon(client.icon)"
               class="text-lg text-primary"
             />
           </template>

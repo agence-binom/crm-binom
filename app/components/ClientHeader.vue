@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Client } from '~/validation/clients'
+import type { Client } from '~/types'
 
 const props = defineProps<{
   client: Client

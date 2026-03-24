@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
+import type { BillingDashboardStatus } from '~/constants/billing'
 import type { BillingCoverageStatus, BillingProjectStatus } from '~/lib/billing'
 import { getProjectDisplayStatus } from '~/lib/projects'
-import type { billingDashboardStatuses } from '~/validation/billing'
-
-type BillingStatusFilter = typeof billingDashboardStatuses[number]
 
 const PAGE_SIZE = 12
 const emptyStats = {
@@ -24,7 +22,7 @@ const emptyPagination = {
 
 const searchInput = ref('')
 const searchQuery = ref('')
-const statusFilter = ref<BillingStatusFilter>('all')
+const statusFilter = ref<BillingDashboardStatus>('all')
 const page = ref(1)
 
 let searchDebounce: ReturnType<typeof setTimeout> | undefined

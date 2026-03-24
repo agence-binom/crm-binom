@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { taskCreateSchema, taskUpdateSchema } from '~/validation/tasks'
-import type { Task } from '~/validation/tasks'
-import type { User } from '~/validation/users'
-import type { Project } from '~/validation/projects'
+import type { Project, Task, User } from '~/types'
 
 type TaskModalProjectOption = {
   id: number
