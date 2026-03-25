@@ -1,4 +1,4 @@
-import type { TaskPriority, TaskStatus, TaskWorkflowTag } from '~/constants/tasks'
+import type { TaskPriority, TaskStatus } from '~/constants/tasks'
 
 export type Task = {
   id: number
@@ -7,7 +7,6 @@ export type Task = {
   title: string
   notes: string | null
   status: TaskStatus
-  workflowTag: TaskWorkflowTag | null
   priority: TaskPriority
   dueDate: string | null
   startedAt: string | null

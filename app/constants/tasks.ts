@@ -2,7 +2,8 @@ export const taskStatuses = [
   'todo',
   'in_progress',
   'waiting',
-  'validation',
+  'validationBinom',
+  'validationClient',
   'done'
 ] as const
 
@@ -15,24 +16,3 @@ export const taskPriorities = [
 ] as const
 
 export type TaskPriority = typeof taskPriorities[number]
-
-export const taskWaitingWorkflowTags = [
-  'information',
-  'budget',
-  'dependency'
-] as const
-
-export const taskValidationWorkflowTags = [
-  'binom',
-  'client'
-] as const
-
-export const taskWorkflowTags = [
-  'information',
-  'budget',
-  'dependency',
-  'binom',
-  'client'
-] as const
-
-export type TaskWorkflowTag = typeof taskWorkflowTags[number]

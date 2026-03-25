@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import type { TaskPriority, TaskStatus, TaskWorkflowTag } from '~/constants/tasks'
+import type { TaskPriority, TaskStatus } from '~/constants/tasks'
 import { taskPriorities, taskStatuses } from '~/constants/tasks'
 import {
-  getAllowedTaskWorkflowTags,
   getTaskPriorityClass,
   getTaskPriorityIcon,
   getTaskPriorityLabel,
-  getDefaultTaskWorkflowTag,
-  getTaskStatusLabel,
-  getTaskWorkflowTagLabel,
-  isTaskWorkflowTagRequired,
-  normalizeTaskWorkflowTag
+  getTaskStatusLabel
 } from '~/lib/tasks'
 import { taskCreateSchema, taskUpdateSchema } from '~/validation/tasks'
 import type { Project, Task, User } from '~/types'
@@ -18,6 +13,7 @@ import type { Project, Task, User } from '~/types'
 type TaskModalProjectOption = {
   id: number
   name: string
+  clientName?: string | null
 }
 
 const props = defineProps<{
@@ -48,7 +44,7 @@ const modalTitle = computed(() => (isEditing.value ? 'Modifier la tâche' : 'Nou
 const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer la tâche'))
 const modalDescription = computed(() => {
   return isEditing.value
-    ? 'Ajuste simplement le contenu, l\'attribution et le workflow.'
+    ? 'Ajuste simplement le contenu, l\'attribution et l\'avancement.'
     : 'La tâche sera créée directement dans À faire.'
 })
 const taskStatusOptions = taskStatuses.map(status => ({
@@ -66,19 +62,9 @@ const formState = reactive({
   dueDate: '',
   priority: 'low' as TaskPriority,
   status: 'todo' as TaskStatus,
-  workflowTag: undefined as TaskWorkflowTag | undefined,
   projectId: props.projectId ?? undefined as number | undefined,
   assignedTo: undefined as number | undefined
 })
-
-const workflowTagOptions = computed(() =>
-  getAllowedTaskWorkflowTags(formState.status).map(tag => ({
-    label: getTaskWorkflowTagLabel(tag),
-    value: tag
-  }))
-)
-
-const showWorkflowTagField = computed(() => isTaskWorkflowTagRequired(formState.status))
 
 const selectedProject = computed({
   get: () => projectsOptions.value.find(p => p.value === formState.projectId),
@@ -90,7 +76,9 @@ const { data: projectData, refresh: refreshProjects } = await useFetch('/api/pro
 })
 const projectsOptions = computed(() =>
   (props.projects ?? projectData.value?.projects ?? []).map((project: TaskModalProjectOption | Project) => ({
-    label: project.name,
+    label: 'clientName' in project && project.clientName
+      ? `${project.name} · ${project.clientName}`
+      : project.name,
     value: project.id
   }))
 )
@@ -120,7 +108,6 @@ const resetForm = () => {
     dueDate: '',
     priority: 'low',
     status: 'todo',
-    workflowTag: undefined,
     projectId: props.projectId ?? undefined,
     assignedTo: undefined
   })
@@ -132,21 +119,11 @@ const fillFromTask = (task: Task) => {
     notes: task.notes ?? '',
     status: task.status ?? 'todo',
     priority: task.priority ?? 'low',
-    workflowTag: task.workflowTag ?? undefined,
     projectId: task.projectId ?? undefined,
     assignedTo: task.assignedTo ?? undefined,
     dueDate: task.dueDate ? task.dueDate.slice(0, 10) : ''
   })
 }
-
-watch(() => formState.status, (status) => {
-  if (!isTaskWorkflowTagRequired(status)) {
-    formState.workflowTag = undefined
-    return
-  }
-
-  formState.workflowTag = normalizeTaskWorkflowTag(status, formState.workflowTag) ?? getDefaultTaskWorkflowTag(status) ?? undefined
-})
 
 watch(
   () => props.open,
@@ -190,8 +167,7 @@ const onSubmit = async () => {
         method: 'PUT',
         body: {
           ...body,
-          status: formState.status,
-          workflowTag: formState.workflowTag
+          status: formState.status
         }
       })
     } else {
@@ -255,14 +231,6 @@ const onSubmit = async () => {
                 class="rounded-full bg-slate-50 px-3 py-1 text-slate-700 ring-1 ring-inset ring-slate-200"
               >
                 {{ getTaskStatusLabel(formState.status) }}
-              </UBadge>
-              <UBadge
-                v-if="formState.workflowTag"
-                variant="soft"
-                color="neutral"
-                class="rounded-full bg-slate-50 px-3 py-1 text-slate-700 ring-1 ring-inset ring-slate-200"
-              >
-                {{ getTaskWorkflowTagLabel(formState.workflowTag) }}
               </UBadge>
             </div>
           </div>
@@ -362,7 +330,7 @@ const onSubmit = async () => {
 
           <div
             v-if="isEditing"
-            class="grid gap-4 sm:grid-cols-2"
+            class="grid gap-4 sm:grid-cols-1"
           >
             <UFormField
               label="Statut"
@@ -371,20 +339,6 @@ const onSubmit = async () => {
               <USelect
                 v-model="formState.status"
                 :items="taskStatusOptions"
-                value-attribute="value"
-                option-attribute="label"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField
-              v-if="showWorkflowTagField"
-              label="Tag de workflow"
-              name="workflowTag"
-            >
-              <USelect
-                v-model="formState.workflowTag"
-                :items="workflowTagOptions"
                 value-attribute="value"
                 option-attribute="label"
                 class="w-full"

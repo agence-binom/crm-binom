@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
-  getDefaultTaskWorkflowTag,
-  normalizeTaskWorkflowTag,
   resolveTaskLifecycleDates,
   sortTasksByDueDate
 } from '../app/lib/tasks'
@@ -29,25 +27,6 @@ test('sortTasksByDueDate place les taches sans echeance en dernier', () => {
   const result = sortTasksByDueDate(tasks)
 
   assert.deepEqual(result.map(task => task.id), [2, 1, 3])
-})
-
-test('normalizeTaskWorkflowTag conserve un tag valide pour le statut', () => {
-  assert.equal(normalizeTaskWorkflowTag('waiting', 'budget'), 'budget')
-  assert.equal(normalizeTaskWorkflowTag('validation', 'client'), 'client')
-})
-
-test('normalizeTaskWorkflowTag remplace un tag invalide par le tag par defaut', () => {
-  assert.equal(normalizeTaskWorkflowTag('waiting', 'client'), 'information')
-  assert.equal(normalizeTaskWorkflowTag('validation', 'budget'), 'binom')
-})
-
-test('normalizeTaskWorkflowTag supprime le tag pour les statuts sans tag', () => {
-  assert.equal(normalizeTaskWorkflowTag('todo', 'budget'), null)
-  assert.equal(normalizeTaskWorkflowTag('done', 'client'), null)
-})
-
-test('getDefaultTaskWorkflowTag retourne null pour un statut sans tag', () => {
-  assert.equal(getDefaultTaskWorkflowTag('in_progress'), null)
 })
 
 test('resolveTaskLifecycleDates ajoute startedAt au premier deplacement hors todo', () => {
@@ -86,7 +65,7 @@ test('resolveTaskLifecycleDates retire completedAt quand une tache quitte done',
 
   const result = resolveTaskLifecycleDates({
     currentStatus: 'done',
-    nextStatus: 'validation',
+    nextStatus: 'validationBinom',
     startedAt,
     completedAt,
     now: new Date('2026-03-26T09:00:00.000Z')

@@ -8,7 +8,6 @@ export default defineEventHandler(async (event) => {
   const [task] = await db.insert(tasksTable).values({
     ...body,
     status: 'todo',
-    workflowTag: null,
     startedAt: null,
     completedAt: null
   }).returning()

@@ -67,13 +67,21 @@ const statuSettings: Record<TaskStatus, {
     badgeClass: 'bg-orange-100 text-orange-700 ring-1 ring-inset ring-orange-200',
     emptyIconClass: 'text-orange-300'
   },
-  validation: {
-    label: 'À valider',
+  validationBinom: {
+    label: 'À valider par binōm',
     bgClass: 'bg-violet-50/90 ring-1 ring-violet-200/80',
     badgeColor: 'primary',
     badgeIcon: 'i-lucide-badge-check',
     badgeClass: 'bg-violet-100 text-violet-700 ring-1 ring-inset ring-violet-200',
     emptyIconClass: 'text-violet-300'
+  },
+  validationClient: {
+    label: 'À valider par le client',
+    bgClass: 'bg-cyan-50/90 ring-1 ring-cyan-200/80',
+    badgeColor: 'primary',
+    badgeIcon: 'i-lucide-badge-check',
+    badgeClass: 'bg-cyan-100 text-cyan-700 ring-1 ring-inset ring-cyan-200',
+    emptyIconClass: 'text-cyan-300'
   },
   done: {
     label: 'Terminées',

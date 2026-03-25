@@ -2,10 +2,7 @@ import { eq } from 'drizzle-orm'
 import type { TaskStatus } from '~/constants/tasks'
 import { db } from '~/db'
 import { tasksTable } from '~/db/schema/tasks'
-import {
-  normalizeTaskWorkflowTag,
-  resolveTaskLifecycleDates
-} from '~/lib/tasks'
+import { resolveTaskLifecycleDates } from '~/lib/tasks'
 import { taskIdSchema, taskUpdateSchema } from '~/validation/tasks'
 
 export default defineEventHandler(async (event) => {
@@ -41,7 +38,6 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date(),
       ...(body.status
         ? {
-            workflowTag: normalizeTaskWorkflowTag(body.status, body.workflowTag || undefined),
             startedAt: lifecycleDates.startedAt,
             completedAt: lifecycleDates.completedAt
           }

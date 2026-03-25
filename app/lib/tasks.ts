@@ -1,8 +1,4 @@
-import type { TaskPriority, TaskStatus, TaskWorkflowTag } from '../constants/tasks'
-import {
-  taskValidationWorkflowTags,
-  taskWaitingWorkflowTags
-} from '../constants/tasks'
+import type { TaskPriority, TaskStatus } from '../constants/tasks'
 
 export type TaskWithDueDate = {
   dueDate: string | null
@@ -33,71 +29,20 @@ export function sortTasksByDueDate<T extends TaskWithDueDate>(tasks: T[]) {
   return [...tasks].sort(compareTasksByDueDate)
 }
 
-export function isTaskWorkflowTagRequired(status: TaskStatus) {
-  return status === 'waiting' || status === 'validation'
-}
-
-export function getAllowedTaskWorkflowTags(status: TaskStatus): readonly TaskWorkflowTag[] {
-  if (status === 'waiting') {
-    return taskWaitingWorkflowTags
-  }
-
-  if (status === 'validation') {
-    return taskValidationWorkflowTags
-  }
-
-  return []
-}
-
-export function getDefaultTaskWorkflowTag(status: TaskStatus): TaskWorkflowTag | null {
-  const [firstTag] = getAllowedTaskWorkflowTags(status)
-  return firstTag ?? null
-}
-
-export function normalizeTaskWorkflowTag(
-  status: TaskStatus,
-  workflowTag?: TaskWorkflowTag | null
-): TaskWorkflowTag | null {
-  const allowedTags = getAllowedTaskWorkflowTags(status)
-
-  if (allowedTags.length === 0) {
-    return null
-  }
-
-  if (workflowTag && allowedTags.includes(workflowTag)) {
-    return workflowTag
-  }
-
-  return getDefaultTaskWorkflowTag(status)
-}
-
 export function getTaskStatusLabel(status: TaskStatus) {
   switch (status) {
     case 'in_progress':
       return 'En cours'
     case 'waiting':
       return 'En attente'
-    case 'validation':
-      return 'À valider'
+    case 'validationBinom':
+      return 'À valider par binōm'
+    case 'validationClient':
+      return 'À valider par le client'
     case 'done':
       return 'Terminée'
     default:
       return 'À faire'
-  }
-}
-
-export function getTaskWorkflowTagLabel(tag: TaskWorkflowTag) {
-  switch (tag) {
-    case 'information':
-      return 'Infos'
-    case 'budget':
-      return 'Budget'
-    case 'dependency':
-      return 'Dépendance'
-    case 'binom':
-      return 'binōm'
-    default:
-      return 'Client'
   }
 }
 
