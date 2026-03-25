@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { sortTasksByDueDate } from '~/lib/tasks'
+import type { TaskStatus, TaskWorkflowTag } from '~/constants/tasks'
+import {
+  getDefaultTaskWorkflowTag,
+  isTaskWorkflowTagRequired,
+  normalizeTaskWorkflowTag,
+  sortTasksByDueDate
+} from '~/lib/tasks'
 import type { Task, User } from '~/types'
 
 type ToDoListProjectOption = {
   id: number
   name: string
+  clientName?: string | null
 }
 
 const props = withDefaults(defineProps<{
@@ -23,25 +30,32 @@ const emit = defineEmits<{
   refresh: []
 }>()
 const { showError } = useFeedbackToast()
+const activeTaskStatuses: TaskStatus[] = ['todo', 'in_progress', 'waiting', 'validation']
+const completedTaskStatus: TaskStatus = 'done'
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<number | null>(null)
 const deletedTaskIds = ref(new Set<number>())
-const taskStatusOverrides = ref(new Map<number, Task['status']>())
+const showCompletedTasks = ref(false)
+const taskWorkflowOverrides = ref(new Map<number, {
+  status: Task['status']
+  workflowTag: TaskWorkflowTag | null
+}>())
 
 const visibleTasks = computed(() => {
   const tasks = props.tasks
     .filter(task => !deletedTaskIds.value.has(task.id))
     .map((task) => {
-      const statusOverride = taskStatusOverrides.value.get(task.id)
+      const workflowOverride = taskWorkflowOverrides.value.get(task.id)
 
-      if (!statusOverride) {
+      if (!workflowOverride) {
         return task
       }
 
       return {
         ...task,
-        status: statusOverride
+        status: workflowOverride.status,
+        workflowTag: workflowOverride.workflowTag
       }
     })
 
@@ -52,8 +66,19 @@ const tasksByStatus = computed(() => {
   return {
     todo: visibleTasks.value.filter(t => t.status === 'todo'),
     in_progress: visibleTasks.value.filter(t => t.status === 'in_progress'),
+    waiting: visibleTasks.value.filter(t => t.status === 'waiting'),
+    validation: visibleTasks.value.filter(t => t.status === 'validation'),
     done: visibleTasks.value.filter(t => t.status === 'done')
   }
+})
+
+const displayedStatuses = computed(() => {
+  return showCompletedTasks.value
+    ? [
+        ...activeTaskStatuses,
+        completedTaskStatus
+      ]
+    : activeTaskStatuses
 })
 
 const openCreateTask = () => {
@@ -66,27 +91,41 @@ const handleTaskToUpdate = (taskId: number) => {
   isTaskModalOpen.value = true
 }
 
-const handleTaskMoved = async (taskId: number, newStatus: string) => {
+const handleTaskMoved = async (taskId: number, newStatus: TaskStatus) => {
   const task = visibleTasks.value.find(currentTask => currentTask.id === taskId)
-  const previousStatus = task?.status
+  const previousWorkflow = task
+    ? {
+        status: task.status,
+        workflowTag: task.workflowTag
+      }
+    : null
+  const nextWorkflowTag = isTaskWorkflowTagRequired(newStatus)
+    ? (
+        normalizeTaskWorkflowTag(newStatus, task?.workflowTag)
+        ?? getDefaultTaskWorkflowTag(newStatus)
+      )
+    : null
 
-  taskStatusOverrides.value = new Map(taskStatusOverrides.value).set(taskId, newStatus as Task['status'])
+  taskWorkflowOverrides.value = new Map(taskWorkflowOverrides.value).set(taskId, {
+    status: newStatus,
+    workflowTag: nextWorkflowTag
+  })
 
   try {
     await $fetch(`/api/tasks/${taskId}`, {
       method: 'PUT',
-      body: { status: newStatus }
+      body: { status: newStatus, workflowTag: nextWorkflowTag ?? undefined }
     })
   } catch (error) {
-    const nextOverrides = new Map(taskStatusOverrides.value)
+    const nextOverrides = new Map(taskWorkflowOverrides.value)
 
-    if (previousStatus) {
-      nextOverrides.set(taskId, previousStatus)
+    if (previousWorkflow) {
+      nextOverrides.set(taskId, previousWorkflow)
     } else {
       nextOverrides.delete(taskId)
     }
 
-    taskStatusOverrides.value = nextOverrides
+    taskWorkflowOverrides.value = nextOverrides
     console.error('Erreur lors du déplacement de la tâche:', error)
     showError('Déplacement impossible', error, 'Impossible de déplacer la tâche.')
   }
@@ -116,8 +155,17 @@ const taskToEdit = computed(() => {
         {{ title }}
       </h2>
 
-      <div class="flex items-center gap-4">
+      <div class="flex flex-wrap items-center gap-3">
         <slot name="filters" />
+
+        <UButton
+          :icon="showCompletedTasks ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+          variant="outline"
+          color="neutral"
+          @click="showCompletedTasks = !showCompletedTasks"
+        >
+          {{ showCompletedTasks ? 'Masquer terminées' : 'Afficher terminées' }}
+        </UButton>
 
         <UButton
           icon="i-lucide-circle-plus"
@@ -140,31 +188,20 @@ const taskToEdit = computed(() => {
       @saved="handleTaskChange"
     />
 
-    <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] min-h-150 overflow-hidden">
-      <KanbanTable
-        status="todo"
-        :tasks="tasksByStatus.todo"
-        :users="availableUsers"
-        @task-deleted="handleTaskDeleted"
-        @task-to-updated="handleTaskToUpdate"
-        @task-moved="handleTaskMoved"
-      />
-      <KanbanTable
-        status="in_progress"
-        :tasks="tasksByStatus.in_progress"
-        :users="availableUsers"
-        @task-deleted="handleTaskDeleted"
-        @task-to-updated="handleTaskToUpdate"
-        @task-moved="handleTaskMoved"
-      />
-      <KanbanTable
-        status="done"
-        :tasks="tasksByStatus.done"
-        :users="availableUsers"
-        @task-deleted="handleTaskDeleted"
-        @task-to-updated="handleTaskToUpdate"
-        @task-moved="handleTaskMoved"
-      />
+    <div class="overflow-x-auto p-1 pb-3 scrollbar-custom">
+      <div class="flex min-w-max gap-6 h-[calc(100vh-10rem)] min-h-150">
+        <KanbanTable
+          v-for="status in displayedStatuses"
+          :key="status"
+          :status="status"
+          :tasks="tasksByStatus[status]"
+          :users="availableUsers"
+          :projects="availableProjects"
+          @task-deleted="handleTaskDeleted"
+          @task-to-updated="handleTaskToUpdate"
+          @task-moved="handleTaskMoved"
+        />
+      </div>
     </div>
   </div>
 </template>

@@ -1,5 +1,6 @@
-import { asc } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { db } from '~/db'
+import { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
 import { tasksTable } from '~/db/schema/tasks'
 import { usersTable } from '~/db/schema/users'
@@ -22,9 +23,11 @@ export default defineEventHandler(async () => {
     db
       .select({
         id: projectsTable.id,
-        name: projectsTable.name
+        name: projectsTable.name,
+        clientName: clientsTable.name
       })
       .from(projectsTable)
+      .innerJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
       .orderBy(asc(projectsTable.name), asc(projectsTable.id))
   ])
 

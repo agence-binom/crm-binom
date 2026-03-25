@@ -1,4 +1,17 @@
 <script setup lang="ts">
+import type { TaskPriority, TaskStatus, TaskWorkflowTag } from '~/constants/tasks'
+import { taskPriorities, taskStatuses } from '~/constants/tasks'
+import {
+  getAllowedTaskWorkflowTags,
+  getTaskPriorityClass,
+  getTaskPriorityIcon,
+  getTaskPriorityLabel,
+  getDefaultTaskWorkflowTag,
+  getTaskStatusLabel,
+  getTaskWorkflowTagLabel,
+  isTaskWorkflowTagRequired,
+  normalizeTaskWorkflowTag
+} from '~/lib/tasks'
 import { taskCreateSchema, taskUpdateSchema } from '~/validation/tasks'
 import type { Project, Task, User } from '~/types'
 
@@ -33,15 +46,39 @@ const isEditing = computed(() => props.taskId != null)
 const schema = computed(() => (isEditing.value ? taskUpdateSchema : taskCreateSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier la tâche' : 'Nouvelle tâche'))
 const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer la tâche'))
+const modalDescription = computed(() => {
+  return isEditing.value
+    ? 'Ajuste simplement le contenu, l\'attribution et le workflow.'
+    : 'La tâche sera créée directement dans À faire.'
+})
+const taskStatusOptions = taskStatuses.map(status => ({
+  label: getTaskStatusLabel(status),
+  value: status
+}))
+const taskPriorityOptions = taskPriorities.map(priority => ({
+  label: getTaskPriorityLabel(priority),
+  value: priority
+}))
 
 const formState = reactive({
   title: '',
   notes: '',
   dueDate: '',
-  status: 'todo' as 'todo' | 'in_progress' | 'done',
+  priority: 'low' as TaskPriority,
+  status: 'todo' as TaskStatus,
+  workflowTag: undefined as TaskWorkflowTag | undefined,
   projectId: props.projectId ?? undefined as number | undefined,
   assignedTo: undefined as number | undefined
 })
+
+const workflowTagOptions = computed(() =>
+  getAllowedTaskWorkflowTags(formState.status).map(tag => ({
+    label: getTaskWorkflowTagLabel(tag),
+    value: tag
+  }))
+)
+
+const showWorkflowTagField = computed(() => isTaskWorkflowTagRequired(formState.status))
 
 const selectedProject = computed({
   get: () => projectsOptions.value.find(p => p.value === formState.projectId),
@@ -58,11 +95,6 @@ const projectsOptions = computed(() =>
   }))
 )
 
-const selectedUser = computed({
-  get: () => userOptions.value.find(u => u.value === formState.assignedTo),
-  set: (val) => { formState.assignedTo = val?.value }
-})
-
 const { data: usersData, refresh: refreshUsers } = await useFetch('/api/users', {
   immediate: false
 })
@@ -72,13 +104,23 @@ const userOptions = computed(() =>
     value: user.id
   }))
 )
+const assigneeOptions = computed(() => [
+  { label: 'Non assigné', value: undefined as number | undefined, icon: 'i-lucide-user-round-x' },
+  ...userOptions.value.map(user => ({
+    label: user.label,
+    value: user.value,
+    icon: 'i-lucide-user-round'
+  }))
+])
 
 const resetForm = () => {
   Object.assign(formState, {
     title: '',
     notes: '',
     dueDate: '',
+    priority: 'low',
     status: 'todo',
+    workflowTag: undefined,
     projectId: props.projectId ?? undefined,
     assignedTo: undefined
   })
@@ -89,11 +131,22 @@ const fillFromTask = (task: Task) => {
     title: task.title ?? '',
     notes: task.notes ?? '',
     status: task.status ?? 'todo',
+    priority: task.priority ?? 'low',
+    workflowTag: task.workflowTag ?? undefined,
     projectId: task.projectId ?? undefined,
     assignedTo: task.assignedTo ?? undefined,
     dueDate: task.dueDate ? task.dueDate.slice(0, 10) : ''
   })
 }
+
+watch(() => formState.status, (status) => {
+  if (!isTaskWorkflowTagRequired(status)) {
+    formState.workflowTag = undefined
+    return
+  }
+
+  formState.workflowTag = normalizeTaskWorkflowTag(status, formState.workflowTag) ?? getDefaultTaskWorkflowTag(status) ?? undefined
+})
 
 watch(
   () => props.open,
@@ -125,7 +178,7 @@ const onSubmit = async () => {
     const body = {
       title: formState.title,
       notes: formState.notes,
-      status: formState.status,
+      priority: formState.priority,
       projectId: formState.projectId,
       assignedTo: formState.assignedTo,
       dueDate: formState.dueDate ? formState.dueDate : undefined
@@ -133,7 +186,14 @@ const onSubmit = async () => {
 
     if (isEditing.value) {
       if (!props.taskId) throw new Error('taskId manquant pour la mise à jour')
-      await $fetch(`/api/tasks/${props.taskId}`, { method: 'PUT', body })
+      await $fetch(`/api/tasks/${props.taskId}`, {
+        method: 'PUT',
+        body: {
+          ...body,
+          status: formState.status,
+          workflowTag: formState.workflowTag
+        }
+      })
     } else {
       await $fetch('/api/tasks', { method: 'POST', body })
     }
@@ -171,80 +231,202 @@ const onSubmit = async () => {
       <UForm
         :schema="schema"
         :state="formState"
-        class="space-y-4"
+        class="space-y-5"
         @submit="onSubmit"
       >
-        <UFormField
-          label="Titre de la tâche"
-          name="title"
-        >
-          <UInput
-            v-model="formState.title"
-            class="w-full"
-          />
-        </UFormField>
+        <div class="space-y-6 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
+          <div class="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
+            <div class="space-y-1">
+              <h3 class="text-lg font-semibold tracking-tight text-slate-900">
+                {{ modalTitle }}
+              </h3>
+              <p class="text-sm text-slate-500">
+                {{ modalDescription }}
+              </p>
+            </div>
 
-        <UFormField
-          label="Projet"
-          name="projectId"
-        >
-          <USelectMenu
-            v-model="selectedProject"
-            :items="projectsOptions"
-            placeholder="Sélectionner un projet"
-            class="w-full"
-          />
-        </UFormField>
+            <div
+              v-if="isEditing"
+              class="flex flex-wrap gap-2"
+            >
+              <UBadge
+                variant="soft"
+                color="neutral"
+                class="rounded-full bg-slate-50 px-3 py-1 text-slate-700 ring-1 ring-inset ring-slate-200"
+              >
+                {{ getTaskStatusLabel(formState.status) }}
+              </UBadge>
+              <UBadge
+                v-if="formState.workflowTag"
+                variant="soft"
+                color="neutral"
+                class="rounded-full bg-slate-50 px-3 py-1 text-slate-700 ring-1 ring-inset ring-slate-200"
+              >
+                {{ getTaskWorkflowTagLabel(formState.workflowTag) }}
+              </UBadge>
+            </div>
+          </div>
 
-        <UFormField
-          label="Assigner à"
-          name="assignedTo"
-        >
-          <USelectMenu
-            v-model="selectedUser"
-            :items="userOptions"
-            placeholder="Sélectionner un utilisateur"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField
-          label="Date d'échéance"
-          name="dueDate"
-        >
-          <UInput
-            v-model="formState.dueDate"
-            type="date"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField
-          label="Notes"
-          name="notes"
-        >
-          <UTextarea
-            v-model="formState.notes"
-            :rows="3"
-            class="w-full"
-          />
-        </UFormField>
-
-        <div class="flex justify-end gap-2">
-          <UButton
-            variant="soft"
-            color="neutral"
-            :disabled="isSaving"
-            @click="isOpen = false"
+          <UFormField
+            label="Titre"
+            name="title"
           >
-            Annuler
-          </UButton>
-          <UButton
-            type="submit"
-            :loading="isSaving"
+            <UInput
+              v-model="formState.title"
+              class="w-full"
+              size="xl"
+              placeholder="Ex: Finaliser la maquette mobile"
+            />
+          </UFormField>
+
+          <div class="grid gap-4 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)]">
+            <UFormField
+              label="Projet"
+              name="projectId"
+            >
+              <USelectMenu
+                v-model="selectedProject"
+                :items="projectsOptions"
+                placeholder="Sélectionner un projet"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Date d'échéance"
+              name="dueDate"
+            >
+              <UInput
+                v-model="formState.dueDate"
+                type="date"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <div class="space-y-2.5">
+            <p class="text-sm font-medium text-slate-700">
+              Priorité
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <UButton
+                v-for="priority in taskPriorityOptions"
+                :key="priority.value"
+                type="button"
+                variant="soft"
+                color="neutral"
+                :class="[
+                  'rounded-full px-3.5 transition-colors',
+                  formState.priority === priority.value
+                    ? getTaskPriorityClass(priority.value)
+                    : 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-200/70'
+                ]"
+                @click="formState.priority = priority.value"
+              >
+                <UIcon
+                  :name="getTaskPriorityIcon(priority.value)"
+                  class="mr-1"
+                />
+                {{ priority.label }}
+              </UButton>
+            </div>
+          </div>
+
+          <div class="space-y-2.5">
+            <p class="text-sm font-medium text-slate-700">
+              Attribution
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <UButton
+                v-for="option in assigneeOptions"
+                :key="option.label"
+                type="button"
+                variant="soft"
+                color="neutral"
+                :class="[
+                  'rounded-full px-3.5 transition-colors',
+                  formState.assignedTo === option.value
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-200/70'
+                ]"
+                @click="formState.assignedTo = option.value"
+              >
+                <UIcon
+                  :name="option.icon"
+                  class="mr-1"
+                />
+                {{ option.label }}
+              </UButton>
+            </div>
+          </div>
+
+          <div
+            v-if="isEditing"
+            class="grid gap-4 sm:grid-cols-2"
           >
-            {{ submitLabel }}
-          </UButton>
+            <UFormField
+              label="Statut"
+              name="status"
+            >
+              <USelect
+                v-model="formState.status"
+                :items="taskStatusOptions"
+                value-attribute="value"
+                option-attribute="label"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              v-if="showWorkflowTagField"
+              label="Tag de workflow"
+              name="workflowTag"
+            >
+              <USelect
+                v-model="formState.workflowTag"
+                :items="workflowTagOptions"
+                value-attribute="value"
+                option-attribute="label"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <UFormField
+            label="Notes"
+            name="notes"
+          >
+            <UTextarea
+              v-model="formState.notes"
+              :rows="6"
+              class="w-full"
+              placeholder="Contexte, points d'attention, prochaines étapes..."
+            />
+          </UFormField>
+
+          <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm text-slate-500">
+              {{ modalDescription }}
+            </p>
+
+            <div class="flex justify-end gap-2">
+              <UButton
+                variant="soft"
+                color="neutral"
+                :disabled="isSaving"
+                @click="isOpen = false"
+              >
+                Annuler
+              </UButton>
+              <UButton
+                type="submit"
+                :loading="isSaving"
+                class="min-w-36 justify-center rounded-full"
+              >
+                {{ submitLabel }}
+              </UButton>
+            </div>
+          </div>
         </div>
       </UForm>
     </template>

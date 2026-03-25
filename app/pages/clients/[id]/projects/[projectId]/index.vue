@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
-import type { ProjectDocument, User } from '~/types'
+import type { ProjectDocument, Task, User } from '~/types'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
@@ -8,7 +8,7 @@ const projectId = computed(() => Number(route.params.projectId))
 
 const { data, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
 const project = computed(() => data.value?.project)
-const projectTasks = computed(() => data.value?.tasks || [])
+const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const quoteDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.quote || [])
 const invoiceDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.invoice || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])

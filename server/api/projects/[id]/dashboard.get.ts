@@ -57,9 +57,11 @@ export default defineEventHandler(async (event) => {
     db
       .select({
         id: projectsTable.id,
-        name: projectsTable.name
+        name: projectsTable.name,
+        clientName: clientsTable.name
       })
       .from(projectsTable)
+      .innerJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
       .orderBy(asc(projectsTable.name)),
     db
       .select()
