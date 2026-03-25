@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { contactCreateSchema, contactUpdateSchema } from '~/validation/contacts'
-import type { Contact } from '~/types'
+import type { Client, Contact } from '~/types'
+
+type ContactModalClientOption = Pick<Client, 'id' | 'name'>
 
 const props = defineProps<{
   open: boolean
   contactId?: number | null
   contact?: Contact | null
-  clientId: number
+  clientId?: number | null
+  clients?: ContactModalClientOption[]
 }>()
 
 const emit = defineEmits<{
@@ -35,7 +38,27 @@ const formState = reactive({
   mobile: '',
   position: '',
   notes: '',
-  clientId: props.clientId
+  clientId: props.clientId ?? null as number | null
+})
+
+const selectedClient = computed({
+  get: () => clientOptions.value.find(client => client.value === formState.clientId),
+  set: (value) => { formState.clientId = value?.value ?? null }
+})
+
+const { data: clientsData, refresh: refreshClients } = await useFetch('/api/clients', {
+  immediate: false
+})
+const clientOptions = computed(() => {
+  const clients = props.clients ?? clientsData.value?.clients ?? []
+
+  return [
+    { label: 'Aucun client', value: null as number | null },
+    ...clients.map((client: ContactModalClientOption) => ({
+      label: client.name,
+      value: client.id
+    }))
+  ]
 })
 
 const resetForm = () => {
@@ -47,7 +70,7 @@ const resetForm = () => {
     mobile: '',
     position: '',
     notes: '',
-    clientId: props.clientId
+    clientId: props.clientId ?? null
   })
 }
 
@@ -60,14 +83,17 @@ const fillFromContact = (contact: Contact) => {
     mobile: contact.mobile ?? '',
     position: contact.position ?? '',
     notes: contact.notes ?? '',
-    clientId: props.clientId
+    clientId: contact.clientId ?? props.clientId ?? null
   })
 }
 
 watch(
   () => props.open,
-  (open) => {
+  async (open) => {
     if (!open) return
+    if (props.clients === undefined && !clientsData.value) {
+      await refreshClients()
+    }
     if (isEditing.value && props.contact) fillFromContact(props.contact)
     else resetForm()
   },
@@ -90,6 +116,7 @@ const onSubmit = async () => {
       lastName: formState.lastName,
       email: formState.email,
       phone: formState.phone,
+      mobile: formState.mobile,
       position: formState.position,
       notes: formState.notes,
       clientId: formState.clientId
@@ -129,106 +156,133 @@ const onSubmit = async () => {
       size: 'xs',
       label: 'Fermer'
     }"
-    class="w-full max-w-3xl"
+    class="w-full max-w-3xl rounded-2xl"
   >
     <template #body>
       <UForm
         :schema="schema"
         :state="formState"
-        class="space-y-4"
+        class="space-y-5"
         @submit="onSubmit"
       >
-        <div class="flex gap-4">
+        <div class="space-y-6">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField
+              label="Prénom"
+              name="firstName"
+              required
+            >
+              <UInput
+                v-model="formState.firstName"
+                placeholder="Jean"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Nom"
+              name="lastName"
+              required
+            >
+              <UInput
+                v-model="formState.lastName"
+                placeholder="Dupont"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField
+              label="Email"
+              name="email"
+            >
+              <UInput
+                v-model="formState.email"
+                type="email"
+                placeholder="jean.dupont@example.com"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Poste"
+              name="position"
+            >
+              <UInput
+                v-model="formState.position"
+                placeholder="Directeur commercial"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField
+              label="Téléphone"
+              name="phone"
+            >
+              <UInput
+                v-model="formState.phone"
+                type="tel"
+                placeholder="01 23 45 67 89"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Mobile"
+              name="mobile"
+            >
+              <UInput
+                v-model="formState.mobile"
+                type="tel"
+                placeholder="06 12 34 56 78"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
           <UFormField
-            label="Prénom"
-            name="firstName"
-            class="flex-1"
-            required
+            label="Client"
+            name="clientId"
           >
-            <UInput
-              v-model="formState.firstName"
-              placeholder="Jean"
+            <USelectMenu
+              v-model="selectedClient"
+              :items="clientOptions"
+              placeholder="Associer à un client"
               class="w-full"
             />
           </UFormField>
 
           <UFormField
-            label="Nom"
-            name="lastName"
-            class="flex-1"
-            required
+            label="Notes"
+            name="notes"
           >
-            <UInput
-              v-model="formState.lastName"
-              placeholder="Dupont"
-              class="w-full"
-            />
-          </UFormField>
-        </div>
-        <div class="flex gap-4">
-          <UFormField
-            label="Email"
-            name="email"
-            class="flex-1"
-          >
-            <UInput
-              v-model="formState.email"
-              type="email"
-              placeholder="jean.dupont@example.com"
+            <UTextarea
+              v-model="formState.notes"
+              :rows="4"
+              placeholder="Contexte, informations utiles, preferences..."
               class="w-full"
             />
           </UFormField>
 
-          <UFormField
-            label="Téléphone"
-            name="phone"
-            class="flex-1"
-          >
-            <UInput
-              v-model="formState.phone"
-              type="tel"
-              placeholder="01 23 45 67 89"
-              class="w-full"
-            />
-          </UFormField>
-        </div>
-        <UFormField
-          label="Poste"
-          name="position"
-        >
-          <UInput
-            v-model="formState.position"
-            placeholder="Directeur commercial"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField
-          label="Notes"
-          name="notes"
-        >
-          <UTextarea
-            v-model="formState.notes"
-            :rows="3"
-            placeholder="Notes supplémentaires..."
-            class="w-full"
-          />
-        </UFormField>
-
-        <div class="flex justify-end gap-2">
-          <UButton
-            variant="soft"
-            color="neutral"
-            @click="isOpen = false"
-          >
-            Annuler
-          </UButton>
-          <UButton
-            type="submit"
-            :loading="isSaving"
-          >
-            {{ submitLabel }}
-          </UButton>
+          <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
+            <UButton
+              variant="soft"
+              color="neutral"
+              :disabled="isSaving"
+              @click="isOpen = false"
+            >
+              Annuler
+            </UButton>
+            <UButton
+              type="submit"
+              :loading="isSaving"
+            >
+              {{ submitLabel }}
+            </UButton>
+          </div>
         </div>
       </UForm>
     </template>
