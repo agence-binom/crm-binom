@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const contactCreateSchema = z.object({
-  clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif'),
+  clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif').optional().nullable(),
   firstName: z.string().min(1, 'Le prénom est requis').max(100, 'Le prénom est trop long'),
   lastName: z.string().min(1, 'Le nom est requis').max(100, 'Le nom est trop long'),
   email: z.email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
@@ -12,7 +12,7 @@ export const contactCreateSchema = z.object({
 })
 
 export const contactUpdateSchema = z.object({
-  clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif').optional(),
+  clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif').optional().nullable(),
   firstName: z.string().min(1, 'Le prénom ne peut pas être vide').max(100, 'Le prénom est trop long').optional().or(z.literal('')),
   lastName: z.string().min(1, 'Le nom ne peut pas être vide').max(100, 'Le nom est trop long').optional().or(z.literal('')),
   email: z.email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),

@@ -50,6 +50,7 @@ const items = ref<DropdownMenuItem[][]>([
           :items="[
             { label: 'Tableau de bord', icon: 'i-lucide-home', to: '/' },
             { label: 'Clients', icon: 'i-lucide-users', to: '/clients' },
+            { label: 'Contacts', icon: 'i-lucide-user-round', to: '/contacts' },
             { label: 'Facturation', icon: 'i-lucide-receipt', to: '/facturation' }
           ]"
         />

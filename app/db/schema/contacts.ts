@@ -3,7 +3,7 @@ import { clientsTable } from './clients'
 
 export const contactsTable = pgTable('contacts', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  clientId: integer().notNull().references(() => clientsTable.id, { onDelete: 'cascade' }),
+  clientId: integer().references(() => clientsTable.id, { onDelete: 'set null' }),
   firstName: varchar({ length: 100 }).notNull(),
   lastName: varchar({ length: 100 }).notNull(),
   email: varchar({ length: 255 }),
