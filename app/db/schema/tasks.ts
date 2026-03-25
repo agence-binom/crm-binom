@@ -8,9 +8,11 @@ export const tasksTable = pgTable('tasks', {
   assignedTo: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   title: varchar({ length: 255 }).notNull(),
   notes: text(),
-  status: varchar({ length: 50 }).notNull().default('todo'), // 'todo' | 'in_progress' | 'done'
+  status: varchar({ length: 50 }).notNull().default('todo'), // 'todo' | 'in_progress' | 'waiting' | 'validationBinom' | 'validationClient' | 'done'
   priority: varchar({ length: 50 }).notNull().default('low'), // 'low' | 'medium' | 'high'
   dueDate: timestamp(),
+  startedAt: timestamp(),
+  completedAt: timestamp(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 })

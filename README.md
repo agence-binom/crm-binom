@@ -51,3 +51,7 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 - `app/composables`: reactive state and reusable Vue/Nuxt logic.
 
 The rule is simple: if a type exists only to describe UI or domain data, it belongs in `app/types`, not in `app/validation`.
+
+## UI/UX Notes
+
+The current task UI rules for kanban columns, task cards, and modals are documented in [docs/ui-ux.md](docs/ui-ux.md).

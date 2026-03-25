@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { User } from '~/types'
+import type { Task, User } from '~/types'
 
 const { data, refresh, status } = await useFetch('/api/tasks/dashboard')
-const allTasks = computed(() => data.value?.tasks || [])
+const allTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
 

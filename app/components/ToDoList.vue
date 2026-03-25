@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { TaskStatus } from '~/constants/tasks'
 import { sortTasksByDueDate } from '~/lib/tasks'
 import type { Task, User } from '~/types'
 
 type ToDoListProjectOption = {
   id: number
   name: string
+  clientName?: string | null
 }
 
 const props = withDefaults(defineProps<{
@@ -23,10 +25,13 @@ const emit = defineEmits<{
   refresh: []
 }>()
 const { showError } = useFeedbackToast()
+const activeTaskStatuses: TaskStatus[] = ['todo', 'in_progress', 'waiting', 'validationBinom', 'validationClient']
+const completedTaskStatus: TaskStatus = 'done'
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<number | null>(null)
 const deletedTaskIds = ref(new Set<number>())
+const showCompletedTasks = ref(false)
 const taskStatusOverrides = ref(new Map<number, Task['status']>())
 
 const visibleTasks = computed(() => {
@@ -52,8 +57,20 @@ const tasksByStatus = computed(() => {
   return {
     todo: visibleTasks.value.filter(t => t.status === 'todo'),
     in_progress: visibleTasks.value.filter(t => t.status === 'in_progress'),
+    waiting: visibleTasks.value.filter(t => t.status === 'waiting'),
+    validationBinom: visibleTasks.value.filter(t => t.status === 'validationBinom'),
+    validationClient: visibleTasks.value.filter(t => t.status === 'validationClient'),
     done: visibleTasks.value.filter(t => t.status === 'done')
   }
+})
+
+const displayedStatuses = computed(() => {
+  return showCompletedTasks.value
+    ? [
+        ...activeTaskStatuses,
+        completedTaskStatus
+      ]
+    : activeTaskStatuses
 })
 
 const openCreateTask = () => {
@@ -66,11 +83,11 @@ const handleTaskToUpdate = (taskId: number) => {
   isTaskModalOpen.value = true
 }
 
-const handleTaskMoved = async (taskId: number, newStatus: string) => {
+const handleTaskMoved = async (taskId: number, newStatus: TaskStatus) => {
   const task = visibleTasks.value.find(currentTask => currentTask.id === taskId)
   const previousStatus = task?.status
 
-  taskStatusOverrides.value = new Map(taskStatusOverrides.value).set(taskId, newStatus as Task['status'])
+  taskStatusOverrides.value = new Map(taskStatusOverrides.value).set(taskId, newStatus)
 
   try {
     await $fetch(`/api/tasks/${taskId}`, {
@@ -101,6 +118,16 @@ const handleTaskDeleted = (taskId: number) => {
     ...deletedTaskIds.value,
     taskId
   ])
+
+  const nextOverrides = new Map(taskStatusOverrides.value)
+  nextOverrides.delete(taskId)
+  taskStatusOverrides.value = nextOverrides
+
+  if (selectedTaskId.value === taskId) {
+    selectedTaskId.value = null
+  }
+
+  emit('refresh')
 }
 
 const taskToEdit = computed(() => {
@@ -116,8 +143,17 @@ const taskToEdit = computed(() => {
         {{ title }}
       </h2>
 
-      <div class="flex items-center gap-4">
+      <div class="flex flex-wrap items-center gap-3">
         <slot name="filters" />
+
+        <UButton
+          :icon="showCompletedTasks ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+          variant="outline"
+          color="neutral"
+          @click="showCompletedTasks = !showCompletedTasks"
+        >
+          {{ showCompletedTasks ? 'Masquer terminées' : 'Afficher terminées' }}
+        </UButton>
 
         <UButton
           icon="i-lucide-circle-plus"
@@ -140,31 +176,20 @@ const taskToEdit = computed(() => {
       @saved="handleTaskChange"
     />
 
-    <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] min-h-150 overflow-hidden">
-      <KanbanTable
-        status="todo"
-        :tasks="tasksByStatus.todo"
-        :users="availableUsers"
-        @task-deleted="handleTaskDeleted"
-        @task-to-updated="handleTaskToUpdate"
-        @task-moved="handleTaskMoved"
-      />
-      <KanbanTable
-        status="in_progress"
-        :tasks="tasksByStatus.in_progress"
-        :users="availableUsers"
-        @task-deleted="handleTaskDeleted"
-        @task-to-updated="handleTaskToUpdate"
-        @task-moved="handleTaskMoved"
-      />
-      <KanbanTable
-        status="done"
-        :tasks="tasksByStatus.done"
-        :users="availableUsers"
-        @task-deleted="handleTaskDeleted"
-        @task-to-updated="handleTaskToUpdate"
-        @task-moved="handleTaskMoved"
-      />
+    <div class="overflow-x-auto p-1 pb-3 scrollbar-custom">
+      <div class="flex min-w-max gap-6 h-[calc(100vh-10rem)] min-h-150">
+        <KanbanTable
+          v-for="status in displayedStatuses"
+          :key="status"
+          :status="status"
+          :tasks="tasksByStatus[status]"
+          :users="availableUsers"
+          :projects="availableProjects"
+          @task-deleted="handleTaskDeleted"
+          @task-to-updated="handleTaskToUpdate"
+          @task-moved="handleTaskMoved"
+        />
+      </div>
     </div>
   </div>
 </template>
