@@ -1,5 +1,6 @@
 import { createError, getRequestURL } from 'h3'
 import { serverSupabaseUser } from '#supabase/server'
+import { toPublicDatabaseError } from '../utils/database-errors'
 import { PUBLIC_AUTH_API_PATHS, requireAuthorizedAppUserByEmail } from '../utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -15,5 +16,9 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  await requireAuthorizedAppUserByEmail(userSession.email)
+  try {
+    await requireAuthorizedAppUserByEmail(userSession.email)
+  } catch (error) {
+    throw toPublicDatabaseError(error)
+  }
 })

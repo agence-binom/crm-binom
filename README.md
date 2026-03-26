@@ -8,6 +8,14 @@ Make sure to install the dependencies:
 npm install
 ```
 
+Create a local env file before starting the app:
+
+```bash
+cp .env.example .env
+```
+
+For `DATABASE_URL`, use the Supabase `Session pooler` connection string from `Connect` in the Supabase dashboard. This Nuxt server keeps a persistent Postgres client open, and the direct host (`db.<project-ref>.supabase.co:5432`) requires IPv6. On common IPv4-only networks that causes DNS failures such as `getaddrinfo ENOTFOUND`.
+
 ## Development Server
 
 Start the development server on `http://localhost:3000`:
