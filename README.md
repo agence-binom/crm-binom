@@ -48,6 +48,20 @@ npm run lint
 npm run typecheck
 ```
 
+## Supabase Database Types
+
+The Nuxt Supabase module reads its database typings from [app/types/database.types.ts](app/types/database.types.ts). Regenerate that file from the live Supabase `public` schema with:
+
+```bash
+npm run db:types
+```
+
+Requirements:
+
+- `DATABASE_URL` must point to the target Supabase Postgres database.
+- The command reads the real schema, so run it after migrations or any manual schema change.
+- Run `npm run typecheck` after regeneration to confirm the Nuxt Supabase module still resolves the file cleanly.
+
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
 
 ## Frontend Structure
