@@ -11,6 +11,7 @@
     "test": "node --import tsx --test tests/**/*.test.ts",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
+    "db:types": "node scripts/generate-supabase-types.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx app/db/migrate.ts",
     "db:studio": "drizzle-kit studio"
