@@ -96,8 +96,13 @@ const formatAmount = (amount: string | number) => {
         v-for="quote in quotes"
         :key="quote.id"
         variant="soft"
-        class="hover:bg-elevated transition-all duration-200 cursor-pointer"
+        role="button"
+        tabindex="0"
+        :aria-label="`Modifier le devis ${quote.number}`"
+        class="hover:bg-elevated transition-all duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         @click="emit('edit', quote.id)"
+        @keydown.enter.prevent="emit('edit', quote.id)"
+        @keydown.space.prevent="emit('edit', quote.id)"
       >
         <div class="flex justify-between items-start gap-4">
           <div class="flex-1">

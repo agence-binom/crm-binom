@@ -13,7 +13,7 @@ const isProjectModalOpen = ref(false)
 const selectedContactId = ref<number | null>(null)
 const selectedProjectId = ref<number | null>(null)
 
-const { deleteResource } = useDeleteConfirmation()
+const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
 const onDeleteClient = async (clientId: number) => {
   await deleteResource('client', clientId, '/api/clients', async () => {
@@ -133,5 +133,13 @@ const projectToEdit = computed(() => {
         @delete="onDeleteContact"
       />
     </div>
+
+    <ConfirmModal
+      :open="confirmModalOpen"
+      title="Confirmer la suppression"
+      :message="confirmModalMessage"
+      @confirm="onConfirm"
+      @cancel="onCancel"
+    />
   </div>
 </template>

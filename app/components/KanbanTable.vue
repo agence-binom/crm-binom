@@ -33,7 +33,7 @@ const emit = defineEmits<{
   taskToUpdated: [taskId: number]
   taskMoved: [taskId: number, newStatus: TaskStatus]
 }>()
-const { deleteResource } = useDeleteConfirmation()
+const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
 const statuSettings: Record<TaskStatus, {
   label: string
@@ -191,4 +191,12 @@ const onDeleteTask = async (taskId: number) => {
       </div>
     </div>
   </div>
+
+  <ConfirmModal
+    :open="confirmModalOpen"
+    title="Confirmer la suppression"
+    :message="confirmModalMessage"
+    @confirm="onConfirm"
+    @cancel="onCancel"
+  />
 </template>

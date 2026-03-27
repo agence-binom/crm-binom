@@ -19,7 +19,7 @@ const { selectedUser, userOptions, filteredTasks } = useUserFilter(projectTasks,
 const isProjectModalOpen = ref(false)
 const isUploadModalOpen = ref(false)
 
-const { deleteResource } = useDeleteConfirmation()
+const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
 const quoteDocumentsMissingLinkCount = computed(() => quoteDocuments.value.filter(document => !document.externalUrl).length)
 const invoiceDocumentsMissingLinkCount = computed(() => invoiceDocuments.value.filter(document => !document.externalUrl).length)
@@ -287,5 +287,13 @@ const handleDocumentsChange = async () => {
         </UCard>
       </div>
     </div>
+
+    <ConfirmModal
+      :open="confirmModalOpen"
+      title="Confirmer la suppression"
+      :message="confirmModalMessage"
+      @confirm="onConfirm"
+      @cancel="onCancel"
+    />
   </div>
 </template>

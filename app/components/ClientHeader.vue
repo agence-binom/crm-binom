@@ -61,6 +61,7 @@ const contactInfos = computed(() => [
         variant="ghost"
         color="error"
         icon="i-lucide-trash"
+        aria-label="Supprimer le client"
         @click="emit('delete', client.id)"
       />
     </div>

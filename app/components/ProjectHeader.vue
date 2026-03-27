@@ -68,6 +68,7 @@ const clientInfos = computed(() => [
         variant="ghost"
         color="error"
         icon="i-lucide-trash"
+        aria-label="Supprimer le projet"
         @click="emit('delete', project.id)"
       />
     </div>

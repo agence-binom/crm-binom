@@ -85,6 +85,7 @@ const { getStatusColor, getStatusLabel } = useStatusHelpers()
               color="error"
               icon="i-lucide-trash"
               class="mt-4"
+              aria-label="Supprimer le projet"
               @click.prevent="emit('delete', project.id)"
             />
           </UCard>
