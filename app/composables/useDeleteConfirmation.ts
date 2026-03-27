@@ -1,15 +1,36 @@
 export function useDeleteConfirmation() {
   const { showError, showSuccess } = useFeedbackToast()
 
+  const confirmModalOpen = ref(false)
+  const confirmModalMessage = ref('')
+  let resolveConfirm: ((value: boolean) => void) | null = null
+
+  const onConfirm = () => {
+    confirmModalOpen.value = false
+    resolveConfirm?.(true)
+    resolveConfirm = null
+  }
+
+  const onCancel = () => {
+    confirmModalOpen.value = false
+    resolveConfirm?.(false)
+    resolveConfirm = null
+  }
+
   const deleteResource = async (
     resourceName: string,
     resourceId: number,
     endpoint: string,
     onSuccess?: () => void | Promise<void>
   ) => {
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer ce ${resourceName} ?`)) {
-      return
-    }
+    confirmModalMessage.value = `Êtes-vous sûr de vouloir supprimer ce ${resourceName} ?`
+    confirmModalOpen.value = true
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      resolveConfirm = resolve
+    })
+
+    if (!confirmed) return
 
     try {
       await $fetch(`${endpoint}/${resourceId}`, {
@@ -29,6 +50,10 @@ export function useDeleteConfirmation() {
   }
 
   return {
-    deleteResource
+    deleteResource,
+    confirmModalOpen,
+    confirmModalMessage,
+    onConfirm,
+    onCancel
   }
 }

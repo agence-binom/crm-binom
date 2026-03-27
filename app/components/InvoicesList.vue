@@ -112,11 +112,16 @@ const isOverdue = (invoice: Invoice) => {
         v-for="invoice in invoices"
         :key="invoice.id"
         variant="soft"
+        role="button"
+        tabindex="0"
+        :aria-label="`Modifier la facture ${invoice.number}`"
         :class="[
-          'hover:bg-elevated transition-all duration-200 cursor-pointer',
+          'hover:bg-elevated transition-all duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
           isOverdue(invoice) && 'border-l-4 border-red-500'
         ]"
         @click="emit('edit', invoice.id)"
+        @keydown.enter.prevent="emit('edit', invoice.id)"
+        @keydown.space.prevent="emit('edit', invoice.id)"
       >
         <div class="flex justify-between items-start gap-4">
           <div class="flex-1">
@@ -179,6 +184,7 @@ const isOverdue = (invoice: Invoice) => {
               variant="soft"
               color="error"
               icon="i-lucide-trash"
+              aria-label="Supprimer la facture"
               @click.stop="emit('delete', invoice.id)"
             />
           </div>

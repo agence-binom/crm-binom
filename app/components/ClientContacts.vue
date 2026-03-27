@@ -98,6 +98,7 @@ const emit = defineEmits<{
                 size="sm"
                 variant="soft"
                 icon="i-lucide-pencil"
+                aria-label="Modifier le contact"
                 @click="emit('edit', contact.id)"
               />
               <UButton
@@ -105,6 +106,7 @@ const emit = defineEmits<{
                 variant="soft"
                 color="error"
                 icon="i-lucide-trash"
+                aria-label="Supprimer le contact"
                 @click="emit('delete', contact.id)"
               />
             </div>

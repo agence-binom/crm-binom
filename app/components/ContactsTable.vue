@@ -165,6 +165,7 @@ const columns: TableColumn<Contact>[] = [
               size="sm"
               color="neutral"
               variant="soft"
+              aria-label="Modifier le contact"
               @click="emit('edit', row.original.id)"
             />
             <UButton
@@ -172,6 +173,7 @@ const columns: TableColumn<Contact>[] = [
               size="sm"
               color="error"
               variant="soft"
+              aria-label="Supprimer le contact"
               @click="emit('delete', row.original.id)"
             />
           </div>

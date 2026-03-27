@@ -153,6 +153,7 @@ const totalPaid = computed(() => {
               variant="soft"
               color="error"
               icon="i-lucide-trash"
+              aria-label="Supprimer le paiement"
               @click="emit('delete', payment.id)"
             />
           </div>

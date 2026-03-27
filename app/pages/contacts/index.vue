@@ -10,7 +10,7 @@ const isClientModalOpen = ref(false)
 const selectedContactId = ref<number | null>(null)
 const sourceContactIdForClient = ref<number | null>(null)
 
-const { deleteResource } = useDeleteConfirmation()
+const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 const { showError } = useFeedbackToast()
 
 const contactToEdit = computed(() => {
@@ -120,6 +120,14 @@ const onDeleteContact = async (contactId: number) => {
       :initial-values="clientInitialValues"
       @update:open="handleClientModalClosed"
       @saved="handleClientSaved"
+    />
+
+    <ConfirmModal
+      :open="confirmModalOpen"
+      title="Confirmer la suppression"
+      :message="confirmModalMessage"
+      @confirm="onConfirm"
+      @cancel="onCancel"
     />
   </div>
 </template>
