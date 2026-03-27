@@ -25,6 +25,17 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
+  vite: {
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return
+          warn(warning)
+        }
+      }
+    }
+  },
+
   eslint: {
     config: {
       stylistic: {

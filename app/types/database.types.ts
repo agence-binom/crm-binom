@@ -486,6 +486,7 @@ export type Database = {
           role: string
           createdAt: string
           updatedAt: string
+          authUserId: string | null
         }
         Insert: {
           id?: never
@@ -494,6 +495,7 @@ export type Database = {
           role?: string
           createdAt?: string
           updatedAt?: string
+          authUserId?: string | null
         }
         Update: {
           id?: never
@@ -502,6 +504,7 @@ export type Database = {
           role?: string
           createdAt?: string
           updatedAt?: string
+          authUserId?: string | null
         }
         Relationships: []
       }
