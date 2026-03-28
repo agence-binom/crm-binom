@@ -25,6 +25,18 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
+  nitro: {
+    storage: {
+      // En dev : driver mémoire (défaut).
+      // En production multi-instance, passer sur Redis :
+      //   1. Installer ioredis : npm install ioredis
+      //   2. Définir REDIS_URL dans l'environnement
+      //   3. Remplacer la config ci-dessous par :
+      //      'rate-limit': { driver: 'redis', url: process.env.REDIS_URL }
+      'rate-limit': { driver: 'memory' }
+    }
+  },
+
   vite: {
     build: {
       rollupOptions: {

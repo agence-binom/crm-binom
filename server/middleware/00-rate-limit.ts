@@ -4,7 +4,6 @@ const WINDOW_MS = 60_000
 const MAX_REQUESTS = 120
 
 type Bucket = { count: number, resetAt: number }
-const buckets = new Map<string, Bucket>()
 
 function getClientIp(event: Parameters<typeof getRequestURL>[0]) {
   const forwarded = getRequestHeader(event, 'x-forwarded-for')
@@ -12,16 +11,19 @@ function getClientIp(event: Parameters<typeof getRequestURL>[0]) {
   return event.node.req.socket.remoteAddress ?? 'unknown'
 }
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const path = getRequestURL(event).pathname
   if (!path.startsWith('/api')) return
 
-  const ip = getClientIp(event)
+  const storage = useStorage<Bucket>('rate-limit')
+  const ip = getClientIp(event) ?? 'unknown'
+  const key = ip.replace(/[^a-zA-Z0-9._-]/g, '_')
   const now = Date.now()
-  const bucket = buckets.get(ip)
+
+  const bucket = await storage.getItem(key)
 
   if (!bucket || now > bucket.resetAt) {
-    buckets.set(ip, { count: 1, resetAt: now + WINDOW_MS })
+    await storage.setItem(key, { count: 1, resetAt: now + WINDOW_MS })
     return
   }
 
@@ -32,4 +34,6 @@ export default defineEventHandler((event) => {
       statusMessage: 'Too Many Requests'
     })
   }
+
+  await storage.setItem(key, bucket)
 })
