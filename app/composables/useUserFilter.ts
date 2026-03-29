@@ -53,10 +53,10 @@ export function useUserFilter(tasks: Ref<Task[]>, users?: Ref<User[]>) {
     }
 
     if (selectedUserId.value === 0) {
-      return tasks.value.filter(t => !t.assignedTo)
+      return tasks.value.filter(t => t.assignedTo === undefined)
     }
 
-    return tasks.value.filter(t => t.assignedTo === selectedUserId.value)
+    return tasks.value.filter(t => t.assignedTo == selectedUserId.value)
   })
 
   return {

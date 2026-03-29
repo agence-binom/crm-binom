@@ -6,15 +6,14 @@ export function useDeleteConfirmation() {
   let resolveConfirm: ((value: boolean) => void) | null = null
 
   const onConfirm = () => {
-    confirmModalOpen.value = false
     resolveConfirm?.(true)
+    confirmModalOpen.value = false
     resolveConfirm = null
   }
 
   const onCancel = () => {
-    confirmModalOpen.value = false
     resolveConfirm?.(false)
-    resolveConfirm = null
+    confirmModalOpen.value = false
   }
 
   const deleteResource = async (
@@ -45,7 +44,6 @@ export function useDeleteConfirmation() {
     } catch (error) {
       console.error(`Erreur lors de la suppression du ${resourceName}:`, error)
       showError('Suppression impossible', error, `Impossible de supprimer le ${resourceName}.`)
-      throw error
     }
   }
 

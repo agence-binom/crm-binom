@@ -20,11 +20,11 @@ const emit = defineEmits<{
 }>()
 
 const isOverdue = computed(() => {
-  if (!props.task.dueDate || props.task.status === 'done') {
+  if (!props.task.dueDate) {
     return false
   }
 
-  return new Date(props.task.dueDate).getTime() < Date.now()
+  return new Date(props.task.dueDate) < new Date()
 })
 
 const projectLabel = computed(() => {

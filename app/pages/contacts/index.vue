@@ -68,17 +68,18 @@ const handleClientSaved = async (client?: Client) => {
 
   try {
     await $fetch(`/api/contacts/${sourceContactIdForClient.value}`, {
-      method: 'PUT',
+      method: ‘PUT’,
       body: { clientId: client.id }
     })
     await refresh()
   } catch (error) {
-    console.error('Erreur lors de l’association du contact au client:', error)
+    console.error(‘Erreur lors de l’association du contact au client:’, error)
     showError(
-      'Association impossible',
+      ‘Association impossible’,
       error,
-      'Le client a bien été créé, mais le contact n’a pas pu être associé automatiquement.'
+      ‘Le client a bien été créé, mais le contact n’a pas pu être associé automatiquement.’
     )
+    await refresh()
   } finally {
     sourceContactIdForClient.value = null
   }

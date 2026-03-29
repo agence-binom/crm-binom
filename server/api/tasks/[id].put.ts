@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     .update(tasksTable)
     .set({
       ...body,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
       ...(body.status
         ? {
             startedAt: lifecycleDates.startedAt,
