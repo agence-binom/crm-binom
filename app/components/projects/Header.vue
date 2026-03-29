@@ -36,16 +36,16 @@ const infos = computed(() => [
           size="sm"
           variant="soft"
           color="neutral"
-          icon="i-lucide-info"
+          icon="i-lucide-edit"
           @click="emit('openInfo')"
         >
-          Informations
+          Modifier les informations
         </UButton>
         <UButton
           size="sm"
           variant="ghost"
           color="error"
-          icon="i-lucide-trash"
+          icon="i-lucide-trash-2"
           aria-label="Supprimer le projet"
           @click="emit('delete', project.id)"
         />

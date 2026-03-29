@@ -156,7 +156,7 @@ const isOverdue = (invoice: Invoice) => {
                 size="sm"
                 variant="soft"
                 color="error"
-                icon="i-lucide-trash"
+                icon="i-lucide-trash-2"
                 class="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                 @click.stop="emit('delete', invoice.id)"
               />
@@ -216,7 +216,7 @@ const isOverdue = (invoice: Invoice) => {
               size="sm"
               variant="soft"
               color="error"
-              icon="i-lucide-trash"
+              icon="i-lucide-trash-2"
               aria-label="Supprimer la facture"
               @click.stop="emit('delete', invoice.id)"
             />

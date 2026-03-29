@@ -142,7 +142,7 @@ const totalPaid = computed(() => {
                 size="sm"
                 variant="soft"
                 color="error"
-                icon="i-lucide-trash"
+                icon="i-lucide-trash-2"
                 class="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                 @click="emit('delete', payment.id)"
               />
@@ -173,7 +173,7 @@ const totalPaid = computed(() => {
               size="sm"
               variant="soft"
               color="error"
-              icon="i-lucide-trash"
+              icon="i-lucide-trash-2"
               aria-label="Supprimer le paiement"
               @click="emit('delete', payment.id)"
             />
