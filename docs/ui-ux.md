@@ -36,10 +36,24 @@ The reference style is the current kanban board, task cards, and task modal.
 - Reveal edit/delete actions on hover or focus, not permanently.
 - Avoid sub-cards inside cards; use spacing, borders, and typography instead.
 
+## List Cards
+
+- Reuse the same calm card language for project, invoice, quote, payment, and contact lists.
+- Prefer one white rounded surface with a light ring and soft shadow.
+- Put categorical badges first, then the entity title, then the supporting metadata.
+- Use pills with icons for dates, workflow hints, or secondary values when it improves scan speed.
+- Keep destructive actions hidden until hover or focus when they are not the main task.
+- Empty states should feel quiet and consistent with tables and Kanban columns.
+
 ## Task Modal
 
 - One main panel is enough.
-- Start with the task title and core context.
+- Start with the modal title and core context.
+- Use the same base structure for all create/edit modals:
+  - rely on the modal shell title first; do not duplicate a heavy inner header by default
+  - one simple flow of fields, without extra panel chrome unless the content really needs grouping
+  - simple grids for short fields, full-width inputs for text areas
+  - quiet footer with actions aligned to the right
 - Use badge-like toggle choices for priority and assignee.
 - Keep normal form inputs for project, due date, notes, and status.
 - Editing and creation should feel almost identical.

@@ -145,106 +145,110 @@ const onSubmit = async () => {
       size: 'xs',
       label: 'Fermer'
     }"
-    class="w-full max-w-3xl"
+    class="w-full max-w-3xl rounded-2xl"
   >
     <template #body>
       <UForm
         :schema="schema"
         :state="formState"
-        class="space-y-4"
+        class="space-y-5"
         @submit="onSubmit"
       >
-        <UFormField
-          label="Nom du projet"
-          name="name"
-          required
-        >
-          <UInput
-            v-model="formState.name"
-            placeholder="Ex: Refonte site web"
-          />
-        </UFormField>
-
-        <UFormField
-          label="Description"
-          name="description"
-          class="w-full"
-        >
-          <UTextarea
-            v-model="formState.description"
-            :rows="3"
-            placeholder="Description du projet..."
-            class="w-full"
-          />
-        </UFormField>
-
-        <div class="flex gap-4">
+        <div class="space-y-6">
           <UFormField
-            label="Date de début"
-            name="startDate"
-            class="flex-1"
+            label="Nom du projet"
+            name="name"
+            required
           >
             <UInput
-              v-model="formState.startDate"
-              type="date"
+              v-model="formState.name"
+              placeholder="Ex: Refonte site web"
               class="w-full"
             />
           </UFormField>
 
-          <UFormField
-            label="Date de fin"
-            name="endDate"
-            class="flex-1"
-          >
-            <UInput
-              v-model="formState.endDate"
-              type="date"
-              class="w-full"
-            />
-          </UFormField>
-        </div>
+          <div class="grid gap-4 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+            <UFormField
+              label="URL du projet"
+              name="url"
+            >
+              <UInput
+                v-model="formState.url"
+                type="url"
+                placeholder="https://example.com"
+                class="w-full"
+              />
+            </UFormField>
 
-        <UFormField
-          label="Statut affiché"
-          name="statusPreview"
-        >
-          <div class="rounded-lg border border-default bg-elevated/40 px-3 py-2">
-            <p class="font-medium">
-              {{ displayStatusLabel }}
-            </p>
-            <p class="mt-1 text-sm text-gray-500">
-              Le statut est calculé automatiquement à partir des dates du projet.
-            </p>
+            <UFormField
+              v-if="isEditing"
+              label="Statut affiché"
+              name="statusPreview"
+            >
+              <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <p class="font-medium text-slate-900">
+                  {{ displayStatusLabel }}
+                </p>
+                <p class="mt-1 text-sm text-slate-500">
+                  Calculé automatiquement à partir des dates du projet.
+                </p>
+              </div>
+            </UFormField>
           </div>
-        </UFormField>
 
-        <UFormField
-          label="URL du projet"
-          name="url"
-          class="w-full"
-        >
-          <UInput
-            v-model="formState.url"
-            type="url"
-            placeholder="https://example.com"
+          <UFormField
+            label="Description"
+            name="description"
             class="w-full"
-          />
-        </UFormField>
+          >
+            <UTextarea
+              v-model="formState.description"
+              :rows="4"
+              placeholder="Décris brièvement le périmètre, l'objectif ou le contexte."
+              class="w-full"
+            />
+          </UFormField>
 
-        <div class="flex justify-end gap-2">
-          <UButton
-            variant="soft"
-            color="neutral"
-            @click="isOpen = false"
-          >
-            Annuler
-          </UButton>
-          <UButton
-            type="submit"
-            :loading="isSaving"
-          >
-            {{ submitLabel }}
-          </UButton>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField
+              label="Date de début"
+              name="startDate"
+            >
+              <UInput
+                v-model="formState.startDate"
+                type="date"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Date de fin"
+              name="endDate"
+            >
+              <UInput
+                v-model="formState.endDate"
+                type="date"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
+            <UButton
+              variant="soft"
+              color="neutral"
+              :disabled="isSaving"
+              @click="isOpen = false"
+            >
+              Annuler
+            </UButton>
+            <UButton
+              type="submit"
+              :loading="isSaving"
+            >
+              {{ submitLabel }}
+            </UButton>
+          </div>
         </div>
       </UForm>
     </template>

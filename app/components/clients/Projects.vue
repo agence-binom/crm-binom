@@ -9,6 +9,7 @@ const _props = defineProps<{
 const emit = defineEmits<{
   create: []
   delete: [projectId: number]
+  edit: [projectId: number]
 }>()
 </script>
 
@@ -21,6 +22,7 @@ const emit = defineEmits<{
     :show-delete-button="true"
     empty-message="Aucun projet pour ce client"
     @create="emit('create')"
+    @edit="(id) => emit('edit', id)"
     @delete="(id) => emit('delete', id)"
   />
 </template>

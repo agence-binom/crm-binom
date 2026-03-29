@@ -166,7 +166,7 @@ const taskToEdit = computed(() => {
       </div>
     </div>
 
-    <TaskModal
+    <TasksModal
       v-model:open="isTaskModalOpen"
       :task-id="selectedTaskId"
       :task="taskToEdit"
@@ -178,7 +178,7 @@ const taskToEdit = computed(() => {
 
     <div class="overflow-x-auto p-1 pb-3 scrollbar-custom">
       <div class="flex min-w-max gap-6 h-[calc(100vh-10rem)] min-h-150">
-        <KanbanTable
+        <TasksKanban
           v-for="status in displayedStatuses"
           :key="status"
           :status="status"

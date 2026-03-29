@@ -101,7 +101,7 @@ const typeOptions = [
   <UModal
     v-model:open="isOpen"
     title="Enregistrer un paiement"
-    class="w-full max-w-2xl"
+    class="w-full max-w-2xl rounded-2xl"
     :close="{
       color: 'error',
       variant: 'solid',
@@ -114,102 +114,115 @@ const typeOptions = [
       <UForm
         :schema="paymentCreateSchema"
         :state="formState"
-        class="space-y-4"
+        class="space-y-5"
         @submit="onSubmit"
       >
-        <div class="flex w-full gap-4">
-          <UFormField
-            label="Montant (€)"
-            name="amount"
-            required
-            class="flex-1"
-          >
-            <UInput
-              v-model="formState.amount"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-            />
-          </UFormField>
-
-          <UFormField
-            label="Date de paiement"
-            name="paymentDate"
-            required
-            class="flex-1"
-          >
-            <UInput
-              v-model="formState.paymentDate"
-              type="date"
-            />
-          </UFormField>
-        </div>
-
-        <div class="flex w-full gap-4">
-          <UFormField
-            label="Méthode de paiement"
-            name="paymentMethod"
-            required
-            class="flex-1"
-          >
-            <USelect
-              v-model="formState.paymentMethod"
-              :options="paymentMethodOptions"
-              option-label="label"
-              option-value="value"
-            />
-          </UFormField>
-
-          <UFormField
-            label="Type"
-            name="type"
-            class="flex-1"
-          >
-            <USelect
-              v-model="formState.type"
-              :options="typeOptions"
-              option-label="label"
-              option-value="value"
-            />
-          </UFormField>
-        </div>
-
-        <UFormField
-          label="Référence"
-          name="reference"
-        >
-          <UInput
-            v-model="formState.reference"
-            placeholder="Numéro de transaction, de chèque..."
-          />
-        </UFormField>
-
-        <UFormField
-          label="Notes"
-          name="notes"
-        >
-          <UTextarea
-            v-model="formState.notes"
-            :rows="3"
-            placeholder="Notes sur ce paiement..."
-          />
-        </UFormField>
-
-        <div class="flex justify-end gap-2">
-          <UButton
-            color="neutral"
+        <div class="space-y-6">
+          <UBadge
+            v-if="props.remainingAmount != null"
             variant="soft"
-            :disabled="isSaving"
-            @click="isOpen = false"
+            color="success"
+            class="rounded-full px-3 py-1"
           >
-            Annuler
-          </UButton>
-          <UButton
-            type="submit"
-            :loading="isSaving"
+            Reste : {{ props.remainingAmount.toFixed(2) }} €
+          </UBadge>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField
+              label="Montant (€)"
+              name="amount"
+              required
+            >
+              <UInput
+                v-model="formState.amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Date de paiement"
+              name="paymentDate"
+              required
+            >
+              <UInput
+                v-model="formState.paymentDate"
+                type="date"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField
+              label="Méthode de paiement"
+              name="paymentMethod"
+              required
+            >
+              <USelect
+                v-model="formState.paymentMethod"
+                :options="paymentMethodOptions"
+                option-label="label"
+                option-value="value"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Type"
+              name="type"
+            >
+              <USelect
+                v-model="formState.type"
+                :options="typeOptions"
+                option-label="label"
+                option-value="value"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <UFormField
+            label="Référence"
+            name="reference"
           >
-            Enregistrer le paiement
-          </UButton>
+            <UInput
+              v-model="formState.reference"
+              placeholder="Numéro de transaction, de chèque..."
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField
+            label="Notes"
+            name="notes"
+          >
+            <UTextarea
+              v-model="formState.notes"
+              :rows="4"
+              placeholder="Notes sur ce paiement..."
+              class="w-full"
+            />
+          </UFormField>
+
+          <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
+            <UButton
+              color="neutral"
+              variant="soft"
+              :disabled="isSaving"
+              @click="isOpen = false"
+            >
+              Annuler
+            </UButton>
+            <UButton
+              type="submit"
+              :loading="isSaving"
+            >
+              Enregistrer le paiement
+            </UButton>
+          </div>
         </div>
       </UForm>
     </template>

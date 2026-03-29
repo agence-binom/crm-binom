@@ -163,7 +163,7 @@ const onDeleteTask = async (taskId: number) => {
       class="w-full flex-1 flex flex-col items-stretch gap-4 overflow-y-auto pr-1 scrollbar-custom pt-1 rounded-2xl transition-all duration-300 min-h-0"
     >
       <template v-if="taskList.length > 0">
-        <TaskCard
+        <TasksCard
           v-for="task in taskList"
           :key="task.id"
           :task="task"

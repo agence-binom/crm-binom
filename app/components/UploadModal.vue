@@ -199,10 +199,18 @@ const onUpload = async () => {
       size: 'xs',
       label: 'Fermer'
     }"
-    class="w-full max-w-2xl"
+    class="w-full max-w-2xl rounded-2xl"
   >
     <template #body>
-      <div class="space-y-4">
+      <div class="space-y-6">
+        <UBadge
+          variant="soft"
+          color="neutral"
+          class="rounded-full bg-slate-50 px-3 py-1 text-slate-700 ring-1 ring-inset ring-slate-200"
+        >
+          {{ allowedDocumentTypesLabel }} · {{ maxFileSizeLabel }}
+        </UBadge>
+
         <UFormField
           v-if="!props.documentType"
           label="Type de document"
@@ -230,39 +238,47 @@ const onUpload = async () => {
             placeholder="https://www.facture.net/..."
             class="w-full"
           />
-          <p class="mt-2 text-xs text-gray-500">
-            Collez l'URL de la page dédiée au devis ou à la facture dans Facture.net.
+          <p class="mt-2 text-xs text-slate-500">
+            Collez l’URL de la page dédiée au devis ou à la facture dans Facture.net.
           </p>
         </UFormField>
 
-        <div>
-          <label class="block text-sm font-medium mb-2">
+        <div class="space-y-3">
+          <label class="text-sm font-medium text-slate-700">
             Fichier
           </label>
-          <input
-            ref="fileInput"
-            type="file"
-            :accept="documentFileInputAccept"
-            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-            @change="onFileSelected"
-          >
-          <p class="mt-2 text-xs text-gray-500">
-            Formats acceptés: {{ allowedDocumentTypesLabel }}. Taille maximale: {{ maxFileSizeLabel }}.
-          </p>
+          <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+            <input
+              ref="fileInput"
+              type="file"
+              :accept="documentFileInputAccept"
+              class="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
+              @change="onFileSelected"
+            >
+            <p class="mt-3 text-xs text-slate-500">
+              Formats acceptés : {{ allowedDocumentTypesLabel }}. Taille maximale : {{ maxFileSizeLabel }}.
+            </p>
+            <p
+              v-if="selectedFile"
+              class="mt-2 text-sm font-medium text-slate-700"
+            >
+              {{ selectedFile.name }}
+            </p>
+          </div>
         </div>
 
         <UFormField
-          label="Description (optionnel)"
+          label="Description"
           name="description"
         >
           <UInput
             v-model="description"
-            placeholder="Description du document..."
+            placeholder="Décris brièvement le document si nécessaire."
             class="w-full"
           />
         </UFormField>
 
-        <div class="flex justify-end gap-2">
+        <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
           <UButton
             color="neutral"
             variant="soft"

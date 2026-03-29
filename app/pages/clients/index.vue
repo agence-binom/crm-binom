@@ -1,13 +1,31 @@
 <script setup lang="ts">
-import { getClientIcon } from '~/lib/clients'
+import type { Client } from '~/types'
 
 const { data, refresh } = await useFetch('/api/clients/dashboard')
 const clients = computed(() => data.value?.clients || [])
 
 const isClientModalOpen = ref(false)
+const selectedClientId = ref<number | null>(null)
+
+const selectedClient = computed<Client | null>(() => {
+  if (!selectedClientId.value) return null
+  return clients.value.find((c: Client) => c.id === selectedClientId.value) ?? null
+})
+
+const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
 const openCreateClient = () => {
+  selectedClientId.value = null
   isClientModalOpen.value = true
+}
+
+const openEditClient = (clientId: number) => {
+  selectedClientId.value = clientId
+  isClientModalOpen.value = true
+}
+
+const onDeleteClient = async (clientId: number) => {
+  await deleteResource('client', clientId, '/api/clients', refresh)
 }
 
 const handleClientChange = async () => {
@@ -16,14 +34,23 @@ const handleClientChange = async () => {
 </script>
 
 <template>
-  <div class="container mx-auto p-6">
-    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-      <h1 class="text-3xl font-bold">
-        Clients
-      </h1>
+  <div class="container mx-auto space-y-6 p-6">
+    <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
+          Clients
+        </h1>
+        <UBadge
+          color="neutral"
+          variant="soft"
+          class="rounded-full"
+        >
+          {{ clients.length }}
+        </UBadge>
+      </div>
       <UButton
         icon="i-lucide-circle-plus"
-        variant="outline"
+        variant="soft"
         color="neutral"
         @click="openCreateClient"
       >
@@ -31,28 +58,34 @@ const handleClientChange = async () => {
       </UButton>
     </div>
 
-    <ClientModal
+    <ClientsModal
       v-model:open="isClientModalOpen"
+      :client-id="selectedClientId"
+      :client="selectedClient"
       @saved="handleClientChange"
     />
 
     <div
       v-if="!data"
-      class="text-center py-12"
+      class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center text-slate-500"
     >
       Chargement...
     </div>
 
     <div
       v-else-if="clients.length === 0"
-      class="text-center py-12"
+      class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center"
     >
-      <p class="text-gray-500 mb-4">
+      <UIcon
+        name="i-lucide-building-2"
+        class="mb-3 text-4xl text-slate-300"
+      />
+      <p class="mb-4 text-slate-500">
         Aucun client
       </p>
       <UButton
         icon="i-lucide-circle-plus"
-        variant="outline"
+        variant="soft"
         color="neutral"
         @click="openCreateClient"
       >
@@ -62,27 +95,31 @@ const handleClientChange = async () => {
 
     <ul
       v-else
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
     >
       <li
         v-for="client in clients"
         :key="client.id"
       >
-        <UPageCard
-          :title="client.name"
-          :description="client.description || ''"
-          variant="soft"
+        <NuxtLink
           :to="`/clients/${client.id}`"
-          class="h-full"
+          class="group block h-full"
         >
-          <template #leading>
-            <UIcon
-              :name="getClientIcon(client.icon)"
-              class="text-lg text-primary"
-            />
-          </template>
-        </UPageCard>
+          <ClientsCard
+            :client="client"
+            @edit="openEditClient"
+            @delete="onDeleteClient"
+          />
+        </NuxtLink>
       </li>
     </ul>
+
+    <ConfirmModal
+      :open="confirmModalOpen"
+      title="Confirmer la suppression"
+      :message="confirmModalMessage"
+      @confirm="onConfirm"
+      @cancel="onCancel"
+    />
   </div>
 </template>

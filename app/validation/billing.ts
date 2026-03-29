@@ -3,6 +3,7 @@ import { billingDashboardStatuses } from '~/constants/billing'
 
 export const billingDashboardQuerySchema = z.object({
   search: z.string().trim().max(255, 'La recherche est trop longue').optional().default(''),
+  projectId: z.coerce.number().int('Le projet doit être un entier').positive('Le projet doit être positif').optional(),
   status: z.enum(billingDashboardStatuses).default('all'),
   page: z.coerce.number().int('La page doit être un entier').positive('La page doit être positive').default(1),
   pageSize: z.coerce.number().int('La taille de page doit être un entier').min(1, 'La taille de page doit être positive').max(100, 'La taille de page est trop grande').default(12)

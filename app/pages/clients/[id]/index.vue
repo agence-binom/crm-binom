@@ -88,20 +88,20 @@ const projectToEdit = computed(() => {
         Retour aux clients
       </UButton>
     </div>
-    <ClientHeader
+    <ClientsHeader
       :client="client"
       @open-info="isClientInfoModalOpen = true"
       @delete="onDeleteClient"
     />
 
-    <ClientModal
+    <ClientsModal
       v-model:open="isClientInfoModalOpen"
       :client-id="client.id"
       :client="client"
       @saved="handleClientChange"
     />
 
-    <ContactModal
+    <ContactsModal
       v-model:open="isContactModalOpen"
       :contact-id="selectedContactId"
       :contact="contactToEdit"
@@ -109,7 +109,7 @@ const projectToEdit = computed(() => {
       @saved="handleContactChange"
     />
 
-    <ProjectModal
+    <ProjectsModal
       v-model:open="isProjectModalOpen"
       :project-id="selectedProjectId"
       :project="projectToEdit"
@@ -117,7 +117,7 @@ const projectToEdit = computed(() => {
       @saved="handleProjectChange"
     />
     <div class="flex flex-col gap-8">
-      <ClientProjects
+      <ClientsProjects
         :projects="projects"
         :client-id="clientId"
         @create="openCreateProject"
@@ -125,7 +125,7 @@ const projectToEdit = computed(() => {
         @delete="onDeleteProject"
       />
 
-      <ClientContacts
+      <ClientsContacts
         :contacts="contacts"
         :client-id="clientId"
         @create="openCreateContact"

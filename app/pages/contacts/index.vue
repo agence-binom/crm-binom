@@ -107,7 +107,7 @@ const onDeleteContact = async (contactId: number) => {
       @create-client="openCreateClientFromContact"
     />
 
-    <ContactModal
+    <ContactsModal
       v-model:open="isContactModalOpen"
       :contact-id="selectedContactId"
       :contact="contactToEdit"
@@ -115,7 +115,7 @@ const onDeleteContact = async (contactId: number) => {
       @saved="handleContactSaved"
     />
 
-    <ClientModal
+    <ClientsModal
       :open="isClientModalOpen"
       :initial-values="clientInitialValues"
       @update:open="handleClientModalClosed"

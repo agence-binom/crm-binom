@@ -42,11 +42,6 @@ const isEditing = computed(() => props.taskId != null)
 const schema = computed(() => (isEditing.value ? taskUpdateSchema : taskCreateSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier la tâche' : 'Nouvelle tâche'))
 const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer la tâche'))
-const modalDescription = computed(() => {
-  return isEditing.value
-    ? 'Ajuste simplement le contenu, l\'attribution et l\'avancement.'
-    : 'La tâche sera créée directement dans À faire.'
-})
 const taskStatusOptions = taskStatuses.map(status => ({
   label: getTaskStatusLabel(status),
   value: status
@@ -201,7 +196,7 @@ const onSubmit = async () => {
       size: 'xs',
       label: 'Fermer'
     }"
-    class="w-full max-w-3xl"
+    class="w-full max-w-3xl rounded-2xl"
   >
     <template #body>
       <UForm
@@ -210,31 +205,7 @@ const onSubmit = async () => {
         class="space-y-5"
         @submit="onSubmit"
       >
-        <div class="space-y-6 rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
-          <div class="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
-            <div class="space-y-1">
-              <h3 class="text-lg font-semibold tracking-tight text-slate-900">
-                {{ modalTitle }}
-              </h3>
-              <p class="text-sm text-slate-500">
-                {{ modalDescription }}
-              </p>
-            </div>
-
-            <div
-              v-if="isEditing"
-              class="flex flex-wrap gap-2"
-            >
-              <UBadge
-                variant="soft"
-                color="neutral"
-                class="rounded-full bg-slate-50 px-3 py-1 text-slate-700 ring-1 ring-inset ring-slate-200"
-              >
-                {{ getTaskStatusLabel(formState.status) }}
-              </UBadge>
-            </div>
-          </div>
-
+        <div class="space-y-6">
           <UFormField
             label="Titre"
             name="title"
@@ -242,7 +213,6 @@ const onSubmit = async () => {
             <UInput
               v-model="formState.title"
               class="w-full"
-              size="xl"
               placeholder="Ex: Finaliser la maquette mobile"
             />
           </UFormField>
@@ -358,28 +328,21 @@ const onSubmit = async () => {
             />
           </UFormField>
 
-          <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-sm text-slate-500">
-              {{ modalDescription }}
-            </p>
-
-            <div class="flex justify-end gap-2">
-              <UButton
-                variant="soft"
-                color="neutral"
-                :disabled="isSaving"
-                @click="isOpen = false"
-              >
-                Annuler
-              </UButton>
-              <UButton
-                type="submit"
-                :loading="isSaving"
-                class="min-w-36 justify-center rounded-full"
-              >
-                {{ submitLabel }}
-              </UButton>
-            </div>
+          <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
+            <UButton
+              variant="soft"
+              color="neutral"
+              :disabled="isSaving"
+              @click="isOpen = false"
+            >
+              Annuler
+            </UButton>
+            <UButton
+              type="submit"
+              :loading="isSaving"
+            >
+              {{ submitLabel }}
+            </UButton>
           </div>
         </div>
       </UForm>
