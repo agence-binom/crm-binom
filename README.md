@@ -1,79 +1,170 @@
 # CRM Binom
 
-## Setup
+CRM interne de binōm — gestion des clients, projets, tâches (kanban), contacts, devis, factures, paiements et documents.
 
-Make sure to install the dependencies:
+Stack : Nuxt 4, Nuxt UI v3, Drizzle ORM, Supabase (Auth + Postgres + Storage).
+
+---
+
+## Prérequis
+
+- Node.js 22+
+- Un projet Supabase avec les tables créées (`npm run db:migrate`)
+- Un bucket Supabase Storage pour les documents
+
+---
+
+## Installation
 
 ```bash
 npm install
-```
-
-Create a local env file before starting the app:
-
-```bash
 cp .env.example .env
 ```
 
-For `DATABASE_URL`, use the Supabase `Session pooler` connection string from `Connect` in the Supabase dashboard. This Nuxt server keeps a persistent Postgres client open, and the direct host (`db.<project-ref>.supabase.co:5432`) requires IPv6. On common IPv4-only networks that causes DNS failures such as `getaddrinfo ENOTFOUND`.
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+Renseigner toutes les variables dans `.env` (voir section ci-dessous), puis :
 
 ```bash
 npm run dev
 ```
 
-## Production
+---
 
-Build the application for production:
+## Variables d'environnement
 
-```bash
-npm run build
-```
+| Variable | Obligatoire | Description |
+|---|---|---|
+| `DATABASE_URL` | Oui | Connection string Postgres (Supabase **Session pooler** — voir note ci-dessous) |
+| `SUPABASE_URL` | Oui | URL du projet Supabase (`https://<ref>.supabase.co`) |
+| `SUPABASE_KEY` | Oui | Clé publique Supabase (anon/publishable) |
+| `SUPABASE_SECRET_KEY` | Oui | Clé secrète Supabase (service role) — utilisée côté serveur uniquement |
+| `DOCUMENTS_BUCKET` | Oui | Nom du bucket Supabase Storage pour les documents (ex : `documents`) |
+| `NUXT_PUBLIC_SITE_URL` | Oui | URL publique du site (ex : `http://localhost:3000`) |
+| `REDIS_URL` | Non | URL Redis pour le rate limiting multi-instance en production (ex : `redis://localhost:6379`) |
 
-Locally preview production build:
+> **Note `DATABASE_URL`** : utiliser la connection string **Session pooler** (`aws-0-<region>.pooler.supabase.com:5432`), pas l'hôte direct (`db.<ref>.supabase.co:5432`). L'hôte direct requiert IPv6, ce qui provoque des erreurs DNS sur les réseaux IPv4-only classiques.
 
-```bash
-npm run preview
-```
+---
 
-## Quality Checks
-
-Run the local quality gate before opening or merging a change:
-
-```bash
-npm test
-npm run lint
-npm run typecheck
-```
-
-## Supabase Database Types
-
-The Nuxt Supabase module reads its database typings from [app/types/database.types.ts](app/types/database.types.ts). Regenerate that file from the live Supabase `public` schema with:
+## Commandes utiles
 
 ```bash
-npm run db:types
+npm run dev          # Serveur de développement (http://localhost:3000)
+npm run build        # Build de production
+npm run start        # Démarrer le build de production
+npm run preview      # Prévisualiser le build en local
 ```
 
-Requirements:
+```bash
+npm test             # Tests
+npm run lint         # ESLint
+npm run lint:fix     # ESLint avec auto-fix
+npm run typecheck    # TypeScript (vue-tsc)
+```
 
-- `DATABASE_URL` must point to the target Supabase Postgres database.
-- The command reads the real schema, so run it after migrations or any manual schema change.
-- Run `npm run typecheck` after regeneration to confirm the Nuxt Supabase module still resolves the file cleanly.
+```bash
+npm run db:migrate   # Applique les migrations Drizzle sur la base
+npm run db:generate  # Génère les fichiers de migration depuis le schéma Drizzle
+npm run db:types     # Régénère app/types/database.types.ts depuis le schéma Supabase live
+npm run db:studio    # Lance Drizzle Studio (interface DB locale)
+```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+---
 
-## Frontend Structure
+## CI
 
-- `app/types`: front domain types shared by pages, components and composables.
-- `app/validation`: Zod schemas and inferred payload types for runtime validation and API inputs.
-- `app/lib`: pure helpers and business utilities without Vue reactivity.
-- `app/constants`: static lists and config values.
-- `app/composables`: reactive state and reusable Vue/Nuxt logic.
+La CI tourne sur chaque push via `.github/workflows/quality.yml` et exécute dans l'ordre :
 
-The rule is simple: if a type exists only to describe UI or domain data, it belongs in `app/types`, not in `app/validation`.
+1. `npm test`
+2. `npm run lint`
+3. `npm run typecheck`
 
-## UI/UX Notes
+**Passer ces trois checks en local avant d'ouvrir une PR.**
 
-The current task UI rules for kanban columns, task cards, and modals are documented in [docs/ui-ux.md](docs/ui-ux.md).
+---
+
+## Authentification
+
+Connexion par **magic-link uniquement** (Supabase Auth). L'envoi du lien est restreint aux adresses e-mail déjà présentes dans `public.users` — toute adresse inconnue reçoit une erreur côté serveur.
+
+Le middleware `server/middleware/01-auth.ts` vérifie le token Supabase sur toutes les routes `/api/*` sauf `/api/auth/*`.
+
+Pour ajouter un utilisateur : l'insérer dans `public.users` avec les champs `name`, `email`, et `auth_user_id` (UUID Supabase Auth).
+
+---
+
+## Documents (Supabase Storage)
+
+Les documents sont stockés dans le bucket défini par `DOCUMENTS_BUCKET`. Le bucket doit exister dans Supabase Storage avant le premier upload. Les URLs signées ont une durée de validité de 1 heure.
+
+---
+
+## Rate limiting
+
+Un rate limiter basé sur l'IP protège toutes les routes `/api/*` : 120 requêtes par minute.
+
+- **Dev / instance unique** : stockage en mémoire (défaut, aucune config).
+- **Production multi-instance** : passer sur Redis.
+  1. `npm install ioredis`
+  2. Définir `REDIS_URL` dans l'environnement.
+  3. Dans `nuxt.config.ts`, remplacer la config `rate-limit` par :
+     ```ts
+     'rate-limit': { driver: 'redis', url: process.env.REDIS_URL }
+     ```
+
+---
+
+## Structure serveur
+
+```
+server/
+  middleware/
+    00-rate-limit.ts   # Rate limiting IP (avant auth)
+    01-auth.ts         # Vérification token Supabase
+  api/                 # Routes API REST (Nitro)
+  utils/               # Helpers serveur (auth, erreurs DB, documents)
+  lib/                 # Logique métier serveur (upload documents, gestion utilisateurs auth)
+```
+
+---
+
+## Structure frontend
+
+```
+app/
+  types/        # Types domaine partagés (pages, composants, composables)
+  validation/   # Schémas Zod et types de payload (validation runtime + inputs API)
+  lib/          # Helpers purs sans réactivité Vue
+  constants/    # Listes statiques et valeurs de config
+  composables/  # État réactif et logique Vue/Nuxt réutilisable
+  components/   # Composants Vue
+  pages/        # Pages Nuxt (routing fichier)
+```
+
+Règle : un type qui décrit uniquement des données UI ou métier va dans `app/types`, pas dans `app/validation`.
+
+---
+
+## Base de données
+
+Le schéma Drizzle est dans `app/db/schema.ts`. Toute modification du schéma requiert :
+
+```bash
+npm run db:generate   # Génère la migration
+npm run db:migrate    # Applique sur la base cible
+npm run db:types      # Resynchronise les types Supabase
+npm run typecheck     # Vérifie que le module @nuxtjs/supabase résout correctement
+```
+
+---
+
+## Flux de contribution
+
+1. Créer une branche depuis `main` au format `<pseudo>/bin-<N>-<slug>`.
+2. Passer les checks locaux (`npm test && npm run lint && npm run typecheck`).
+3. Ouvrir une PR vers `main` — la CI vérifie les mêmes checks.
+
+---
+
+## Notes UI/UX
+
+Les règles visuelles pour les colonnes kanban, les cards tâche et les modales sont documentées dans [docs/ui-ux.md](docs/ui-ux.md).
