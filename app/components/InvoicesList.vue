@@ -112,18 +112,23 @@ const isOverdue = (invoice: Invoice) => {
       <UCard
         v-for="invoice in invoices"
         :key="invoice.id"
+        <<<<<<<
+        HEAD
         variant="soft"
         role="button"
         tabindex="0"
         :aria-label="`Modifier la facture ${invoice.number}`"
+        =="====="
+      >
+        >>>>>> b10780cdbfcca77922fd8237f0a1499bfc68c5a0
         :class="[
-          'group cursor-pointer rounded-[1.35rem] border-0 bg-white/90 shadow-sm ring-1 ring-gray-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
-          isOverdue(invoice) && 'ring-red-200/90'
+        'group cursor-pointer rounded-[1.35rem] border-0 bg-white/90 shadow-sm ring-1 ring-gray-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+        isOverdue(invoice) && 'ring-red-200/90'
         ]"
         @click="emit('edit', invoice.id)"
         @keydown.enter.prevent="emit('edit', invoice.id)"
         @keydown.space.prevent="emit('edit', invoice.id)"
-      >
+        >
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0 flex-1 space-y-3">
             <div class="flex items-start justify-between gap-3">
