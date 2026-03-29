@@ -1,6 +1,6 @@
-import { and, asc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db } from '~/db'
-import { buildBillingProjectStatus } from '~/lib/billing'
+import { buildBillingProjectStatus, type BillingProjectDocument } from '~/lib/billing'
 import { clientsTable } from '~/db/schema/clients'
 import { documentsTable } from '~/db/schema/documents'
 import { projectsTable } from '~/db/schema/projects'
@@ -11,10 +11,10 @@ const toNumber = (value: unknown) => Number(value ?? 0)
 const buildDocumentsByProjectQuery = () => db
   .select({
     projectId: documentsTable.entityId,
-    quoteTotal: sql<number>`sum(case when ${documentsTable.documentType} = 'quote' then 1 else 0 end)`,
-    quoteWithLinkCount: sql<number>`sum(case when ${documentsTable.documentType} = 'quote' and coalesce(${documentsTable.externalUrl}, '') <> '' then 1 else 0 end)`,
-    invoiceTotal: sql<number>`sum(case when ${documentsTable.documentType} = 'invoice' then 1 else 0 end)`,
-    invoiceWithLinkCount: sql<number>`sum(case when ${documentsTable.documentType} = 'invoice' and coalesce(${documentsTable.externalUrl}, '') <> '' then 1 else 0 end)`
+    quoteTotal: sql<number>`sum(case when ${documentsTable.documentType} = 'quote' then 1 else 0 end)`.as('quote_total'),
+    quoteWithLinkCount: sql<number>`sum(case when ${documentsTable.documentType} = 'quote' and coalesce(${documentsTable.externalUrl}, '') <> '' then 1 else 0 end)`.as('quote_with_link_count'),
+    invoiceTotal: sql<number>`sum(case when ${documentsTable.documentType} = 'invoice' then 1 else 0 end)`.as('invoice_total'),
+    invoiceWithLinkCount: sql<number>`sum(case when ${documentsTable.documentType} = 'invoice' and coalesce(${documentsTable.externalUrl}, '') <> '' then 1 else 0 end)`.as('invoice_with_link_count')
   })
   .from(documentsTable)
   .where(and(
@@ -44,6 +44,10 @@ const buildWhereClause = (
     ))
   }
 
+  if (query.projectId) {
+    filters.push(eq(projectsTable.id, query.projectId))
+  }
+
   switch (query.status) {
     case 'missing_quote_pdf':
       filters.push(sql`${quoteTotal} = 0`)
@@ -66,6 +70,14 @@ export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, billingDashboardQuerySchema.parse)
   const documentsByProject = buildDocumentsByProjectQuery()
   const whereClause = buildWhereClause(query, documentsByProject)
+
+  const projectOptions = await db
+    .select({
+      value: projectsTable.id,
+      label: projectsTable.name
+    })
+    .from(projectsTable)
+    .orderBy(asc(projectsTable.name), asc(projectsTable.id))
 
   const [countRow] = await db
     .select({
@@ -104,6 +116,44 @@ export default defineEventHandler(async (event) => {
     .limit(query.pageSize)
     .offset(offset)
 
+  const projectIds = rows.map(row => row.id)
+  const documents = projectIds.length > 0
+    ? await db
+        .select({
+          id: documentsTable.id,
+          projectId: documentsTable.entityId,
+          name: documentsTable.name,
+          type: documentsTable.documentType,
+          externalUrl: documentsTable.externalUrl,
+          createdAt: documentsTable.createdAt
+        })
+        .from(documentsTable)
+        .where(and(
+          eq(documentsTable.entityType, 'project'),
+          inArray(documentsTable.entityId, projectIds),
+          inArray(documentsTable.documentType, ['quote', 'invoice'])
+        ))
+        .orderBy(asc(documentsTable.entityId), asc(documentsTable.documentType), desc(documentsTable.createdAt), desc(documentsTable.id))
+    : []
+
+  const documentsByProjectId = new Map<number, BillingProjectDocument[]>()
+
+  documents.forEach((document) => {
+    const item: BillingProjectDocument = {
+      id: document.id,
+      projectId: document.projectId,
+      name: document.name,
+      type: document.type as 'quote' | 'invoice',
+      hasLink: Boolean(document.externalUrl?.trim()),
+      externalUrl: document.externalUrl,
+      createdAt: document.createdAt
+    }
+
+    const current = documentsByProjectId.get(document.projectId) ?? []
+    current.push(item)
+    documentsByProjectId.set(document.projectId, current)
+  })
+
   const [statsRow] = await db
     .select({
       totalProjects: sql<number>`count(*)`,
@@ -134,8 +184,10 @@ export default defineEventHandler(async (event) => {
       quoteTotal: toNumber(row.quoteTotal),
       quoteWithLinkCount: toNumber(row.quoteWithLinkCount),
       invoiceTotal: toNumber(row.invoiceTotal),
-      invoiceWithLinkCount: toNumber(row.invoiceWithLinkCount)
+      invoiceWithLinkCount: toNumber(row.invoiceWithLinkCount),
+      documents: documentsByProjectId.get(row.id) ?? []
     })),
+    projectOptions,
     stats: {
       totalProjects: toNumber(statsRow?.totalProjects),
       projectsWithQuotePdf: toNumber(statsRow?.projectsWithQuotePdf),

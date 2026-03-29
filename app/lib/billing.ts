@@ -7,6 +7,16 @@ export type BillingCoverage = {
   status: BillingCoverageStatus
 }
 
+export type BillingProjectDocument = {
+  id: number
+  projectId: number
+  name: string
+  type: 'quote' | 'invoice'
+  hasLink: boolean
+  externalUrl?: string | null
+  createdAt?: string | Date | null
+}
+
 type BillingProjectBase = {
   id: number
   clientId: number
@@ -26,12 +36,14 @@ type BillingProjectStatusInput = {
   quoteWithLinkCount: number
   invoiceTotal: number
   invoiceWithLinkCount: number
+  documents?: BillingProjectDocument[]
 }
 
 export type BillingProjectStatus = {
   project: BillingProjectBase
   quoteCoverage: BillingCoverage
   invoiceCoverage: BillingCoverage
+  documents: BillingProjectDocument[]
   totalDocuments: number
   missingLinkCount: number
   isComplete: boolean
@@ -64,7 +76,8 @@ export const buildBillingProjectStatus = ({
   quoteTotal,
   quoteWithLinkCount,
   invoiceTotal,
-  invoiceWithLinkCount
+  invoiceWithLinkCount,
+  documents
 }: BillingProjectStatusInput): BillingProjectStatus => {
   const quoteCoverage = getBillingCoverage(quoteTotal, quoteWithLinkCount)
   const invoiceCoverage = getBillingCoverage(invoiceTotal, invoiceWithLinkCount)
@@ -74,6 +87,7 @@ export const buildBillingProjectStatus = ({
     project,
     quoteCoverage,
     invoiceCoverage,
+    documents: documents ?? [],
     totalDocuments: quoteCoverage.total + invoiceCoverage.total,
     missingLinkCount,
     isComplete: quoteCoverage.status === 'complete' && invoiceCoverage.status === 'complete'

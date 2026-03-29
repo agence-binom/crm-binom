@@ -14,14 +14,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="mb-6">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold flex items-center gap-2">
+  <div class="space-y-6">
+    <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <h2 class="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900">
         <UIcon name="i-lucide-users" />
         Contacts
         <UBadge
           color="neutral"
           variant="soft"
+          class="rounded-full"
         >
           {{ contacts.length }}
         </UBadge>
@@ -39,31 +40,55 @@ const emit = defineEmits<{
 
     <ul
       v-if="contacts.length > 0"
-      class="flex items-stretch gap-4 flex-wrap"
+      class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
     >
       <li
         v-for="contact in contacts"
         :key="contact.id"
-        class="min-w-sm"
       >
         <UCard
-          variant="soft"
-          class="h-full"
+          class="group relative h-full rounded-[1.35rem] border-0 bg-white/90 shadow-sm ring-1 ring-gray-200/80"
         >
-          <div>
-            <h3 class="text-xl font-semibold">
-              {{ contact.firstName }} {{ contact.lastName }}
-              <span
-                v-if="contact.position"
-                class="text-sm text-gray-500"
-              >({{ contact.position }})</span>
-            </h3>
-            <div class="flex gap-2 mt-2">
+          <div class="space-y-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 space-y-2">
+                <h3 class="text-lg font-semibold tracking-tight text-slate-900">
+                  {{ contact.firstName }} {{ contact.lastName }}
+                </h3>
+
+                <UBadge
+                  v-if="contact.position"
+                  variant="soft"
+                  color="neutral"
+                  class="rounded-full"
+                >
+                  {{ contact.position }}
+                </UBadge>
+              </div>
+
+              <div class="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                <UButton
+                  size="sm"
+                  variant="soft"
+                  icon="i-lucide-pencil"
+                  @click="emit('edit', contact.id)"
+                />
+                <UButton
+                  size="sm"
+                  variant="soft"
+                  color="error"
+                  icon="i-lucide-trash"
+                  @click="emit('delete', contact.id)"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
               <UBadge
                 v-if="contact.email"
                 variant="soft"
                 color="neutral"
-                class="rounded-full"
+                class="max-w-full rounded-full"
                 icon="i-lucide-mail"
               >
                 {{ contact.email }}
@@ -87,27 +112,13 @@ const emit = defineEmits<{
                 {{ contact.mobile }}
               </UBadge>
             </div>
-            <div
+
+            <p
               v-if="contact.notes"
-              class="mt-2"
+              class="line-clamp-3 text-sm leading-6 text-slate-600"
             >
               {{ contact.notes }}
-            </div>
-            <div class="flex gap-2 mt-4">
-              <UButton
-                size="sm"
-                variant="soft"
-                icon="i-lucide-pencil"
-                @click="emit('edit', contact.id)"
-              />
-              <UButton
-                size="sm"
-                variant="soft"
-                color="error"
-                icon="i-lucide-trash"
-                @click="emit('delete', contact.id)"
-              />
-            </div>
+            </p>
           </div>
         </UCard>
       </li>
@@ -115,13 +126,13 @@ const emit = defineEmits<{
 
     <div
       v-else
-      class="text-center py-8"
+      class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white/80 px-6 py-10 text-center"
     >
       <UIcon
         name="i-lucide-user-x"
-        class="text-4xl text-gray-400 mb-2"
+        class="mb-3 text-4xl text-slate-300"
       />
-      <p class="text-gray-600 mb-4">
+      <p class="mb-4 text-slate-600">
         Aucun contact pour ce client
       </p>
       <UButton
