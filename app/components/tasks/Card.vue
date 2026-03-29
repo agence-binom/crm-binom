@@ -69,7 +69,6 @@ const projectLabel = computed(() => {
                   size="xs"
                   color="neutral"
                   variant="ghost"
-                  class="rounded-full"
                   aria-label="Modifier la tâche"
                   @click="emit('update', props.task.id)"
                 />
@@ -78,7 +77,6 @@ const projectLabel = computed(() => {
                   size="xs"
                   color="error"
                   variant="ghost"
-                  class="rounded-full"
                   aria-label="Supprimer la tâche"
                   @click="emit('delete', props.task.id)"
                 />

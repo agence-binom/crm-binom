@@ -25,7 +25,7 @@ const isLoading = computed(() => status.value === 'pending')
         />
       </div>
     </div>
-    <ToDoList
+    <TasksToDoList
       v-else
       :tasks="filteredTasks"
       :available-users="availableUsers"
@@ -47,6 +47,6 @@ const isLoading = computed(() => status.value === 'pending')
           </template>
         </USelectMenu>
       </template>
-    </ToDoList>
+    </TasksToDoList>
   </div>
 </template>

@@ -1,13 +1,31 @@
 <script setup lang="ts">
-import { getClientIcon } from '~/lib/clients'
+import type { Client } from '~/types'
 
 const { data, refresh } = await useFetch('/api/clients/dashboard')
 const clients = computed(() => data.value?.clients || [])
 
 const isClientModalOpen = ref(false)
+const selectedClientId = ref<number | null>(null)
+
+const selectedClient = computed<Client | null>(() => {
+  if (!selectedClientId.value) return null
+  return clients.value.find((c: Client) => c.id === selectedClientId.value) ?? null
+})
+
+const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
 const openCreateClient = () => {
+  selectedClientId.value = null
   isClientModalOpen.value = true
+}
+
+const openEditClient = (clientId: number) => {
+  selectedClientId.value = clientId
+  isClientModalOpen.value = true
+}
+
+const onDeleteClient = async (clientId: number) => {
+  await deleteResource('client', clientId, '/api/clients', refresh)
 }
 
 const handleClientChange = async () => {
@@ -19,7 +37,7 @@ const handleClientChange = async () => {
   <div class="container mx-auto space-y-6 p-6">
     <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
       <div class="flex items-center gap-3">
-        <h1 class="text-3xl font-bold tracking-tight text-slate-900">
+        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
           Clients
         </h1>
         <UBadge
@@ -32,7 +50,7 @@ const handleClientChange = async () => {
       </div>
       <UButton
         icon="i-lucide-circle-plus"
-        variant="outline"
+        variant="soft"
         color="neutral"
         @click="openCreateClient"
       >
@@ -40,8 +58,10 @@ const handleClientChange = async () => {
       </UButton>
     </div>
 
-    <ClientModal
+    <ClientsModal
       v-model:open="isClientModalOpen"
+      :client-id="selectedClientId"
+      :client="selectedClient"
       @saved="handleClientChange"
     />
 
@@ -65,7 +85,7 @@ const handleClientChange = async () => {
       </p>
       <UButton
         icon="i-lucide-circle-plus"
-        variant="outline"
+        variant="soft"
         color="neutral"
         @click="openCreateClient"
       >
@@ -85,91 +105,21 @@ const handleClientChange = async () => {
           :to="`/clients/${client.id}`"
           class="group block h-full"
         >
-          <UCard
-            class="h-full rounded-[1.35rem] border-0 bg-white/90 shadow-sm ring-1 ring-gray-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div class="space-y-4">
-              <div class="flex items-start gap-3">
-                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200">
-                  <UIcon
-                    :name="getClientIcon(client.icon)"
-                    class="text-lg"
-                  />
-                </div>
-
-                <div class="min-w-0 flex-1 space-y-2">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <UBadge
-                      v-if="client.status"
-                      color="neutral"
-                      variant="soft"
-                      class="rounded-full"
-                    >
-                      {{ client.status }}
-                    </UBadge>
-                  </div>
-
-                  <h2 class="text-lg font-semibold tracking-tight text-slate-900">
-                    {{ client.name }}
-                  </h2>
-                </div>
-              </div>
-
-              <p
-                v-if="client.description"
-                class="line-clamp-3 text-sm leading-6 text-slate-600"
-              >
-                {{ client.description }}
-              </p>
-              <p
-                v-else
-                class="text-sm italic text-slate-400"
-              >
-                Aucune description
-              </p>
-
-              <div class="flex flex-wrap gap-2">
-                <UBadge
-                  v-if="client.email"
-                  color="neutral"
-                  variant="soft"
-                  class="rounded-full"
-                >
-                  <UIcon
-                    name="i-lucide-mail"
-                    class="mr-1"
-                  />
-                  {{ client.email }}
-                </UBadge>
-                <UBadge
-                  v-if="client.phone"
-                  color="neutral"
-                  variant="soft"
-                  class="rounded-full"
-                >
-                  <UIcon
-                    name="i-lucide-phone"
-                    class="mr-1"
-                  />
-                  {{ client.phone }}
-                </UBadge>
-                <UBadge
-                  v-if="client.website"
-                  color="neutral"
-                  variant="soft"
-                  class="rounded-full"
-                >
-                  <UIcon
-                    name="i-lucide-globe"
-                    class="mr-1"
-                  />
-                  Site web
-                </UBadge>
-              </div>
-            </div>
-          </UCard>
+          <ClientsCard
+            :client="client"
+            @edit="openEditClient"
+            @delete="onDeleteClient"
+          />
         </NuxtLink>
       </li>
     </ul>
+
+    <ConfirmModal
+      :open="confirmModalOpen"
+      title="Confirmer la suppression"
+      :message="confirmModalMessage"
+      @confirm="onConfirm"
+      @cancel="onCancel"
+    />
   </div>
 </template>

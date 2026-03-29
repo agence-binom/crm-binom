@@ -61,7 +61,7 @@ const columns: TableColumn<Contact>[] = [
   <div class="space-y-6">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3">
-        <h1 class="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 class="text-xl font-semibold tracking-tight text-slate-900">
           Contacts
         </h1>
         <UBadge
@@ -76,7 +76,7 @@ const columns: TableColumn<Contact>[] = [
       <UButton
         icon="i-lucide-circle-plus"
         color="neutral"
-        variant="outline"
+        variant="soft"
         @click="emit('create')"
       >
         Nouveau contact
@@ -128,7 +128,6 @@ const columns: TableColumn<Contact>[] = [
                 size="xs"
                 color="neutral"
                 variant="soft"
-                class="rounded-full cursor-pointer"
                 aria-label="Créer un client depuis ce contact"
                 @click="emit('createClient', row.original.id)"
               />
@@ -164,7 +163,7 @@ const columns: TableColumn<Contact>[] = [
               icon="i-lucide-pencil"
               size="sm"
               color="neutral"
-              variant="soft"
+              variant="ghost"
               aria-label="Modifier le contact"
               @click="emit('edit', row.original.id)"
             />
@@ -172,7 +171,7 @@ const columns: TableColumn<Contact>[] = [
               icon="i-lucide-trash-2"
               size="sm"
               color="error"
-              variant="soft"
+              variant="ghost"
               aria-label="Supprimer le contact"
               @click="emit('delete', row.original.id)"
             />
@@ -192,7 +191,7 @@ const columns: TableColumn<Contact>[] = [
               <UButton
                 icon="i-lucide-circle-plus"
                 color="neutral"
-                variant="outline"
+                variant="soft"
                 @click="emit('create')"
               >
                 Créer un premier contact

@@ -56,14 +56,14 @@ const handleDocumentsChange = async () => {
       </UButton>
     </div>
 
-    <ProjectHeader
+    <ProjectsHeader
       :project="project"
       :client="project.client"
       @open-info="isProjectModalOpen = true"
       @delete="onDeleteProject"
     />
 
-    <ProjectModal
+    <ProjectsModal
       v-model:open="isProjectModalOpen"
       :project-id="project.id"
       :project="project"
@@ -81,7 +81,7 @@ const handleDocumentsChange = async () => {
     />
 
     <div class="mt-8">
-      <ToDoList
+      <TasksToDoList
         :tasks="filteredTasks"
         title="Tâches du projet"
         :project-id="projectId"
@@ -103,13 +103,13 @@ const handleDocumentsChange = async () => {
             </template>
           </USelectMenu>
         </template>
-      </ToDoList>
+      </TasksToDoList>
     </div>
 
     <div class="mt-8 space-y-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 class="text-xl font-semibold">
+          <h2 class="text-xl font-semibold tracking-tight text-slate-900">
             Documents de facturation
           </h2>
           <p class="text-sm text-gray-500">
@@ -119,6 +119,8 @@ const handleDocumentsChange = async () => {
 
         <UButton
           icon="i-lucide-plus"
+          variant="soft"
+          color="neutral"
           @click="isUploadModalOpen = true"
         >
           Ajouter un document
