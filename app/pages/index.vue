@@ -30,7 +30,7 @@ const isLoading = computed(() => status.value === 'pending')
       :tasks="filteredTasks"
       :available-users="availableUsers"
       :available-projects="projectOptions"
-      title="To Do List globale"
+      title="Tableau de bord"
       @refresh="refresh"
     >
       <template #filters>
