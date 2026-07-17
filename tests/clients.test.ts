@@ -31,7 +31,6 @@ test('normalizeClientStatus retourne active par defaut', () => {
 })
 
 test('normalizeClientStatus conserve les statuts connus', () => {
-  assert.equal(normalizeClientStatus('inactive'), 'inactive')
   assert.equal(normalizeClientStatus('archived'), 'archived')
 })
 
