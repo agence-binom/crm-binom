@@ -1,0 +1,38 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Version control / editor / IDE
+.git
+.github
+.vscode
+.editorconfig
+.idea
+.fleet
+.claude
+
+# Logs
+logs
+*.log
+
+# Local env files (never bake secrets into the image)
+.env
+.env.*
+!.env.example
+
+# Docs / misc (not needed at build or runtime)
+README.md
+SECURITY.md
+LICENSE
+docs
+tests
+
+# OS files
+.DS_Store
