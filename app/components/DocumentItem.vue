@@ -134,7 +134,7 @@ const onDeleteDocument = async (documentId: number) => {
       size="sm"
       variant="soft"
       color="error"
-      icon="i-lucide--2"
+      icon="i-lucide-trash-2"
       aria-label="Supprimer le document"
       @click="onDeleteDocument(document.id)"
     />
