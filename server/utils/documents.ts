@@ -215,10 +215,8 @@ const resolveDocumentDownloadUrl = async (
     .createSignedUrl(filepath, DOCUMENT_SIGNED_URL_TTL_SECONDS)
 
   if (error) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: `Impossible de générer le lien de téléchargement: ${error.message}`
-    })
+    console.error(`[documents] Impossible de générer le lien de téléchargement pour "${filepath}": ${error.message}`)
+    return null
   }
 
   return data.signedUrl
