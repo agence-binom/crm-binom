@@ -6,7 +6,7 @@ const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
 const projectId = computed(() => Number(route.params.projectId))
 
-const { data, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
+const { data, error, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
 const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const quoteDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.quote || [])
@@ -297,5 +297,29 @@ const handleDocumentsChange = async () => {
       @confirm="onConfirm"
       @cancel="onCancel"
     />
+  </div>
+
+  <div
+    v-else-if="error"
+    class="container mx-auto p-6"
+  >
+    <UAlert
+      icon="i-lucide-circle-alert"
+      color="error"
+      variant="soft"
+      title="Impossible de charger le projet"
+      :description="error.statusMessage || error.message || 'Une erreur est survenue lors du chargement de ce projet.'"
+    >
+      <template #actions>
+        <UButton
+          variant="soft"
+          color="error"
+          icon="i-lucide-rotate-cw"
+          @click="refresh()"
+        >
+          Réessayer
+        </UButton>
+      </template>
+    </UAlert>
   </div>
 </template>
