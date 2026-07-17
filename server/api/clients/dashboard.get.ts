@@ -1,8 +1,11 @@
-import { asc } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
+import { clientsDashboardQuerySchema } from '~/validation/clients'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  const query = await getValidatedQuery(event, clientsDashboardQuerySchema.parse)
+
   const clients = await db
     .select({
       id: clientsTable.id,
@@ -22,6 +25,7 @@ export default defineEventHandler(async () => {
     })
     .from(clientsTable)
     .orderBy(asc(clientsTable.name), asc(clientsTable.id))
+    .where(eq(clientsTable.status, query.status))
 
   return {
     clients

@@ -1,17 +1,16 @@
 import { clientIconOptions } from './client-icons'
 
-export type ClientStatus = 'active' | 'inactive' | 'archived'
+export type ClientStatus = 'active' | 'archived'
 
 export const defaultClientIcon = clientIconOptions[0]?.value ?? 'i-lucide-briefcase'
 
 export const clientStatusOptions: Array<{ label: string, value: ClientStatus }> = [
   { label: 'Actif', value: 'active' },
-  { label: 'Inactif', value: 'inactive' },
   { label: 'Archivé', value: 'archived' }
 ]
 
 export function normalizeClientStatus(status?: string | null): ClientStatus {
-  if (status === 'inactive' || status === 'archived') {
+  if (status === 'archived') {
     return status
   }
 
