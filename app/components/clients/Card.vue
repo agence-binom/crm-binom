@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Client } from '~/types'
+import { clientStatusOptions, normalizeClientStatus } from '~/lib/clients'
 
 const props = defineProps<{
   client: Client
@@ -15,13 +16,17 @@ const infos = computed(() => [
   props.client.phone ? { icon: 'i-lucide-phone', label: props.client.phone } : null,
   props.client.website ? { icon: 'i-lucide-globe', label: 'Site web' } : null
 ].filter(i => i !== null))
+
+const statusLabel = computed(() =>
+  clientStatusOptions.find(option => option.value === normalizeClientStatus(props.client.status))?.label ?? ''
+)
 </script>
 
 <template>
   <AppCard
     :title="client.name"
     :subtitle="client.description ?? undefined"
-    :badge="client.status ? { label: client.status } : undefined"
+    :badge="client.status === 'archived' ? { label: statusLabel } : undefined"
     :infos="infos"
     hoverable
   >

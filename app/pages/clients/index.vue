@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import type { Client } from '~/types'
 
-const { data, refresh } = await useFetch('/api/clients/dashboard')
+const showArchived = ref(false)
+const statusFilter = computed(() => (showArchived.value ? 'archived' : 'active'))
+
+const { data, refresh } = await useFetch('/api/clients/dashboard', {
+  query: { status: statusFilter }
+})
 const clients = computed(() => data.value?.clients || [])
+
+const toggleArchived = () => {
+  showArchived.value = !showArchived.value
+}
 
 const isClientModalOpen = ref(false)
 const selectedClientId = ref<number | null>(null)
@@ -48,14 +57,24 @@ const handleClientChange = async () => {
           {{ clients.length }}
         </UBadge>
       </div>
-      <UButton
-        icon="i-lucide-circle-plus"
-        variant="soft"
-        color="neutral"
-        @click="openCreateClient"
-      >
-        Nouveau client
-      </UButton>
+      <div class="flex items-center gap-2">
+        <UButton
+          :icon="showArchived ? 'i-lucide-users' : 'i-lucide-archive'"
+          variant="ghost"
+          color="neutral"
+          @click="toggleArchived"
+        >
+          {{ showArchived ? 'Voir les clients actifs' : 'Voir les clients archivés' }}
+        </UButton>
+        <UButton
+          icon="i-lucide-circle-plus"
+          variant="soft"
+          color="neutral"
+          @click="openCreateClient"
+        >
+          Nouveau client
+        </UButton>
+      </div>
     </div>
 
     <ClientsModal
@@ -81,9 +100,10 @@ const handleClientChange = async () => {
         class="mb-3 text-4xl text-slate-300"
       />
       <p class="mb-4 text-slate-500">
-        Aucun client
+        {{ showArchived ? 'Aucun client archivé' : 'Aucun client actif' }}
       </p>
       <UButton
+        v-if="!showArchived"
         icon="i-lucide-circle-plus"
         variant="soft"
         color="neutral"
@@ -107,6 +127,7 @@ const handleClientChange = async () => {
         >
           <ClientsCard
             :client="client"
+            :status="client.status"
             @edit="openEditClient"
             @delete="onDeleteClient"
           />
