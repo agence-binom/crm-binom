@@ -8,6 +8,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   openInfo: []
   delete: [clientId: number]
+  archive: [clientId: number]
+  restore: [clientId: number]
 }>()
 
 const infos = computed(() => [
@@ -35,13 +37,32 @@ const infos = computed(() => [
           Modifier les informations
         </UButton>
         <UButton
+          v-if="!client.archived"
           size="sm"
           variant="ghost"
-          color="error"
-          icon="i-lucide-trash-2"
-          aria-label="Supprimer le client"
-          @click="emit('delete', client.id)"
+          color="neutral"
+          icon="i-lucide-archive"
+          aria-label="Archiver le client"
+          @click="emit('archive', client.id)"
         />
+        <template v-else>
+          <UButton
+            size="sm"
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-archive-restore"
+            aria-label="Restaurer le client"
+            @click="emit('restore', client.id)"
+          />
+          <UButton
+            size="sm"
+            variant="ghost"
+            color="error"
+            icon="i-lucide-trash-2"
+            aria-label="Supprimer le client"
+            @click="emit('delete', client.id)"
+          />
+        </template>
       </div>
     </template>
   </AppPageHeader>

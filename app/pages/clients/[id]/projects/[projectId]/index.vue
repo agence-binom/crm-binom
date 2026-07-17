@@ -20,6 +20,7 @@ const isProjectModalOpen = ref(false)
 const isUploadModalOpen = ref(false)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
+const { setArchived } = useArchiveAction()
 
 const quoteDocumentsMissingLinkCount = computed(() => quoteDocuments.value.filter(document => !document.externalUrl).length)
 const invoiceDocumentsMissingLinkCount = computed(() => invoiceDocuments.value.filter(document => !document.externalUrl).length)
@@ -28,6 +29,14 @@ const onDeleteProject = async (projectId: number) => {
   await deleteResource('projet', projectId, '/api/projects', async () => {
     await navigateTo(`/clients/${clientId.value}`)
   })
+}
+
+const onArchiveProject = async (projectId: number) => {
+  await setArchived('projet', projectId, '/api/projects', true, refresh)
+}
+
+const onRestoreProject = async (projectId: number) => {
+  await setArchived('projet', projectId, '/api/projects', false, refresh)
 }
 
 const handleProjectChange = async () => {
@@ -61,6 +70,8 @@ const handleDocumentsChange = async () => {
       :client="project.client"
       @open-info="isProjectModalOpen = true"
       @delete="onDeleteProject"
+      @archive="onArchiveProject"
+      @restore="onRestoreProject"
     />
 
     <ProjectsModal

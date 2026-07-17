@@ -4,13 +4,17 @@ import type { Contact } from '~/types'
 
 defineProps<{
   contacts: Contact[]
+  showArchived: boolean
 }>()
 
 const emit = defineEmits<{
   create: []
   edit: [contactId: number]
   delete: [contactId: number]
+  archive: [contactId: number]
+  restore: [contactId: number]
   createClient: [contactId: number]
+  toggleArchived: []
 }>()
 
 const getContactFullName = (contact: Contact) => `${contact.firstName} ${contact.lastName}`
@@ -73,14 +77,24 @@ const columns: TableColumn<Contact>[] = [
         </UBadge>
       </div>
 
-      <UButton
-        icon="i-lucide-circle-plus"
-        color="neutral"
-        variant="soft"
-        @click="emit('create')"
-      >
-        Nouveau contact
-      </UButton>
+      <div class="flex items-center gap-2">
+        <UButton
+          :icon="showArchived ? 'i-lucide-users' : 'i-lucide-archive'"
+          variant="ghost"
+          color="neutral"
+          @click="emit('toggleArchived')"
+        >
+          {{ showArchived ? 'Voir les contacts actifs' : 'Voir les contacts archivés' }}
+        </UButton>
+        <UButton
+          icon="i-lucide-circle-plus"
+          color="neutral"
+          variant="soft"
+          @click="emit('create')"
+        >
+          Nouveau contact
+        </UButton>
+      </div>
     </div>
 
     <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
@@ -168,13 +182,32 @@ const columns: TableColumn<Contact>[] = [
               @click="emit('edit', row.original.id)"
             />
             <UButton
-              icon="i-lucide-trash-2"
+              v-if="!row.original.archived"
+              icon="i-lucide-archive"
               size="sm"
-              color="error"
+              color="neutral"
               variant="ghost"
-              aria-label="Supprimer le contact"
-              @click="emit('delete', row.original.id)"
+              aria-label="Archiver le contact"
+              @click="emit('archive', row.original.id)"
             />
+            <template v-else>
+              <UButton
+                icon="i-lucide-archive-restore"
+                size="sm"
+                color="neutral"
+                variant="ghost"
+                aria-label="Restaurer le contact"
+                @click="emit('restore', row.original.id)"
+              />
+              <UButton
+                icon="i-lucide-trash-2"
+                size="sm"
+                color="error"
+                variant="ghost"
+                aria-label="Supprimer le contact"
+                @click="emit('delete', row.original.id)"
+              />
+            </template>
           </div>
         </template>
 

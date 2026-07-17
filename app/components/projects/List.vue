@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '~/types'
 
-const _props = defineProps<{
+const props = defineProps<{
   projects: Project[]
   clientId?: number
   showHeader?: boolean
@@ -14,7 +14,16 @@ const emit = defineEmits<{
   create: []
   edit: [projectId: number]
   delete: [projectId: number]
+  archive: [projectId: number]
+  restore: [projectId: number]
 }>()
+
+const showArchived = ref(false)
+const filteredProjects = computed(() => props.projects.filter(project => Boolean(project.archived) === showArchived.value))
+
+const toggleArchived = () => {
+  showArchived.value = !showArchived.value
+}
 </script>
 
 <template>
@@ -31,28 +40,38 @@ const emit = defineEmits<{
           variant="soft"
           class="rounded-full"
         >
-          {{ projects.length }}
+          {{ filteredProjects.length }}
         </UBadge>
       </h2>
-      <UButton
-        v-if="showCreateButton"
-        icon="i-lucide-circle-plus"
-        variant="soft"
-        color="neutral"
-        @click="emit('create')"
-      >
-        Nouveau projet
-      </UButton>
+      <div class="flex items-center gap-2">
+        <UButton
+          :icon="showArchived ? 'i-lucide-folder' : 'i-lucide-archive'"
+          variant="ghost"
+          color="neutral"
+          @click="toggleArchived"
+        >
+          {{ showArchived ? 'Voir les projets actifs' : 'Voir les projets archivés' }}
+        </UButton>
+        <UButton
+          v-if="showCreateButton"
+          icon="i-lucide-circle-plus"
+          variant="soft"
+          color="neutral"
+          @click="emit('create')"
+        >
+          Nouveau projet
+        </UButton>
+      </div>
     </div>
 
     <TransitionGroup
-      v-if="projects.length > 0"
+      v-if="filteredProjects.length > 0"
       name="list"
       tag="ul"
       class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
     >
       <li
-        v-for="project in projects"
+        v-for="project in filteredProjects"
         :key="project.id"
       >
         <NuxtLink
@@ -64,6 +83,8 @@ const emit = defineEmits<{
             :show-delete-button="showDeleteButton"
             @delete="emit('delete', project.id)"
             @edit="emit('edit', project.id)"
+            @archive="emit('archive', project.id)"
+            @restore="emit('restore', project.id)"
           />
         </NuxtLink>
       </li>
@@ -78,10 +99,10 @@ const emit = defineEmits<{
         class="mb-3 text-4xl text-slate-300"
       />
       <p class="mb-4 text-slate-600">
-        {{ emptyMessage || 'Aucun projet' }}
+        {{ showArchived ? 'Aucun projet archivé' : (emptyMessage || 'Aucun projet') }}
       </p>
       <UButton
-        v-if="showCreateButton"
+        v-if="showCreateButton && !showArchived"
         icon="i-lucide-circle-plus"
         variant="soft"
         @click="emit('create')"

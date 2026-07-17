@@ -26,7 +26,7 @@ export const clientCreateSchema = z.object({
   siret: z.string().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   icon: clientIconSchema,
-  status: z.enum(['active', 'archived']).default('active'),
+  archived: z.boolean().default(false),
   description: z.string().optional().or(z.literal(''))
 })
 
@@ -42,7 +42,7 @@ export const clientUpdateSchema = z.object({
   siret: z.string().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   icon: clientIconSchema,
-  status: z.enum(['active', 'archived']).optional(),
+  archived: z.boolean().optional(),
   description: z.string().optional().or(z.literal(''))
 }).refine(
   data => Object.keys(data).length > 0,
@@ -54,7 +54,7 @@ export const clientIdSchema = z.object({
 })
 
 export const clientsDashboardQuerySchema = z.object({
-  status: z.enum(['active', 'archived']).default('active')
+  archived: z.stringbool().default(false)
 })
 
 export type ClientCreate = z.infer<typeof clientCreateSchema>

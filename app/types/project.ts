@@ -4,6 +4,7 @@ export type Project = {
   name: string
   description?: string | null
   status?: string | null
+  archived?: boolean | null
   url?: string | null
   notes?: string | null
   startDate?: string | null

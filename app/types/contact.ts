@@ -13,5 +13,6 @@ export type Contact = {
   position?: string | null
   mobile?: string | null
   notes?: string | null
+  archived?: boolean | null
   client?: ContactClientSummary | null
 }

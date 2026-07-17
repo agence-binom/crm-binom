@@ -20,12 +20,12 @@ export default defineEventHandler(async (event) => {
       siret: clientsTable.siret,
       notes: clientsTable.notes,
       icon: clientsTable.icon,
-      status: clientsTable.status,
+      archived: clientsTable.archived,
       description: clientsTable.description
     })
     .from(clientsTable)
     .orderBy(asc(clientsTable.name), asc(clientsTable.id))
-    .where(eq(clientsTable.status, query.status))
+    .where(eq(clientsTable.archived, query.archived))
 
   return {
     clients

@@ -1,4 +1,4 @@
-import { integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
+import { boolean, integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
 
 export const clientsTable = pgTable('clients', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -13,7 +13,7 @@ export const clientsTable = pgTable('clients', {
   siret: varchar({ length: 14 }),
   notes: text(),
   icon: varchar({ length: 100 }),
-  status: varchar({ length: 50 }).notNull().default('active'),
+  archived: boolean().notNull().default(false),
   description: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
