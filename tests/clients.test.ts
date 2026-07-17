@@ -2,10 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   defaultClientIcon,
-  getClientIcon,
-  normalizeClientStatus
+  getClientIcon
 } from '../app/lib/clients'
-import { clientCreateSchema } from '../app/validation/clients'
+import { clientCreateSchema, clientsDashboardQuerySchema } from '../app/validation/clients'
 
 test('clientCreateSchema accepte une icone connue', () => {
   const result = clientCreateSchema.parse({
@@ -25,13 +24,32 @@ test('clientCreateSchema refuse une icone libre non proposee', () => {
   assert.equal(result.success, false)
 })
 
-test('normalizeClientStatus retourne active par defaut', () => {
-  assert.equal(normalizeClientStatus(undefined), 'active')
-  assert.equal(normalizeClientStatus('unexpected'), 'active')
+test('clientCreateSchema archive a false par defaut', () => {
+  const result = clientCreateSchema.parse({
+    name: 'Client test'
+  })
+
+  assert.equal(result.archived, false)
 })
 
-test('normalizeClientStatus conserve les statuts connus', () => {
-  assert.equal(normalizeClientStatus('archived'), 'archived')
+test('clientCreateSchema conserve archived a true si fourni', () => {
+  const result = clientCreateSchema.parse({
+    name: 'Client test',
+    archived: true
+  })
+
+  assert.equal(result.archived, true)
+})
+
+test('clientsDashboardQuerySchema retourne false par defaut sans parametre', () => {
+  const result = clientsDashboardQuerySchema.parse({})
+
+  assert.equal(result.archived, false)
+})
+
+test('clientsDashboardQuerySchema interprete correctement les chaines "true" et "false"', () => {
+  assert.equal(clientsDashboardQuerySchema.parse({ archived: 'false' }).archived, false)
+  assert.equal(clientsDashboardQuerySchema.parse({ archived: 'true' }).archived, true)
 })
 
 test('getClientIcon retourne l icone par defaut si aucune valeur n est fournie', () => {
