@@ -110,6 +110,12 @@ const handleTaskMoved = async (taskId: number, newStatus: TaskStatus) => {
 }
 
 const handleTaskChange = () => {
+  if (selectedTaskId.value != null) {
+    const nextOverrides = new Map(taskStatusOverrides.value)
+    nextOverrides.delete(selectedTaskId.value)
+    taskStatusOverrides.value = nextOverrides
+  }
+
   emit('refresh')
 }
 
