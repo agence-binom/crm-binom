@@ -10,6 +10,8 @@ const emit = defineEmits<{
   create: []
   delete: [projectId: number]
   edit: [projectId: number]
+  archive: [projectId: number]
+  restore: [projectId: number]
 }>()
 </script>
 
@@ -24,5 +26,7 @@ const emit = defineEmits<{
     @create="emit('create')"
     @edit="(id) => emit('edit', id)"
     @delete="(id) => emit('delete', id)"
+    @archive="(id) => emit('archive', id)"
+    @restore="(id) => emit('restore', id)"
   />
 </template>

@@ -18,6 +18,13 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  if (!existingContact[0]!.archived) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: 'Archivez le contact avant de le supprimer définitivement'
+    })
+  }
+
   await db
     .delete(contactsTable)
     .where(eq(contactsTable.id, id))

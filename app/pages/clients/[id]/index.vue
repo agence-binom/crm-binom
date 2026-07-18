@@ -14,11 +14,20 @@ const selectedContactId = ref<number | null>(null)
 const selectedProjectId = ref<number | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
+const { setArchived } = useArchiveAction()
 
 const onDeleteClient = async (clientId: number) => {
   await deleteResource('client', clientId, '/api/clients', async () => {
     await navigateTo('/clients')
   })
+}
+
+const onArchiveClient = async (clientId: number) => {
+  await setArchived('client', clientId, '/api/clients', true, refresh)
+}
+
+const onRestoreClient = async (clientId: number) => {
+  await setArchived('client', clientId, '/api/clients', false, refresh)
 }
 
 const handleClientChange = async () => {
@@ -61,6 +70,22 @@ const onDeleteProject = async (projectId: number) => {
   await deleteResource('projet', projectId, '/api/projects', refresh)
 }
 
+const onArchiveContact = async (contactId: number) => {
+  await setArchived('contact', contactId, '/api/contacts', true, refresh)
+}
+
+const onRestoreContact = async (contactId: number) => {
+  await setArchived('contact', contactId, '/api/contacts', false, refresh)
+}
+
+const onArchiveProject = async (projectId: number) => {
+  await setArchived('projet', projectId, '/api/projects', true, refresh)
+}
+
+const onRestoreProject = async (projectId: number) => {
+  await setArchived('projet', projectId, '/api/projects', false, refresh)
+}
+
 const contactToEdit = computed(() => {
   if (!selectedContactId.value) return null
   return contacts.value.find(c => c.id === selectedContactId.value) ?? null
@@ -92,6 +117,8 @@ const projectToEdit = computed(() => {
       :client="client"
       @open-info="isClientInfoModalOpen = true"
       @delete="onDeleteClient"
+      @archive="onArchiveClient"
+      @restore="onRestoreClient"
     />
 
     <ClientsModal
@@ -123,6 +150,8 @@ const projectToEdit = computed(() => {
         @create="openCreateProject"
         @edit="openEditProject"
         @delete="onDeleteProject"
+        @archive="onArchiveProject"
+        @restore="onRestoreProject"
       />
 
       <ClientsContacts
@@ -131,6 +160,8 @@ const projectToEdit = computed(() => {
         @create="openCreateContact"
         @edit="openEditContact"
         @delete="onDeleteContact"
+        @archive="onArchiveContact"
+        @restore="onRestoreContact"
       />
     </div>
 

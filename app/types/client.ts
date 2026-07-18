@@ -11,6 +11,6 @@ export type Client = {
   siret?: string | null
   notes?: string | null
   icon?: string | null
-  status?: string | null
+  archived?: boolean | null
   description?: string | null
 }

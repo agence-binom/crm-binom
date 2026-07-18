@@ -134,6 +134,27 @@
       "when": 1784328834732,
       "tag": "0018_archive_inactive_clients",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784331610498,
+      "tag": "0019_friendly_sentinel",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1784331622036,
+      "tag": "0020_migrate_client_archived_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1784331635026,
+      "tag": "0021_powerful_unus",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [contactId: number]
   delete: [contactId: number]
+  archive: [contactId: number]
+  restore: [contactId: number]
 }>()
 
 const infos = computed(() => [
@@ -34,13 +36,32 @@ const infos = computed(() => [
           @click="emit('edit', contact.id)"
         />
         <UButton
+          v-if="!contact.archived"
           size="xs"
           variant="ghost"
-          color="error"
-          icon="i-lucide-trash-2"
-          aria-label="Supprimer le contact"
-          @click="emit('delete', contact.id)"
+          color="neutral"
+          icon="i-lucide-archive"
+          aria-label="Archiver le contact"
+          @click="emit('archive', contact.id)"
         />
+        <template v-else>
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-archive-restore"
+            aria-label="Restaurer le contact"
+            @click="emit('restore', contact.id)"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="error"
+            icon="i-lucide-trash-2"
+            aria-label="Supprimer le contact"
+            @click="emit('delete', contact.id)"
+          />
+        </template>
       </div>
     </template>
 

@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import {
-  clientStatusOptions,
   defaultClientIcon,
-  getClientIcon,
-  normalizeClientStatus
+  getClientIcon
 } from '~/lib/clients'
 import { clientIconOptions } from '~/lib/client-icons'
 import { clientCreateSchema, clientUpdateSchema } from '~/validation/clients'
@@ -52,7 +50,7 @@ const createDefaultFormState = () => ({
   siret: '',
   notes: '',
   icon: defaultClientIcon,
-  status: 'active' as const,
+  archived: false,
   description: ''
 })
 const createFormStateFromInitialValues = (initialValues?: Partial<Client> | null) => ({
@@ -68,7 +66,7 @@ const createFormStateFromInitialValues = (initialValues?: Partial<Client> | null
   siret: initialValues?.siret ?? '',
   notes: initialValues?.notes ?? '',
   icon: getClientIcon(initialValues?.icon),
-  status: normalizeClientStatus(initialValues?.status),
+  archived: initialValues?.archived ?? false,
   description: initialValues?.description ?? ''
 })
 const createFormStateFromClient = (client?: Client | null) => ({
@@ -84,7 +82,7 @@ const createFormStateFromClient = (client?: Client | null) => ({
   siret: client?.siret ?? createFormStateFromInitialValues(props.initialValues).siret,
   notes: client?.notes ?? createFormStateFromInitialValues(props.initialValues).notes,
   icon: getClientIcon(client?.icon ?? props.initialValues?.icon),
-  status: normalizeClientStatus(client?.status ?? props.initialValues?.status),
+  archived: client?.archived ?? props.initialValues?.archived ?? false,
   description: client?.description ?? createFormStateFromInitialValues(props.initialValues).description
 })
 const formState = reactive(createDefaultFormState())
@@ -180,47 +178,32 @@ const onSubmit = async () => {
             />
           </UFormField>
 
-          <div class="grid gap-4 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)]">
-            <UFormField
-              label="Icône client"
-              name="icon"
+          <UFormField
+            label="Icône client"
+            name="icon"
+          >
+            <USelect
+              v-model="formState.icon"
+              :items="clientIconOptions"
+              value-attribute="value"
+              option-attribute="label"
+              class="w-full"
             >
-              <USelect
-                v-model="formState.icon"
-                :items="clientIconOptions"
-                value-attribute="value"
-                option-attribute="label"
-                class="w-full"
-              >
-                <template #leading>
-                  <UIcon
-                    :name="formState.icon || defaultClientIcon"
-                    class="text-base text-dimmed"
-                  />
-                </template>
+              <template #leading>
+                <UIcon
+                  :name="formState.icon || defaultClientIcon"
+                  class="text-base text-dimmed"
+                />
+              </template>
 
-                <template #item-leading="{ item }">
-                  <UIcon
-                    :name="getOptionValue(item)"
-                    class="text-base text-dimmed"
-                  />
-                </template>
-              </USelect>
-            </UFormField>
-
-            <UFormField
-              label="Statut"
-              name="status"
-            >
-              <USelect
-                v-model="formState.status"
-                :items="clientStatusOptions"
-                value-attribute="value"
-                option-attribute="label"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
+              <template #item-leading="{ item }">
+                <UIcon
+                  :name="getOptionValue(item)"
+                  class="text-base text-dimmed"
+                />
+              </template>
+            </USelect>
+          </UFormField>
 
           <UFormField
             label="Description"

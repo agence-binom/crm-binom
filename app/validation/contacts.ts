@@ -8,7 +8,8 @@ export const contactCreateSchema = z.object({
   phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
   position: z.string().max(100, 'Poste trop long').optional().or(z.literal('')),
   mobile: z.string().max(50, 'Mobile trop long').optional().or(z.literal('')),
-  notes: z.string().optional().or(z.literal(''))
+  notes: z.string().optional().or(z.literal('')),
+  archived: z.boolean().default(false)
 })
 
 export const contactUpdateSchema = z.object({
@@ -19,7 +20,8 @@ export const contactUpdateSchema = z.object({
   phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
   position: z.string().max(100, 'Poste trop long').optional().or(z.literal('')),
   mobile: z.string().max(50, 'Mobile trop long').optional().or(z.literal('')),
-  notes: z.string().optional().or(z.literal(''))
+  notes: z.string().optional().or(z.literal('')),
+  archived: z.boolean().optional()
 }).refine(
   data => Object.keys(data).length > 0,
   { message: 'Au moins un champ doit être fourni' }

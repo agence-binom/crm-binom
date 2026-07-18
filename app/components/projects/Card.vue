@@ -10,6 +10,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   delete: [projectId: number]
   edit: [projectId: number]
+  archive: [projectId: number]
+  restore: [projectId: number]
 }>()
 
 const { getStatusColor, getStatusLabel } = useStatusHelpers()
@@ -53,13 +55,32 @@ const infos = computed(() => [
           @click.prevent.stop="emit('edit', project.id)"
         />
         <UButton
+          v-if="!project.archived"
           size="xs"
           variant="ghost"
-          color="error"
-          icon="i-lucide-trash-2"
-          aria-label="Supprimer le projet"
-          @click.prevent.stop="emit('delete', project.id)"
+          color="neutral"
+          icon="i-lucide-archive"
+          aria-label="Archiver le projet"
+          @click.prevent.stop="emit('archive', project.id)"
         />
+        <template v-else>
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-archive-restore"
+            aria-label="Restaurer le projet"
+            @click.prevent.stop="emit('restore', project.id)"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="error"
+            icon="i-lucide-trash-2"
+            aria-label="Supprimer le projet"
+            @click.prevent.stop="emit('delete', project.id)"
+          />
+        </template>
       </div>
     </template>
   </AppCard>

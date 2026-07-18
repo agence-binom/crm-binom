@@ -2,10 +2,9 @@
 import type { Client } from '~/types'
 
 const showArchived = ref(false)
-const statusFilter = computed(() => (showArchived.value ? 'archived' : 'active'))
 
 const { data, refresh } = await useFetch('/api/clients/dashboard', {
-  query: { status: statusFilter }
+  query: { archived: showArchived }
 })
 const clients = computed(() => data.value?.clients || [])
 
@@ -22,6 +21,7 @@ const selectedClient = computed<Client | null>(() => {
 })
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
+const { setArchived } = useArchiveAction()
 
 const openCreateClient = () => {
   selectedClientId.value = null
@@ -35,6 +35,14 @@ const openEditClient = (clientId: number) => {
 
 const onDeleteClient = async (clientId: number) => {
   await deleteResource('client', clientId, '/api/clients', refresh)
+}
+
+const onArchiveClient = async (clientId: number) => {
+  await setArchived('client', clientId, '/api/clients', true, refresh)
+}
+
+const onRestoreClient = async (clientId: number) => {
+  await setArchived('client', clientId, '/api/clients', false, refresh)
 }
 
 const handleClientChange = async () => {
@@ -127,9 +135,10 @@ const handleClientChange = async () => {
         >
           <ClientsCard
             :client="client"
-            :status="client.status"
             @edit="openEditClient"
             @delete="onDeleteClient"
+            @archive="onArchiveClient"
+            @restore="onRestoreClient"
           />
         </NuxtLink>
       </li>

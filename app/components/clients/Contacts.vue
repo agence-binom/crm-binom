@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Contact } from '~/types'
 
-const _props = defineProps<{
+const props = defineProps<{
   contacts: Contact[]
   clientId: number
 }>()
@@ -10,7 +10,16 @@ const emit = defineEmits<{
   create: []
   edit: [contactId: number]
   delete: [contactId: number]
+  archive: [contactId: number]
+  restore: [contactId: number]
 }>()
+
+const showArchived = ref(false)
+const filteredContacts = computed(() => props.contacts.filter(contact => Boolean(contact.archived) === showArchived.value))
+
+const toggleArchived = () => {
+  showArchived.value = !showArchived.value
+}
 </script>
 
 <template>
@@ -24,31 +33,43 @@ const emit = defineEmits<{
           variant="soft"
           class="rounded-full"
         >
-          {{ contacts.length }}
+          {{ filteredContacts.length }}
         </UBadge>
       </h2>
-      <UButton
-        icon="i-lucide-circle-plus"
-        variant="soft"
-        color="neutral"
-        @click="emit('create')"
-      >
-        Nouveau contact
-      </UButton>
+      <div class="flex items-center gap-2">
+        <UButton
+          :icon="showArchived ? 'i-lucide-users' : 'i-lucide-archive'"
+          variant="ghost"
+          color="neutral"
+          @click="toggleArchived"
+        >
+          {{ showArchived ? 'Voir les contacts actifs' : 'Voir les contacts archivés' }}
+        </UButton>
+        <UButton
+          icon="i-lucide-circle-plus"
+          variant="soft"
+          color="neutral"
+          @click="emit('create')"
+        >
+          Nouveau contact
+        </UButton>
+      </div>
     </div>
 
     <ul
-      v-if="contacts.length > 0"
+      v-if="filteredContacts.length > 0"
       class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
     >
       <li
-        v-for="contact in contacts"
+        v-for="contact in filteredContacts"
         :key="contact.id"
       >
         <ContactsCard
           :contact="contact"
           @edit="emit('edit', contact.id)"
           @delete="emit('delete', contact.id)"
+          @archive="emit('archive', contact.id)"
+          @restore="emit('restore', contact.id)"
         />
       </li>
     </ul>
@@ -62,9 +83,10 @@ const emit = defineEmits<{
         class="mb-3 text-4xl text-slate-300"
       />
       <p class="mb-4 text-slate-600">
-        Aucun contact pour ce client
+        {{ showArchived ? 'Aucun contact archivé' : 'Aucun contact pour ce client' }}
       </p>
       <UButton
+        v-if="!showArchived"
         icon="i-lucide-circle-plus"
         variant="soft"
         color="neutral"
