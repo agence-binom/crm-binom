@@ -14,6 +14,7 @@ const props = withDefaults(defineProps<{
   tasks?: Task[]
   users?: User[]
   projects?: KanbanProjectOption[]
+  showProjectBadge?: boolean
 }>(), {
   tasks: () => [],
   users: () => [],
@@ -170,6 +171,7 @@ const onDeleteTask = async (taskId: number) => {
           :user-name="task.assignedTo ? usersMap.get(task.assignedTo) : 'Non assigné'"
           :project-name="task.projectId ? projectsMap.get(task.projectId)?.name : undefined"
           :client-name="task.projectId ? projectsMap.get(task.projectId)?.clientName : undefined"
+          :show-project-badge="showProjectBadge"
           @delete="onDeleteTask"
           @update="emit('taskToUpdated', $event)"
         />
