@@ -17,4 +17,4 @@ export const quotesTable = pgTable('quotes', {
   terms: text(), // Conditions générales
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()

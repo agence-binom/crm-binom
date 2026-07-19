@@ -14,4 +14,4 @@ export const contactsTable = pgTable('contacts', {
   archived: boolean().notNull().default(false),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()

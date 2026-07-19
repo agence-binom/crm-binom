@@ -15,4 +15,4 @@ export const tasksTable = pgTable('tasks', {
   completedAt: timestamp(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()

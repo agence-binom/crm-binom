@@ -8,4 +8,4 @@ export const usersTable = pgTable('users', {
   role: varchar({ length: 50 }).notNull().default('client'), // 'admin' | 'employee' | 'client'
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()

@@ -14,4 +14,4 @@ export const documentsTable = pgTable('documents', {
   description: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()
