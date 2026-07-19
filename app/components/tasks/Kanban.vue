@@ -15,6 +15,7 @@ const props = withDefaults(defineProps<{
   tasks?: Task[]
   users?: User[]
   projects?: KanbanProjectOption[]
+  showProjectBadge?: boolean
 }>(), {
   tasks: () => [],
   users: () => [],
