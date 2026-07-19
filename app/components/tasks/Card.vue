@@ -12,6 +12,7 @@ const props = defineProps<{
   userName?: string
   projectName?: string
   clientName?: string | null
+  showProjectBadge?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -97,13 +98,11 @@ const projectLabel = computed(() => {
 
         <div class="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 text-xs text-slate-600">
           <div
-            v-if="projectLabel"
+            v-if="projectLabel && showProjectBadge !== false"
             class="flex min-w-0 items-center gap-2"
           >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-              <UIcon
-                name="i-lucide-briefcase-business"
-              />
+              <UIcon name="i-lucide-briefcase-business" />
             </div>
             <p class=" font-medium text-slate-700">
               {{ projectLabel }}
