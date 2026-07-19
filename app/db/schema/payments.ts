@@ -12,4 +12,4 @@ export const paymentsTable = pgTable('payments', {
   notes: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()

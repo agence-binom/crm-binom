@@ -21,4 +21,4 @@ export const invoicesTable = pgTable('invoices', {
   terms: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()

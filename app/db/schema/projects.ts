@@ -15,4 +15,4 @@ export const projectsTable = pgTable('projects', {
   links: json(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()

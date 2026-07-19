@@ -17,4 +17,4 @@ export const clientsTable = pgTable('clients', {
   description: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-})
+}).enableRLS()
