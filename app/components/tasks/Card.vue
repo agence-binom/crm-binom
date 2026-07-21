@@ -42,9 +42,6 @@ const projectLabel = computed(() => {
 })
 
 const projectLink = computed(() => {
-  if (!props.task.projectId || !props.clientId) {
-    return
-  }
   return `clients/${props.clientId}/projects/${props.task.projectId}`
 })
 </script>
@@ -105,10 +102,10 @@ const projectLink = computed(() => {
         </div>
 
         <div class="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 text-xs text-slate-600">
-          <a
+          <AppLink
             v-if="projectLabel"
-            :href="projectLink"
-            class="w-full flex min-w-0 items-center gap-2 border border-neutral-100 hover:bg-neutral-50 rounded-lg px-2 py-1 transition-colors"
+            :to="projectLink"
+            class="w-full"
           >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
               <UIcon name="i-lucide-briefcase-business" />
@@ -121,7 +118,7 @@ const projectLink = computed(() => {
                 {{ clientName }}
               </p>
             </div>
-          </a>
+          </AppLink>
           <UBadge
             v-if="props.userName"
             variant="soft"

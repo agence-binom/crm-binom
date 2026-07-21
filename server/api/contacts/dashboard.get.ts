@@ -17,7 +17,8 @@ export default defineEventHandler(async () => {
         mobile: contactsTable.mobile,
         notes: contactsTable.notes,
         clientEntityId: clientsTable.id,
-        clientName: clientsTable.name
+        clientName: clientsTable.name,
+        archived: contactsTable.archived
       })
       .from(contactsTable)
       .leftJoin(clientsTable, eq(contactsTable.clientId, clientsTable.id))
@@ -51,7 +52,8 @@ export default defineEventHandler(async () => {
             id: contact.clientEntityId,
             name: contact.clientName
           }
-        : null
+        : null,
+      archived: contact.archived
     })),
     clientOptions
   }
