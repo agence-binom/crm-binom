@@ -2,7 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { Contact } from '~/types'
 
-defineProps<{
+const props = defineProps<{
   contacts: Contact[]
   showArchived: boolean
 }>()
@@ -22,39 +22,61 @@ const getContactFullName = (contact: Contact) => `${contact.firstName} ${contact
 const columns: TableColumn<Contact>[] = [
   {
     accessorKey: 'fullName',
-    header: 'Contact'
-  },
-  {
-    accessorKey: 'position',
-    header: 'Poste'
+    header: 'Contact',
+    meta: {
+      class: {
+        th: 'w-[12%]',
+        td: 'truncate'
+      }
+    }
   },
   {
     accessorKey: 'client',
-    header: 'Client'
+    header: 'Client',
+    meta: {
+      class: {
+        th: 'w-[16%]',
+        td: 'truncate'
+      }
+    }
   },
   {
     accessorKey: 'email',
-    header: 'Email'
+    header: 'Email',
+    meta: {
+      class: {
+        th: 'w-[20%]',
+        td: 'truncate'
+      }
+    }
   },
   {
-    accessorKey: 'phone',
-    header: 'Téléphone'
-  },
-  {
-    accessorKey: 'mobile',
-    header: 'Mobile'
+    id: 'phone',
+    header: 'Téléphone',
+    meta: {
+      class: {
+        th: 'w-[18%]',
+        td: 'truncate'
+      }
+    }
   },
   {
     accessorKey: 'notes',
-    header: 'Notes'
+    header: 'Notes',
+    meta: {
+      class: {
+        th: 'w-[20%]',
+        td: 'whitespace-normal'
+      }
+    }
   },
   {
     id: 'actions',
     header: 'Actions',
     meta: {
       class: {
-        th: 'text-right',
-        td: 'w-px'
+        th: 'w-[14%] text-right',
+        td: 'text-right'
       }
     }
   }
@@ -99,24 +121,21 @@ const columns: TableColumn<Contact>[] = [
 
     <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
       <UTable
-        :data="contacts"
+        :data="props.contacts"
         :columns="columns"
         sticky="header"
+        :ui="{ base: 'table-fixed w-full' }"
         class="max-h-[calc(100vh-14rem)]"
       >
         <template #fullName-cell="{ row }">
-          <div class="min-w-32">
-            <p class="font-semibold text-slate-900">
+          <div>
+            <p class="truncate font-semibold text-slate-900">
               {{ getContactFullName(row.original) }}
             </p>
             <p class="mt-1 text-xs text-slate-500">
-              #{{ row.original.id }}
+              {{ row.original.position || '—' }}
             </p>
           </div>
-        </template>
-
-        <template #position-cell="{ row }">
-          {{ row.original.position || '—' }}
         </template>
 
         <template #client-cell="{ row }">
@@ -124,10 +143,13 @@ const columns: TableColumn<Contact>[] = [
             <NuxtLink
               v-if="row.original.client"
               :to="`/clients/${row.original.client.id}`"
-              class="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-100"
+              class="inline-flex max-w-full items-center gap-2 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-100"
             >
-              <UIcon name="i-lucide-building-2" />
-              {{ row.original.client.name }}
+              <UIcon
+                name="i-lucide-building-2"
+                class="shrink-0"
+              />
+              <span class="truncate">{{ row.original.client.name }}</span>
             </NuxtLink>
             <template v-else>
               <UBadge
@@ -150,21 +172,37 @@ const columns: TableColumn<Contact>[] = [
         </template>
 
         <template #email-cell="{ row }">
-          {{ row.original.email || '—' }}
+          <AppLink
+            v-if="row.original.email"
+            :to="`mailto:${row.original.email}`"
+            variant="tertiary"
+            aria-label="Envoyer un e-mail"
+          >
+            {{ row.original.email }}
+          </AppLink>
+          <span v-else>—</span>
         </template>
 
         <template #phone-cell="{ row }">
-          {{ row.original.phone || '—' }}
-        </template>
-
-        <template #mobile-cell="{ row }">
-          {{ row.original.mobile || '—' }}
+          <div v-if="row.original.phone || row.original.mobile">
+            <p
+              v-if="row.original.phone"
+            >
+              {{ row.original.phone }}
+            </p>
+            <p
+              v-if="row.original.mobile"
+            >
+              {{ row.original.mobile }}
+            </p>
+          </div>
+          <span v-else>—</span>
         </template>
 
         <template #notes-cell="{ row }">
           <p
             v-if="row.original.notes"
-            class="max-w-64 line-clamp-2"
+            class="line-clamp-2"
           >
             {{ row.original.notes }}
           </p>
@@ -185,7 +223,7 @@ const columns: TableColumn<Contact>[] = [
               v-if="!row.original.archived"
               icon="i-lucide-archive"
               size="sm"
-              color="neutral"
+              color="error"
               variant="ghost"
               aria-label="Archiver le contact"
               @click="emit('archive', row.original.id)"

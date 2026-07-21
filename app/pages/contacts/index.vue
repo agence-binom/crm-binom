@@ -7,7 +7,6 @@ const clientOptions = computed<Array<Pick<Client, 'id' | 'name'>>>(() => data.va
 
 const showArchived = ref(false)
 const contacts = computed<Contact[]>(() => allContacts.value.filter(contact => Boolean(contact.archived) === showArchived.value))
-
 const toggleArchived = () => {
   showArchived.value = !showArchived.value
 }
@@ -111,6 +110,8 @@ const onArchiveContact = async (contactId: number) => {
 const onRestoreContact = async (contactId: number) => {
   await setArchived('contact', contactId, '/api/contacts', false, refresh)
 }
+
+console.log(contacts.value)
 </script>
 
 <template>
