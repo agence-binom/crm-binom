@@ -140,6 +140,8 @@ const taskToEdit = computed(() => {
   if (!selectedTaskId.value) return null
   return visibleTasks.value.find(t => t.id === selectedTaskId.value) ?? null
 })
+
+const showProjectBadge = computed(() => !props.projectId)
 </script>
 
 <template>
@@ -191,6 +193,7 @@ const taskToEdit = computed(() => {
           :tasks="tasksByStatus[status]"
           :users="availableUsers"
           :projects="availableProjects"
+          :show-project-badge="showProjectBadge"
           @task-deleted="handleTaskDeleted"
           @task-to-updated="handleTaskToUpdate"
           @task-moved="handleTaskMoved"

@@ -13,6 +13,7 @@ const props = defineProps<{
   projectName?: string
   clientName?: string | null
   clientId?: number
+  showProjectBadge?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -110,9 +111,7 @@ const projectLink = computed(() => {
             class="flex min-w-0 items-center gap-2"
           >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-              <UIcon
-                name="i-lucide-briefcase-business"
-              />
+              <UIcon name="i-lucide-briefcase-business" />
             </div>
             <p class=" font-medium text-slate-700">
               {{ projectLabel }}
