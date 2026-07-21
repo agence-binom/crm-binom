@@ -4,7 +4,6 @@ import type { Task, User } from '~/types'
 const { data, refresh, status } = await useFetch('/api/tasks/dashboard')
 const allTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
-console.log(data.value)
 const projectOptions = computed(() => data.value?.projectOptions || [])
 
 const { selectedUser, userOptions, filteredTasks } = useUserFilter(allTasks, availableUsers)
@@ -32,6 +31,7 @@ const isLoading = computed(() => status.value === 'pending')
       :available-users="availableUsers"
       :available-projects="projectOptions"
       title="Tableau de bord"
+      title-heading="h1"
       @refresh="refresh"
     >
       <template #filters>
