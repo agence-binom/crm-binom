@@ -24,7 +24,8 @@ export default defineEventHandler(async () => {
       .select({
         id: projectsTable.id,
         name: projectsTable.name,
-        clientName: clientsTable.name
+        clientName: clientsTable.name,
+        clientId: clientsTable.id
       })
       .from(projectsTable)
       .innerJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))

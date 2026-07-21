@@ -10,16 +10,18 @@ export function useUserFilter(tasks: Ref<Task[]>, users?: Ref<User[]>) {
 
     const counts = new Map<number | null, number>()
 
-    tasks.value.forEach((task) => {
-      const userId = task.assignedTo ?? null
-      counts.set(userId, (counts.get(userId) ?? 0) + 1)
-    })
+    tasks.value
+      .filter(task => task.status !== 'done')
+      .forEach((task) => {
+        const userId = task.assignedTo ?? null
+        counts.set(userId, (counts.get(userId) ?? 0) + 1)
+      })
 
     return counts
   })
 
   const userOptions = computed(() => {
-    const totalTasks = tasks.value?.length ?? 0
+    const totalTasks = tasks.value?.filter(task => task.status !== 'done').length ?? 0
     const options: { label: string, value: number | null }[] = [
       { label: `Tous les utilisateurs (${totalTasks})`, value: null }
     ]
