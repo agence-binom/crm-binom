@@ -30,7 +30,7 @@ const isOverdue = computed(() => {
 })
 
 const projectLabel = computed(() => {
-  if (!props.projectName) {
+  if (!props.showProjectBadge || !props.projectName) {
     return undefined
   }
 

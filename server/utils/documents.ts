@@ -61,7 +61,8 @@ const DOCUMENT_TYPE_FOLDERS: Record<string, string> = {
   invoice: 'factures',
   client: 'clients',
   project: 'projets',
-  task: 'taches'
+  task: 'taches',
+  resource: 'ressources'
 }
 
 const getClientStorageSegment = async (entityType: string, entityId: number) => {
