@@ -12,6 +12,7 @@ type ToDoListProjectOption = {
 const props = withDefaults(defineProps<{
   tasks: Task[]
   title?: string
+  titleHeading?: 'h1' | 'h2' | 'h3'
   projectId?: number
   showUserFilter?: boolean
   availableProjects?: ToDoListProjectOption[]
@@ -142,14 +143,30 @@ const taskToEdit = computed(() => {
 })
 
 const showProjectBadge = computed(() => !props.projectId)
+
+const headingClass = computed(() => {
+  switch (props.titleHeading) {
+    case 'h1':
+      return 'text-2xl font-bold'
+    case 'h2':
+      return 'text-xl font-semibold'
+    case 'h3':
+      return 'text-lg font-medium'
+    default:
+      return 'text-2xl font-bold'
+  }
+})
 </script>
 
 <template>
   <div>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-      <h2 class="text-2xl font-bold">
+      <component
+        :is="titleHeading || 'h2'"
+        :class="headingClass"
+      >
         {{ title }}
-      </h2>
+      </component>
 
       <div class="flex flex-wrap items-center gap-3">
         <slot name="filters" />

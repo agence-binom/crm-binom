@@ -30,7 +30,7 @@ const isOverdue = computed(() => {
 })
 
 const projectLabel = computed(() => {
-  if (!props.projectName) {
+  if (!props.showProjectBadge || !props.projectName) {
     return undefined
   }
 
@@ -108,14 +108,19 @@ const projectLink = computed(() => {
           <a
             v-if="projectLabel"
             :href="projectLink"
-            class="flex min-w-0 items-center gap-2"
+            class="w-full flex min-w-0 items-center gap-2 border border-neutral-100 hover:bg-neutral-50 rounded-lg px-2 py-1 transition-colors"
           >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
               <UIcon name="i-lucide-briefcase-business" />
             </div>
-            <p class=" font-medium text-slate-700">
-              {{ projectLabel }}
-            </p>
+            <div class="space-y-0 min-w-0">
+              <p class="truncate font-medium text-slate-700">
+                {{ projectName }}
+              </p>
+              <p class="truncate text-slate-500">
+                {{ clientName }}
+              </p>
+            </div>
           </a>
           <UBadge
             v-if="props.userName"
