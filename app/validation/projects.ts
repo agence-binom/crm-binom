@@ -8,8 +8,8 @@ export const projectCreateSchema = z.object({
     message: 'Le statut doit être "en_cours", "termine", "en_attente" ou "annule"'
   }).default('en_cours'),
   archived: z.boolean().default(false),
-  startDate: z.coerce.date().optional(),
-  endDate: z.coerce.date().optional(),
+  startDate: z.preprocess(v => (v === '' ? undefined : v), z.coerce.date().optional()),
+  endDate: z.preprocess(v => (v === '' ? undefined : v), z.coerce.date().optional()),
   url: z.url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   links: z.array(z.string().url('URL invalide')).optional()
@@ -23,8 +23,8 @@ export const projectUpdateSchema = z.object({
     message: 'Le statut doit être "en_cours", "termine", "en_attente" ou "annule"'
   }).optional(),
   archived: z.boolean().optional(),
-  startDate: z.coerce.date().optional(),
-  endDate: z.coerce.date().optional(),
+  startDate: z.preprocess(v => (v === '' ? undefined : v), z.coerce.date().optional()),
+  endDate: z.preprocess(v => (v === '' ? undefined : v), z.coerce.date().optional()),
   url: z.url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   links: z.array(z.url('URL invalide')).optional()
