@@ -13,7 +13,8 @@ export const createResourceInsertValues = (
   filepath: string,
   metadata: ResourceUploadMetadata
 ) => ({
-  projectId: metadata.projectId,
+  projectId: metadata.projectId ?? null,
+  taskId: metadata.taskId ?? null,
   type: 'document' as const,
   name: metadata.name?.trim() || file.name,
   description: metadata.description?.trim() || null,

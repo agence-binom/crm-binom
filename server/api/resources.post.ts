@@ -6,7 +6,8 @@ export default defineEventHandler(async (event) => {
   const body = await readValidatedBody(event, resourceCreateSchema.parse)
 
   const [resource] = await db.insert(resourcesTable).values({
-    projectId: body.projectId,
+    projectId: body.projectId ?? null,
+    taskId: body.taskId ?? null,
     type: body.type,
     name: body.name,
     description: body.description?.trim() || null,

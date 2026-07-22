@@ -34,7 +34,7 @@ export const projectsRelations = relations(projectsTable, ({ one, many }) => ({
   invoices: many(invoicesTable)
 }))
 
-export const tasksRelations = relations(tasksTable, ({ one }) => ({
+export const tasksRelations = relations(tasksTable, ({ one, many }) => ({
   project: one(projectsTable, {
     fields: [tasksTable.projectId],
     references: [projectsTable.id]
@@ -42,13 +42,18 @@ export const tasksRelations = relations(tasksTable, ({ one }) => ({
   assignee: one(usersTable, {
     fields: [tasksTable.assignedTo],
     references: [usersTable.id]
-  })
+  }),
+  resources: many(resourcesTable)
 }))
 
 export const resourcesRelations = relations(resourcesTable, ({ one }) => ({
   project: one(projectsTable, {
     fields: [resourcesTable.projectId],
     references: [projectsTable.id]
+  }),
+  task: one(tasksTable, {
+    fields: [resourcesTable.taskId],
+    references: [tasksTable.id]
   })
 }))
 
