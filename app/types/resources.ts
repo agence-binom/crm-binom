@@ -2,7 +2,8 @@ import type { ResourceType } from '~/constants/resources'
 
 export type ProjectResource = {
   id: number
-  projectId: number
+  projectId?: number | null
+  taskId?: number | null
   type: ResourceType
   name: string
   description?: string | null

@@ -20,16 +20,14 @@ export default defineEventHandler(async (event) => {
 
   const metadata = resourceUploadMetadataSchema.parse({
     projectId: formData.get('projectId'),
+    taskId: formData.get('taskId'),
     name: formData.get('name'),
     description: formData.get('description')
   })
 
-  const filepath = await buildDocumentStoragePath(
-    'project',
-    metadata.projectId,
-    fileEntry.name,
-    'resource'
-  )
+  const filepath = metadata.taskId
+    ? await buildDocumentStoragePath('task', metadata.taskId, fileEntry.name, 'resource')
+    : await buildDocumentStoragePath('project', metadata.projectId!, fileEntry.name, 'resource')
   await uploadDocumentFile(event, filepath, fileEntry)
 
   try {

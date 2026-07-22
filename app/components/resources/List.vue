@@ -3,7 +3,12 @@ import type { ProjectResource } from '~/types'
 
 const props = defineProps<{
   resources: ProjectResource[]
-  projectId: number
+  projectId?: number
+  taskId?: number
+  title?: string
+  description?: string
+  emptyTitle?: string
+  emptyDescription?: string
 }>()
 
 const emit = defineEmits<{
@@ -34,10 +39,10 @@ const onDeleteResource = async (resourceId: number) => {
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <h2 class="text-xl font-semibold tracking-tight text-slate-900">
-          Ressources du projet
+          {{ title || 'Ressources du projet' }}
         </h2>
         <p class="text-sm text-gray-500">
-          Documents, liens et notes utiles pour ce projet.
+          {{ description || 'Documents, liens et notes utiles pour ce projet.' }}
         </p>
       </div>
       <UButton
@@ -75,16 +80,17 @@ const onDeleteResource = async (resourceId: number) => {
         class="mb-2 text-4xl"
       />
       <p class="font-medium text-gray-700 dark:text-gray-200">
-        Aucune ressource pour ce projet
+        {{ emptyTitle || 'Aucune ressource pour ce projet' }}
       </p>
       <p class="mt-1 text-sm">
-        Ajoutez un document, un lien ou une note utile pour ce projet.
+        {{ emptyDescription || 'Ajoutez un document, un lien ou une note utile pour ce projet.' }}
       </p>
     </div>
 
     <ResourcesModal
       v-model:open="isModalOpen"
       :project-id="projectId"
+      :task-id="taskId"
       @saved="onSaved"
     />
 

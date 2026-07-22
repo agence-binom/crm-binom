@@ -7,7 +7,8 @@ import { resourceFileInputAccept, resourceMaxSizeBytes } from '~/validation/reso
 
 const props = defineProps<{
   open: boolean
-  projectId: number
+  projectId?: number
+  taskId?: number
 }>()
 
 const emit = defineEmits<{
@@ -39,6 +40,9 @@ const typeOptions = resourceTypes.map(type => ({
 }))
 
 const maxFileSizeLabel = formatFileSize(resourceMaxSizeBytes)
+const ownerPayload = computed(() => (
+  props.taskId != null ? { taskId: props.taskId } : { projectId: props.projectId }
+))
 
 const clearSelectedFile = () => {
   selectedFile.value = null
@@ -102,7 +106,8 @@ const onSubmit = async () => {
     if (selectedType.value === 'document') {
       const formData = new FormData()
       formData.set('file', selectedFile.value as File)
-      formData.set('projectId', String(props.projectId))
+      if (props.taskId != null) formData.set('taskId', String(props.taskId))
+      else formData.set('projectId', String(props.projectId))
       formData.set('name', name.value.trim())
       formData.set('description', description.value.trim())
 
@@ -112,7 +117,7 @@ const onSubmit = async () => {
         method: 'POST',
         body: {
           type: selectedType.value,
-          projectId: props.projectId,
+          ...ownerPayload.value,
           name: name.value.trim(),
           description: description.value.trim(),
           ...(selectedType.value === 'link' ? { url: url.value.trim() } : { content: content.value })

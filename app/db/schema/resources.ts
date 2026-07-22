@@ -1,9 +1,11 @@
 import { integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
 import { projectsTable } from './projects'
+import { tasksTable } from './tasks'
 
 export const resourcesTable = pgTable('resources', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  projectId: integer().notNull().references(() => projectsTable.id, { onDelete: 'cascade' }),
+  projectId: integer().references(() => projectsTable.id, { onDelete: 'cascade' }),
+  taskId: integer().references(() => tasksTable.id, { onDelete: 'cascade' }),
   type: varchar({ length: 20 }).notNull(), // 'document' | 'link' | 'text'
   name: varchar({ length: 255 }).notNull(),
   description: text(),
