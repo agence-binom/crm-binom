@@ -5,9 +5,10 @@ import {
   getTaskPriorityClass,
   getTaskPriorityIcon,
   getTaskPriorityLabel,
+  getTaskStatusClass,
+  getTaskStatusIcon,
   getTaskStatusLabel
 } from '~/lib/tasks'
-import { taskCreateSchema, taskUpdateSchema } from '~/validation/tasks'
 import type { Project, Task, TaskAttachment, User } from '~/types'
 
 type TaskModalProjectOption = {
@@ -15,6 +16,8 @@ type TaskModalProjectOption = {
   name: string
   clientName?: string | null
 }
+
+type EditableTaskField = 'title' | 'projectId' | 'dueDate' | 'priority' | 'status' | 'assignedTo' | 'notes'
 
 const props = defineProps<{
   open: boolean
@@ -36,19 +39,19 @@ const isOpen = computed({
   set: value => emit('update:open', value)
 })
 
-const isSaving = ref(false)
-const isEditing = computed(() => props.taskId != null)
+const draftTaskId = ref<number | null>(null)
+const isCreatingDraft = ref(false)
+const effectiveTaskId = computed(() => props.taskId ?? draftTaskId.value)
 
-const schema = computed(() => (isEditing.value ? taskUpdateSchema : taskCreateSchema))
-const modalTitle = computed(() => (isEditing.value ? 'Modifier la tâche' : 'Nouvelle tâche'))
-const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer la tâche'))
 const taskStatusOptions = taskStatuses.map(status => ({
   label: getTaskStatusLabel(status),
-  value: status
+  value: status,
+  icon: getTaskStatusIcon(status)
 }))
 const taskPriorityOptions = taskPriorities.map(priority => ({
   label: getTaskPriorityLabel(priority),
-  value: priority
+  value: priority,
+  icon: getTaskPriorityIcon(priority)
 }))
 
 const formState = reactive({
@@ -74,7 +77,8 @@ const projectsOptions = computed(() =>
     label: 'clientName' in project && project.clientName
       ? `${project.name} · ${project.clientName}`
       : project.name,
-    value: project.id
+    value: project.id,
+    icon: 'i-lucide-briefcase-business'
   }))
 )
 
@@ -96,14 +100,19 @@ const assigneeOptions = computed(() => [
   }))
 ])
 
+const selectedAssignee = computed({
+  get: () => assigneeOptions.value.find(option => option.value === formState.assignedTo),
+  set: val => selectAssignee(val?.value)
+})
+
 const taskAttachments = ref<TaskAttachment[]>([])
 const loadTaskAttachments = async () => {
-  if (!props.taskId) {
+  if (!effectiveTaskId.value) {
     taskAttachments.value = []
     return
   }
 
-  const response = await $fetch('/api/task-attachments', { query: { taskId: props.taskId } })
+  const response = await $fetch('/api/task-attachments', { query: { taskId: effectiveTaskId.value } })
   taskAttachments.value = (response.attachments as TaskAttachment[] | undefined) || []
 }
 
@@ -119,7 +128,12 @@ const resetForm = () => {
   })
 }
 
+// Dernière version confirmée par le serveur : sert de référence pour savoir
+// si un champ a changé, et pour revenir en arrière si une sauvegarde échoue.
+const lastKnownTask = ref<Task | null>(null)
+
 const fillFromTask = (task: Task) => {
+  lastKnownTask.value = task
   Object.assign(formState, {
     title: task.title ?? '',
     notes: task.notes ?? '',
@@ -131,19 +145,48 @@ const fillFromTask = (task: Task) => {
   })
 }
 
+const savingField = ref<EditableTaskField | null>(null)
+const titleInput = useTemplateRef('titleInput')
+
 watch(
   () => props.open,
   async (open) => {
-    if (!open) return
+    if (!open) {
+      draftTaskId.value = null
+      lastKnownTask.value = null
+      savingField.value = null
+      return
+    }
+
+    if (props.taskId) {
+      if (props.task) fillFromTask(props.task)
+    } else {
+      resetForm()
+      isCreatingDraft.value = true
+      try {
+        const created = await $fetch<Task>('/api/tasks', {
+          method: 'POST',
+          body: { title: 'Sans titre', projectId: props.projectId ?? undefined }
+        })
+        draftTaskId.value = created.id
+        fillFromTask(created)
+        emit('saved')
+        nextTick(() => titleInput.value?.inputRef?.focus())
+      } catch (error) {
+        console.error('Erreur lors de la création de la tâche:', error)
+        showError('Création impossible', error, 'Impossible de créer la tâche.')
+        isOpen.value = false
+        return
+      } finally {
+        isCreatingDraft.value = false
+      }
+    }
 
     await Promise.all([
       props.projects === undefined && !projectData.value ? refreshProjects() : Promise.resolve(),
       props.users === undefined && !usersData.value ? refreshUsers() : Promise.resolve(),
       loadTaskAttachments()
     ])
-
-    if (isEditing.value && props.task) fillFromTask(props.task)
-    else resetForm()
   },
   { immediate: true }
 )
@@ -151,56 +194,95 @@ watch(
 watch(
   () => props.task,
   (task) => {
-    if (!props.open) return
-    if (isEditing.value && task) fillFromTask(task)
+    if (!props.open || !props.taskId) return
+    if (task) fillFromTask(task)
   }
 )
 
-const onSubmit = async () => {
-  isSaving.value = true
+const saveField = async (field: EditableTaskField, value: unknown) => {
+  const taskId = effectiveTaskId.value
+  if (!taskId) return
+
+  if (value === undefined) return
+
+  savingField.value = field
   try {
-    const body = {
-      title: formState.title,
-      notes: formState.notes,
-      priority: formState.priority,
-      projectId: formState.projectId,
-      assignedTo: formState.assignedTo,
-      dueDate: formState.dueDate ? formState.dueDate : undefined
-    }
-
-    if (isEditing.value) {
-      if (!props.taskId) throw new Error('taskId manquant pour la mise à jour')
-      await $fetch(`/api/tasks/${props.taskId}`, {
-        method: 'PUT',
-        body: {
-          ...body,
-          status: formState.status
-        }
-      })
-    } else {
-      await $fetch('/api/tasks', { method: 'POST', body })
-    }
-
+    const updated = await $fetch<Task>(`/api/tasks/${taskId}`, {
+      method: 'PUT',
+      body: { [field]: value }
+    })
+    lastKnownTask.value = updated
     emit('saved')
-    isOpen.value = false
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde de la tâche:', error)
+    console.error(`Erreur lors de la sauvegarde du champ "${field}":`, error)
     showError(
       'Enregistrement impossible',
       error,
-      'Impossible de sauvegarder la tâche.'
+      'Impossible de sauvegarder cette modification.'
     )
+    if (lastKnownTask.value) fillFromTask(lastKnownTask.value)
   } finally {
-    isSaving.value = false
+    savingField.value = null
   }
 }
+
+const onTitleBlur = () => {
+  const title = formState.title.trim()
+
+  if (!title) {
+    if (lastKnownTask.value) fillFromTask(lastKnownTask.value)
+    return
+  }
+
+  if (title !== (lastKnownTask.value?.title ?? '')) saveField('title', title)
+}
+
+const onNotesBlur = () => {
+  if (formState.notes !== (lastKnownTask.value?.notes ?? '')) saveField('notes', formState.notes)
+}
+
+const onDueDateChange = () => {
+  const previousValue = lastKnownTask.value?.dueDate ? lastKnownTask.value.dueDate.slice(0, 10) : ''
+  if (formState.dueDate !== previousValue) saveField('dueDate', formState.dueDate || undefined)
+}
+
+const selectProject = (value: number | undefined) => {
+  formState.projectId = value
+  saveField('projectId', value)
+}
+
+const selectPriority = (value: TaskPriority | undefined) => {
+  if (!value) return
+  formState.priority = value
+  saveField('priority', value)
+}
+
+const selectStatus = (value: TaskStatus | undefined) => {
+  if (!value) return
+  formState.status = value
+  saveField('status', value)
+}
+
+const selectAssignee = (value: number | undefined) => {
+  formState.assignedTo = value
+  saveField('assignedTo', value)
+}
+
+const priorityChipUi = computed(() => ({
+  base: `rounded-full ring-1 ring-inset px-2.5 py-1 text-xs font-medium transition-colors hover:brightness-95 aria-expanded:brightness-95 ${getTaskPriorityClass(formState.priority)}`,
+  leadingIcon: 'text-current'
+}))
+const statusChipUi = computed(() => ({
+  base: `rounded-full ring-1 ring-inset px-2.5 py-1 text-xs font-medium transition-colors hover:brightness-95 aria-expanded:brightness-95 ${getTaskStatusClass(formState.status)}`,
+  leadingIcon: 'text-current'
+}))
 </script>
 
 <template>
   <UModal
     v-model:open="isOpen"
-    :title="modalTitle"
-    :aria-describedby="isEditing ? 'Modifier les informations de la tâche' : 'Créer une nouvelle tâche'"
+    title="Tâche"
+    aria-describedby="Détail de la tâche"
     :close="{
       color: 'error',
       variant: 'solid',
@@ -208,170 +290,147 @@ const onSubmit = async () => {
       size: 'xs',
       label: 'Fermer'
     }"
-    class="w-full max-w-3xl rounded-2xl"
+    class="w-full max-w-2xl rounded-2xl"
   >
     <template #body>
-      <UForm
-        :schema="schema"
-        :state="formState"
-        class="space-y-5"
-        @submit="onSubmit"
+      <div
+        v-if="isCreatingDraft"
+        class="flex justify-center py-16"
       >
-        <div class="space-y-6">
-          <UFormField
-            label="Titre"
-            name="title"
-          >
-            <UInput
-              v-model="formState.title"
-              class="w-full"
-              placeholder="Ex: Finaliser la maquette mobile"
+        <UIcon
+          name="i-lucide-loader-2"
+          class="animate-spin text-2xl text-slate-400"
+        />
+      </div>
+
+      <div
+        v-else
+        class="space-y-4"
+      >
+        <div class="flex items-center gap-3">
+          <UInput
+            ref="titleInput"
+            v-model="formState.title"
+            variant="none"
+            fixed
+            trailing-icon="i-lucide-pencil"
+            aria-label="Titre de la tâche"
+            class="w-full"
+            :ui="{
+              root: 'group',
+              base: 'text-2xl font-semibold tracking-tight text-slate-900 -mx-2 px-2 py-1 rounded-lg ring-1 ring-transparent transition-colors group-hover:bg-slate-50 focus:bg-white focus:ring-slate-300',
+              trailingIcon: 'opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 size-4'
+            }"
+            placeholder="Sans titre"
+            @blur="onTitleBlur"
+            @keydown.enter.prevent="($event.target as HTMLInputElement)?.blur()"
+          />
+          <div class="flex items-center gap-2">
+            <USelect
+              :model-value="formState.status"
+              :items="taskStatusOptions"
+              :icon="getTaskStatusIcon(formState.status)"
+              value-attribute="value"
+              option-attribute="label"
+              variant="none"
+              size="sm"
+              aria-label="Statut"
+              :ui="statusChipUi"
+              @update:model-value="value => selectStatus(value as TaskStatus)"
             />
-          </UFormField>
-
-          <div class="grid gap-4 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)]">
-            <UFormField
-              label="Projet"
-              name="projectId"
-            >
-              <USelectMenu
-                v-model="selectedProject"
-                :items="projectsOptions"
-                placeholder="Sélectionner un projet"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField
-              label="Date d'échéance"
-              name="dueDate"
-            >
-              <UInput
-                v-model="formState.dueDate"
-                type="date"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
-
-          <div class="space-y-2.5">
-            <p class="text-sm font-medium text-slate-700">
-              Priorité
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <UButton
-                v-for="priority in taskPriorityOptions"
-                :key="priority.value"
-                type="button"
-                variant="soft"
-                color="neutral"
-                :class="[
-                  'rounded-full px-3.5 transition-colors',
-                  formState.priority === priority.value
-                    ? getTaskPriorityClass(priority.value)
-                    : 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-200/70'
-                ]"
-                @click="formState.priority = priority.value"
-              >
-                <UIcon
-                  :name="getTaskPriorityIcon(priority.value)"
-                  class="mr-1"
-                />
-                {{ priority.label }}
-              </UButton>
-            </div>
-          </div>
-
-          <div class="space-y-2.5">
-            <p class="text-sm font-medium text-slate-700">
-              Attribution
-            </p>
-            <div class="flex flex-wrap gap-2">
-              <UButton
-                v-for="option in assigneeOptions"
-                :key="option.label"
-                type="button"
-                variant="soft"
-                color="neutral"
-                :class="[
-                  'rounded-full px-3.5 transition-colors',
-                  formState.assignedTo === option.value
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-200/70'
-                ]"
-                @click="formState.assignedTo = option.value"
-              >
-                <UIcon
-                  :name="option.icon"
-                  class="mr-1"
-                />
-                {{ option.label }}
-              </UButton>
-            </div>
-          </div>
-
-          <div
-            v-if="isEditing"
-            class="grid gap-4 sm:grid-cols-1"
-          >
-            <UFormField
-              label="Statut"
-              name="status"
-            >
-              <USelect
-                v-model="formState.status"
-                :items="taskStatusOptions"
-                value-attribute="value"
-                option-attribute="label"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
-
-          <UFormField
-            label="Notes"
-            name="notes"
-          >
-            <UTextarea
-              v-model="formState.notes"
-              :rows="6"
-              class="w-full"
-              placeholder="Contexte, points d'attention, prochaines étapes..."
+            <USelect
+              :model-value="formState.priority"
+              :items="taskPriorityOptions"
+              :icon="getTaskPriorityIcon(formState.priority)"
+              value-attribute="value"
+              option-attribute="label"
+              variant="none"
+              size="sm"
+              aria-label="Priorité"
+              :ui="priorityChipUi"
+              @update:model-value="value => selectPriority(value as TaskPriority)"
             />
-          </UFormField>
-
-          <div v-if="isEditing && props.taskId">
-            <TaskAttachmentsList
-              :attachments="taskAttachments"
-              :task-id="props.taskId"
-              @refresh="loadTaskAttachments"
-            />
-          </div>
-          <p
-            v-else
-            class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500"
-          >
-            Enregistrez la tâche pour pouvoir y ajouter des documents ou des liens.
-          </p>
-
-          <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
-            <UButton
-              variant="soft"
-              color="neutral"
-              :disabled="isSaving"
-              @click="isOpen = false"
-            >
-              Annuler
-            </UButton>
-            <UButton
-              type="submit"
-              :loading="isSaving"
-            >
-              {{ submitLabel }}
-            </UButton>
           </div>
         </div>
-      </UForm>
+
+        <div class="flex flex-wrap items-center gap-1.5 border-y border-slate-100 py-3">
+          <USelectMenu
+            v-model="selectedAssignee"
+            :items="assigneeOptions"
+            :icon="selectedAssignee?.icon"
+            variant="none"
+            size="sm"
+            aria-label="Attribution"
+            :ui="{
+              base: 'rounded-full px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-transparent transition-colors hover:bg-slate-100 aria-expanded:bg-slate-100',
+              leadingIcon: 'text-current'
+            }"
+          />
+          <USelectMenu
+            v-model="selectedProject"
+            :items="projectsOptions"
+            :icon="selectedProject ? 'i-lucide-briefcase-business' : 'i-lucide-circle-slash'"
+            variant="none"
+            size="sm"
+            placeholder="Aucun projet"
+            aria-label="Projet"
+            :ui="{
+              base: 'rounded-full px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-transparent transition-colors hover:bg-slate-100 aria-expanded:bg-slate-100',
+              leadingIcon: 'text-current'
+            }"
+            @update:model-value="option => selectProject(option?.value)"
+          />
+          <UInput
+            v-model="formState.dueDate"
+            type="date"
+            variant="none"
+            size="sm"
+            aria-label="Date d'échéance"
+            class="w-auto"
+            :ui="{
+              base: 'rounded-full px-2.5 py-1 text-xs font-medium text-sky-700 bg-sky-50 ring-1 ring-transparent transition-colors hover:bg-sky-50/50 focus:bg-slate-100 focus:ring-slate-300'
+            }"
+            @blur="onDueDateChange"
+          />
+        </div>
+
+        <UTextarea
+          v-model="formState.notes"
+          :rows="5"
+          variant="none"
+          trailing-icon="i-lucide-pencil"
+          aria-label="Notes"
+          class="w-full"
+          :ui="{
+            root: 'group',
+            base: '-mx-2 px-2 py-1.5 rounded-lg text-sm text-slate-600 ring-1 ring-transparent transition-colors group-hover:bg-slate-50 focus:bg-white focus:ring-slate-300',
+            trailingIcon: 'opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 size-4'
+          }"
+          placeholder="Ajouter une description..."
+          @blur="onNotesBlur"
+        />
+
+        <div
+          v-if="effectiveTaskId"
+          class="border-t border-slate-100 pt-4"
+        >
+          <TaskAttachmentsList
+            :attachments="taskAttachments"
+            :task-id="effectiveTaskId"
+            @refresh="loadTaskAttachments"
+          />
+        </div>
+
+        <div class="flex justify-end border-t border-slate-100 pt-4">
+          <UButton
+            variant="soft"
+            color="neutral"
+            @click="isOpen = false"
+          >
+            Fermer
+          </UButton>
+        </div>
+      </div>
     </template>
   </UModal>
 </template>

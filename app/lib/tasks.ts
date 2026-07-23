@@ -46,6 +46,40 @@ export function getTaskStatusLabel(status: TaskStatus) {
   }
 }
 
+export function getTaskStatusIcon(status: TaskStatus) {
+  switch (status) {
+    case 'in_progress':
+      return 'i-lucide-loader'
+    case 'waiting':
+      return 'i-lucide-clock'
+    case 'validationBinom':
+      return 'i-lucide-eye'
+    case 'validationClient':
+      return 'i-lucide-user-check'
+    case 'done':
+      return 'i-lucide-circle-check'
+    default:
+      return 'i-lucide-circle'
+  }
+}
+
+export function getTaskStatusClass(status: TaskStatus) {
+  switch (status) {
+    case 'in_progress':
+      return 'bg-blue-100 text-blue-700 ring-blue-200'
+    case 'waiting':
+      return 'bg-amber-100 text-amber-700 ring-amber-200'
+    case 'validationBinom':
+      return 'bg-violet-100 text-violet-700 ring-violet-200'
+    case 'validationClient':
+      return 'bg-fuchsia-100 text-fuchsia-700 ring-fuchsia-200'
+    case 'done':
+      return 'bg-emerald-100 text-emerald-700 ring-emerald-200'
+    default:
+      return 'bg-slate-100 text-slate-600 ring-slate-200'
+  }
+}
+
 export function getTaskPriorityLabel(priority: TaskPriority) {
   switch (priority) {
     case 'high':
