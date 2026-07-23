@@ -31,8 +31,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:open': [open: boolean]
   'saved': []
+  'deleted': [taskId: number]
 }>()
 const { showError } = useFeedbackToast()
+const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
 const isOpen = computed({
   get: () => props.open,
@@ -268,6 +270,16 @@ const selectAssignee = (value: number | undefined) => {
   saveField('assignedTo', value)
 }
 
+const onDeleteTask = async () => {
+  const taskId = effectiveTaskId.value
+  if (!taskId) return
+
+  await deleteResource('tâche', taskId, '/api/tasks', () => {
+    emit('deleted', taskId)
+    isOpen.value = false
+  })
+}
+
 const priorityChipUi = computed(() => ({
   base: `rounded-full ring-1 ring-inset px-2.5 py-1 text-xs font-medium transition-colors hover:brightness-95 aria-expanded:brightness-95 ${getTaskPriorityClass(formState.priority)}`,
   leadingIcon: 'text-current'
@@ -421,7 +433,15 @@ const statusChipUi = computed(() => ({
           />
         </div>
 
-        <div class="flex justify-end border-t border-slate-100 pt-4">
+        <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+          <UButton
+            variant="soft"
+            color="error"
+            icon="i-lucide-trash-2"
+            @click="onDeleteTask"
+          >
+            Supprimer
+          </UButton>
           <UButton
             variant="soft"
             color="neutral"
@@ -433,4 +453,12 @@ const statusChipUi = computed(() => ({
       </div>
     </template>
   </UModal>
+
+  <ConfirmModal
+    :open="confirmModalOpen"
+    title="Confirmer la suppression"
+    :message="confirmModalMessage"
+    @confirm="onConfirm"
+    @cancel="onCancel"
+  />
 </template>
