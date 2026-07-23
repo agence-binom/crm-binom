@@ -51,7 +51,10 @@ const projectLink = computed(() => {
       name="i-lucide-grip-vertical"
       class="kanban-handle mt-4 shrink-0 cursor-grab text-gray-400 hover:text-gray-600 active:cursor-grabbing"
     />
-    <UCard class="flex-1 rounded-[1.35rem] border-0 bg-white/90 shadow-sm ring-1 ring-gray-200/80 backdrop-blur">
+    <UCard
+      class="flex-1 rounded-[1.35rem] border-0 bg-white/90 shadow-sm ring-1 ring-gray-200/80 backdrop-blur hover:shadow-md focus-within:shadow-md focus-within:ring-gray-300/80 cursor-pointer"
+      @click="emit('update', props.task.id)"
+    >
       <div class="space-y-4">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 flex-1">

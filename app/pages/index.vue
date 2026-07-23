@@ -7,7 +7,7 @@ const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
 
 const { selectedUser, userOptions, filteredTasks } = useUserFilter(allTasks, availableUsers)
-const isLoading = computed(() => status.value === 'pending')
+const isLoading = computed(() => status.value === 'pending' && !data.value)
 </script>
 
 <template>
