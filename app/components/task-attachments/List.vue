@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { ProjectResource } from '~/types'
+import type { TaskAttachment } from '~/types'
 
 const props = defineProps<{
-  resources: ProjectResource[]
-  projectId: number
+  attachments: TaskAttachment[]
+  taskId: number
 }>()
 
 const emit = defineEmits<{
@@ -14,16 +14,16 @@ const isModalOpen = ref(false)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
-const sortedResources = computed(() => (
-  [...props.resources].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+const sortedAttachments = computed(() => (
+  [...props.attachments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 ))
 
 const onSaved = async () => {
   emit('refresh')
 }
 
-const onDeleteResource = async (resourceId: number) => {
-  await deleteResource('ressource', resourceId, '/api/resources', async () => {
+const onDeleteAttachment = async (attachmentId: number) => {
+  await deleteResource('pièce jointe', attachmentId, '/api/task-attachments', async () => {
     emit('refresh')
   })
 }
@@ -34,10 +34,10 @@ const onDeleteResource = async (resourceId: number) => {
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <h2 class="text-xl font-semibold tracking-tight text-slate-900">
-          Ressources du projet
+          Documents & liens
         </h2>
         <p class="text-sm text-gray-500">
-          Documents, liens et notes utiles pour ce projet.
+          Fichiers et liens utiles pour cette tâche.
         </p>
       </div>
       <UButton
@@ -46,22 +46,22 @@ const onDeleteResource = async (resourceId: number) => {
         color="neutral"
         @click="isModalOpen = true"
       >
-        Ajouter une ressource
+        Ajouter
       </UButton>
     </div>
 
     <div
-      v-if="sortedResources.length"
+      v-if="sortedAttachments.length"
       class="space-y-3"
     >
       <div
-        v-for="resource in sortedResources"
-        :key="resource.id"
+        v-for="attachment in sortedAttachments"
+        :key="attachment.id"
         class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
       >
-        <ResourcesCard
-          :resource="resource"
-          @delete="onDeleteResource"
+        <TaskAttachmentsCard
+          :attachment="attachment"
+          @delete="onDeleteAttachment"
         />
       </div>
     </div>
@@ -75,16 +75,16 @@ const onDeleteResource = async (resourceId: number) => {
         class="mb-2 text-4xl"
       />
       <p class="font-medium text-gray-700 dark:text-gray-200">
-        Aucune ressource pour ce projet
+        Aucun document pour cette tâche
       </p>
       <p class="mt-1 text-sm">
-        Ajoutez un document, un lien ou une note utile pour ce projet.
+        Ajoutez un fichier ou un lien utile pour cette tâche.
       </p>
     </div>
 
-    <ResourcesModal
+    <TaskAttachmentsModal
       v-model:open="isModalOpen"
-      :project-id="projectId"
+      :task-id="taskId"
       @saved="onSaved"
     />
 

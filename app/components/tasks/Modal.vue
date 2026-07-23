@@ -8,7 +8,7 @@ import {
   getTaskStatusLabel
 } from '~/lib/tasks'
 import { taskCreateSchema, taskUpdateSchema } from '~/validation/tasks'
-import type { Project, ProjectResource, Task, User } from '~/types'
+import type { Project, Task, TaskAttachment, User } from '~/types'
 
 type TaskModalProjectOption = {
   id: number
@@ -96,15 +96,15 @@ const assigneeOptions = computed(() => [
   }))
 ])
 
-const taskResources = ref<ProjectResource[]>([])
-const loadTaskResources = async () => {
+const taskAttachments = ref<TaskAttachment[]>([])
+const loadTaskAttachments = async () => {
   if (!props.taskId) {
-    taskResources.value = []
+    taskAttachments.value = []
     return
   }
 
-  const response = await $fetch('/api/resources', { query: { taskId: props.taskId } })
-  taskResources.value = (response.resources as ProjectResource[] | undefined) || []
+  const response = await $fetch('/api/task-attachments', { query: { taskId: props.taskId } })
+  taskAttachments.value = (response.attachments as TaskAttachment[] | undefined) || []
 }
 
 const resetForm = () => {
@@ -139,7 +139,7 @@ watch(
     await Promise.all([
       props.projects === undefined && !projectData.value ? refreshProjects() : Promise.resolve(),
       props.users === undefined && !usersData.value ? refreshUsers() : Promise.resolve(),
-      loadTaskResources()
+      loadTaskAttachments()
     ])
 
     if (isEditing.value && props.task) fillFromTask(props.task)
@@ -341,14 +341,10 @@ const onSubmit = async () => {
           </UFormField>
 
           <div v-if="isEditing && props.taskId">
-            <ResourcesList
-              :resources="taskResources"
+            <TaskAttachmentsList
+              :attachments="taskAttachments"
               :task-id="props.taskId"
-              title="Documents & liens"
-              description="Fichiers et liens utiles pour cette tâche."
-              empty-title="Aucun document pour cette tâche"
-              empty-description="Ajoutez un fichier ou un lien utile pour cette tâche."
-              @refresh="loadTaskResources"
+              @refresh="loadTaskAttachments"
             />
           </div>
           <p

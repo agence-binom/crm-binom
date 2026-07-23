@@ -235,3 +235,19 @@ export const withDocumentsDownloadUrls = async <T extends DocumentWithPath>(
   event: H3Event,
   documents: T[]
 ) => Promise.all(documents.map(document => withDocumentDownloadUrl(event, document)))
+
+type TypedDocumentWithOptionalPath = {
+  type: string
+  filepath: string | null
+}
+
+export const withOptionalDocumentDownloadUrls = async <T extends TypedDocumentWithOptionalPath>(
+  event: H3Event,
+  items: T[]
+) => Promise.all(items.map(async (item) => {
+  if (item.type !== 'document' || !item.filepath) {
+    return { ...item, downloadUrl: null }
+  }
+
+  return withDocumentDownloadUrl(event, { ...item, filepath: item.filepath })
+}))

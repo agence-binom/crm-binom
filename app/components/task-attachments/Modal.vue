@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { resourceTypes } from '~/constants/resources'
-import type { ResourceType } from '~/constants/resources'
-import { getResourceTypeIcon, getResourceTypeLabel } from '~/lib/resources'
+import { taskAttachmentTypes } from '~/constants/task-attachments'
+import type { TaskAttachmentType } from '~/constants/task-attachments'
+import { getTaskAttachmentTypeIcon, getTaskAttachmentTypeLabel } from '~/lib/task-attachments'
 import { formatFileSize } from '~/lib/utils'
-import { resourceFileInputAccept, resourceMaxSizeBytes } from '~/validation/resources'
+import { taskAttachmentFileInputAccept, taskAttachmentMaxSizeBytes } from '~/validation/task-attachments'
 
 const props = defineProps<{
   open: boolean
-  projectId: number
+  taskId: number
 }>()
 
 const emit = defineEmits<{
@@ -24,21 +24,20 @@ const isOpen = computed({
 })
 
 const isSaving = ref(false)
-const selectedType = ref<ResourceType>('document')
+const selectedType = ref<TaskAttachmentType>('document')
 const name = ref('')
 const description = ref('')
 const url = ref('')
-const content = ref('')
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement>()
 
-const typeOptions = resourceTypes.map(type => ({
-  label: getResourceTypeLabel(type),
+const typeOptions = taskAttachmentTypes.map(type => ({
+  label: getTaskAttachmentTypeLabel(type),
   value: type,
-  icon: getResourceTypeIcon(type)
+  icon: getTaskAttachmentTypeIcon(type)
 }))
 
-const maxFileSizeLabel = formatFileSize(resourceMaxSizeBytes)
+const maxFileSizeLabel = formatFileSize(taskAttachmentMaxSizeBytes)
 
 const clearSelectedFile = () => {
   selectedFile.value = null
@@ -52,7 +51,6 @@ const resetForm = () => {
   name.value = ''
   description.value = ''
   url.value = ''
-  content.value = ''
   clearSelectedFile()
 }
 
@@ -72,7 +70,7 @@ const onFileSelected = (event: Event) => {
     return
   }
 
-  if (file.size > resourceMaxSizeBytes) {
+  if (file.size > taskAttachmentMaxSizeBytes) {
     clearSelectedFile()
     toast.add({
       title: 'Fichier refusé',
@@ -89,8 +87,7 @@ const onFileSelected = (event: Event) => {
 const isValid = computed(() => {
   if (!name.value.trim()) return false
   if (selectedType.value === 'document') return Boolean(selectedFile.value)
-  if (selectedType.value === 'link') return Boolean(url.value.trim())
-  return Boolean(content.value.trim())
+  return Boolean(url.value.trim())
 })
 
 const onSubmit = async () => {
@@ -102,20 +99,20 @@ const onSubmit = async () => {
     if (selectedType.value === 'document') {
       const formData = new FormData()
       formData.set('file', selectedFile.value as File)
-      formData.set('projectId', String(props.projectId))
+      formData.set('taskId', String(props.taskId))
       formData.set('name', name.value.trim())
       formData.set('description', description.value.trim())
 
-      await $fetch('/api/resources/upload', { method: 'POST', body: formData })
+      await $fetch('/api/task-attachments/upload', { method: 'POST', body: formData })
     } else {
-      await $fetch('/api/resources', {
+      await $fetch('/api/task-attachments', {
         method: 'POST',
         body: {
-          type: selectedType.value,
-          projectId: props.projectId,
+          type: 'link',
+          taskId: props.taskId,
           name: name.value.trim(),
           description: description.value.trim(),
-          ...(selectedType.value === 'link' ? { url: url.value.trim() } : { content: content.value })
+          url: url.value.trim()
         }
       })
     }
@@ -123,7 +120,7 @@ const onSubmit = async () => {
     emit('saved')
     isOpen.value = false
   } catch (error) {
-    showError('Enregistrement impossible', error, 'Impossible d\'ajouter la ressource.')
+    showError('Enregistrement impossible', error, 'Impossible d\'ajouter la pièce jointe.')
   } finally {
     isSaving.value = false
   }
@@ -133,8 +130,8 @@ const onSubmit = async () => {
 <template>
   <UModal
     v-model:open="isOpen"
-    title="Ajouter une ressource"
-    aria-describedby="Ajouter un document, un lien ou une note au projet"
+    title="Ajouter un document ou un lien"
+    aria-describedby="Ajouter un document ou un lien à la tâche"
     :close="{
       color: 'error',
       variant: 'solid',
@@ -148,7 +145,7 @@ const onSubmit = async () => {
       <div class="space-y-6">
         <div class="space-y-2.5">
           <p class="text-sm font-medium text-slate-700">
-            Type de ressource
+            Type
           </p>
           <div class="flex flex-wrap gap-2">
             <UButton
@@ -197,7 +194,7 @@ const onSubmit = async () => {
             <input
               ref="fileInput"
               type="file"
-              :accept="resourceFileInputAccept"
+              :accept="taskAttachmentFileInputAccept"
               class="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
               @change="onFileSelected"
             >
@@ -214,7 +211,7 @@ const onSubmit = async () => {
         </div>
 
         <UFormField
-          v-else-if="selectedType === 'link'"
+          v-else
           label="Lien"
           name="url"
           required
@@ -228,26 +225,12 @@ const onSubmit = async () => {
         </UFormField>
 
         <UFormField
-          v-else
-          label="Texte"
-          name="content"
-          required
-        >
-          <UTextarea
-            v-model="content"
-            :rows="6"
-            class="w-full"
-            placeholder="Rédigez votre note ici..."
-          />
-        </UFormField>
-
-        <UFormField
           label="Description"
           name="description"
         >
           <UInput
             v-model="description"
-            placeholder="Décris brièvement la ressource si nécessaire."
+            placeholder="Décris brièvement le document ou le lien si nécessaire."
             class="w-full"
           />
         </UFormField>

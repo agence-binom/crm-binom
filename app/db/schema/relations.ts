@@ -4,6 +4,7 @@ import { contactsTable } from './contacts'
 import { projectsTable } from './projects'
 import { tasksTable } from './tasks'
 import { resourcesTable } from './resources'
+import { taskAttachmentsTable } from './task-attachments'
 import { usersTable } from './users'
 import { quotesTable } from './quotes'
 import { invoicesTable } from './invoices'
@@ -43,16 +44,19 @@ export const tasksRelations = relations(tasksTable, ({ one, many }) => ({
     fields: [tasksTable.assignedTo],
     references: [usersTable.id]
   }),
-  resources: many(resourcesTable)
+  attachments: many(taskAttachmentsTable)
 }))
 
 export const resourcesRelations = relations(resourcesTable, ({ one }) => ({
   project: one(projectsTable, {
     fields: [resourcesTable.projectId],
     references: [projectsTable.id]
-  }),
+  })
+}))
+
+export const taskAttachmentsRelations = relations(taskAttachmentsTable, ({ one }) => ({
   task: one(tasksTable, {
-    fields: [resourcesTable.taskId],
+    fields: [taskAttachmentsTable.taskId],
     references: [tasksTable.id]
   })
 }))

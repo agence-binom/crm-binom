@@ -16,6 +16,15 @@ export const formatDate = (date: string | Date) => {
   })
 }
 
+export const getFileTypeIcon = (mimetype?: string | null) => {
+  if (!mimetype) return 'i-lucide-file'
+  if (mimetype.includes('pdf')) return 'i-lucide-file-text'
+  if (mimetype.includes('image')) return 'i-lucide-image'
+  if (mimetype.includes('word') || mimetype.includes('document')) return 'i-lucide-file-text'
+  if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'i-lucide-file-spreadsheet'
+  return 'i-lucide-file'
+}
+
 export const formatDateOnly = (date: string | Date | null | undefined) => {
   if (!date) return '-'
 
