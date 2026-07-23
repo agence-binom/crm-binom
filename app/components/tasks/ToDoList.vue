@@ -199,6 +199,7 @@ const headingClass = computed(() => {
       :projects="availableProjects"
       :users="availableUsers"
       @saved="handleTaskChange"
+      @deleted="handleTaskDeleted"
     />
 
     <div class="overflow-x-auto p-1 pb-3 scrollbar-custom">
