@@ -256,9 +256,6 @@ const navigateToProject = (clientId: number, projectId: number) => {
     <div class="space-y-2">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-center gap-4 text-sm text-slate-500">
-          <p>
-            {{ pagination.totalItems }} projet{{ pagination.totalItems > 1 ? 's' : '' }}
-          </p>
           <p v-if="isLoading">
             Mise à jour en cours...
           </p>
@@ -268,7 +265,7 @@ const navigateToProject = (clientId: number, projectId: number) => {
             v-model="searchInput"
             icon="i-lucide-search"
             placeholder="Rechercher un projet ou un client..."
-            size="xl"
+            size="md"
             class="w-full md:min-w-md"
           />
 
