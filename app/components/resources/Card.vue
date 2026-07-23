@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatDate, formatFileSize } from '~/lib/utils'
+import { formatDate, formatFileSize, getFileTypeIcon } from '~/lib/utils'
 import { getResourceTypeColor, getResourceTypeIcon, getResourceTypeLabel } from '~/lib/resources'
 import type { ProjectResource } from '~/types'
 
@@ -11,18 +11,9 @@ defineEmits<{
   delete: [resourceId: number]
 }>()
 
-const getFileIcon = (mimetype?: string | null) => {
-  if (!mimetype) return 'i-lucide-file'
-  if (mimetype.includes('pdf')) return 'i-lucide-file-text'
-  if (mimetype.includes('image')) return 'i-lucide-image'
-  if (mimetype.includes('word') || mimetype.includes('document')) return 'i-lucide-file-text'
-  if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'i-lucide-file-spreadsheet'
-  return 'i-lucide-file'
-}
-
 const icon = computed(() => (
   props.resource.type === 'document'
-    ? getFileIcon(props.resource.mimetype)
+    ? getFileTypeIcon(props.resource.mimetype)
     : getResourceTypeIcon(props.resource.type)
 ))
 

@@ -176,6 +176,13 @@
       "when": 1784645406644,
       "tag": "0024_slow_pyro",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1784803566465,
+      "tag": "0025_brave_charles_xavier",
+      "breakpoints": true
     }
   ]
 }

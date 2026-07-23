@@ -6,7 +6,7 @@ type BillingDocumentType = typeof billingDocumentTypes[number]
 
 const props = defineProps<{
   open: boolean
-  entityType: 'quote' | 'invoice' | 'project' | 'client' | 'task'
+  entityType: 'quote' | 'invoice' | 'project' | 'client'
   entityId: number
   documentType?: BillingDocumentType
   title?: string
