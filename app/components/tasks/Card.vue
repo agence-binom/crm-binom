@@ -74,20 +74,12 @@ const projectLink = computed(() => {
               </UBadge>
               <div class="flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
                 <UButton
-                  icon="i-lucide-edit"
-                  size="xs"
-                  color="neutral"
-                  variant="ghost"
-                  aria-label="Modifier la tâche"
-                  @click="emit('update', props.task.id)"
-                />
-                <UButton
                   icon="i-lucide-trash-2"
                   size="xs"
                   color="error"
                   variant="ghost"
                   aria-label="Supprimer la tâche"
-                  @click="emit('delete', props.task.id)"
+                  @click.stop="emit('delete', props.task.id)"
                 />
               </div>
             </div>
