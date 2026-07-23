@@ -8,7 +8,7 @@ import {
   getTaskStatusLabel
 } from '~/lib/tasks'
 import { taskCreateSchema, taskUpdateSchema } from '~/validation/tasks'
-import type { Project, Task, User } from '~/types'
+import type { Project, Task, TaskAttachment, User } from '~/types'
 
 type TaskModalProjectOption = {
   id: number
@@ -96,6 +96,17 @@ const assigneeOptions = computed(() => [
   }))
 ])
 
+const taskAttachments = ref<TaskAttachment[]>([])
+const loadTaskAttachments = async () => {
+  if (!props.taskId) {
+    taskAttachments.value = []
+    return
+  }
+
+  const response = await $fetch('/api/task-attachments', { query: { taskId: props.taskId } })
+  taskAttachments.value = (response.attachments as TaskAttachment[] | undefined) || []
+}
+
 const resetForm = () => {
   Object.assign(formState, {
     title: '',
@@ -127,7 +138,8 @@ watch(
 
     await Promise.all([
       props.projects === undefined && !projectData.value ? refreshProjects() : Promise.resolve(),
-      props.users === undefined && !usersData.value ? refreshUsers() : Promise.resolve()
+      props.users === undefined && !usersData.value ? refreshUsers() : Promise.resolve(),
+      loadTaskAttachments()
     ])
 
     if (isEditing.value && props.task) fillFromTask(props.task)
@@ -327,6 +339,20 @@ const onSubmit = async () => {
               placeholder="Contexte, points d'attention, prochaines étapes..."
             />
           </UFormField>
+
+          <div v-if="isEditing && props.taskId">
+            <TaskAttachmentsList
+              :attachments="taskAttachments"
+              :task-id="props.taskId"
+              @refresh="loadTaskAttachments"
+            />
+          </div>
+          <p
+            v-else
+            class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500"
+          >
+            Enregistrez la tâche pour pouvoir y ajouter des documents ou des liens.
+          </p>
 
           <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
             <UButton

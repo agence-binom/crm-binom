@@ -1,10 +1,9 @@
-import type { ResourceType } from '~/constants/resources'
+import type { TaskAttachmentType } from '~/constants/task-attachments'
 
-export type ProjectResource = {
+export type TaskAttachment = {
   id: number
-  projectId?: number | null
-  taskId?: number | null
-  type: ResourceType
+  taskId: number
+  type: TaskAttachmentType
   name: string
   description?: string | null
   filename?: string | null
@@ -13,7 +12,6 @@ export type ProjectResource = {
   mimetype?: string | null
   size?: number | null
   url?: string | null
-  content?: string | null
   createdAt: string | Date
   updatedAt: string | Date
 }

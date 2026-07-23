@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const documentEntityTypes = ['quote', 'invoice', 'project', 'client', 'task'] as const
+export const documentEntityTypes = ['quote', 'invoice', 'project', 'client'] as const
 export const billingDocumentTypes = ['quote', 'invoice'] as const
 
 export const documentAcceptedMimeTypes = [
@@ -59,7 +59,7 @@ export const documentCreateSchema = z.object({
   mimetype: z.string().min(1, 'Le type MIME est requis').max(100, 'Le type MIME est trop long'),
   size: z.number().int('La taille doit être un entier').positive('La taille doit être positive'),
   entityType: z.enum(documentEntityTypes, {
-    message: 'Le type d\'entité doit être "quote", "invoice", "project", "client" ou "task"'
+    message: 'Le type d\'entité doit être "quote", "invoice", "project" ou "client"'
   }),
   entityId: z.number().int('L\'ID entité doit être un entier').positive('L\'ID entité doit être positif'),
   documentType: z.enum(billingDocumentTypes).optional(),
@@ -68,7 +68,7 @@ export const documentCreateSchema = z.object({
 
 export const documentUploadMetadataSchema = z.object({
   entityType: z.enum(documentEntityTypes, {
-    message: 'Le type d\'entité doit être "quote", "invoice", "project", "client" ou "task"'
+    message: 'Le type d\'entité doit être "quote", "invoice", "project" ou "client"'
   }),
   entityId: z.coerce.number().int('L\'ID entité doit être un entier').positive('L\'ID entité doit être positif'),
   documentType: z.enum(billingDocumentTypes).optional(),
@@ -85,7 +85,7 @@ export const documentUpdateSchema = z.object({
   mimetype: z.string().min(1, 'Le type MIME ne peut pas être vide').max(100, 'Le type MIME est trop long').optional(),
   size: z.number().int('La taille doit être un entier').positive('La taille doit être positive').optional(),
   entityType: z.enum(documentEntityTypes, {
-    message: 'Le type d\'entité doit être "quote", "invoice", "project", "client" ou "task"'
+    message: 'Le type d\'entité doit être "quote", "invoice", "project" ou "client"'
   }).optional(),
   entityId: z.number().int('L\'ID entité doit être un entier').positive('L\'ID entité doit être positif').optional(),
   documentType: z.enum(billingDocumentTypes).optional(),
@@ -101,7 +101,7 @@ export const documentIdSchema = z.object({
 
 export const documentEntityParamsSchema = z.object({
   entityType: z.enum(documentEntityTypes, {
-    message: 'Le type d\'entité doit être "quote", "invoice", "project", "client" ou "task"'
+    message: 'Le type d\'entité doit être "quote", "invoice", "project" ou "client"'
   }),
   entityId: z.coerce.number().int('L\'ID entité doit être un entier').positive('L\'ID entité doit être positif')
 })

@@ -1,10 +1,10 @@
 import { integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
-import { projectsTable } from './projects'
+import { tasksTable } from './tasks'
 
-export const resourcesTable = pgTable('resources', {
+export const taskAttachmentsTable = pgTable('task_attachments', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  projectId: integer().references(() => projectsTable.id, { onDelete: 'cascade' }),
-  type: varchar({ length: 20 }).notNull(), // 'document' | 'link' | 'text'
+  taskId: integer().notNull().references(() => tasksTable.id, { onDelete: 'cascade' }),
+  type: varchar({ length: 20 }).notNull(), // 'document' | 'link'
   name: varchar({ length: 255 }).notNull(),
   description: text(),
 
@@ -16,9 +16,6 @@ export const resourcesTable = pgTable('resources', {
 
   // link only
   url: varchar({ length: 2048 }),
-
-  // text only
-  content: text(),
 
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
