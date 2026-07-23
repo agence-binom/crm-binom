@@ -12,8 +12,14 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+COPY package*.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
 COPY --from=builder --chown=node:node /app/.output ./.output
+COPY --from=builder --chown=node:node /app/drizzle ./drizzle
+COPY --from=builder --chown=node:node /app/scripts/migrate-production.mjs ./scripts/migrate-production.mjs
+COPY --from=builder --chown=node:node /app/scripts/start-production.sh ./scripts/start-production.sh
 
 USER node
 EXPOSE 3000
-CMD ["node", ".output/server/index.mjs"]
+CMD ["sh", "./scripts/start-production.sh"]
