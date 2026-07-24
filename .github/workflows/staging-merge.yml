@@ -10,7 +10,7 @@ jobs:
       - name: Extraire le numéro d'issue
         id: extract
         run: |
-          ISSUE=$(echo "${{ github.event.head_commit.message }}" | grep -oP '#\K[0-9]+' | head -1)
+          ISSUE=$(echo "${{ github.event.head_commit.message }}" | grep -oP '/\K[0-9]+' | head -1)
           echo "issue_number=$ISSUE" >> "$GITHUB_OUTPUT"
 
       - name: Trouver l'Item ID dans le Project
