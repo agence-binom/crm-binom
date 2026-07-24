@@ -449,6 +449,7 @@ const statusChipUi = computed(() => ({
             </TasksDuePillButton>
 
             <TasksDuePillButton
+              v-if="formState.dueDate"
               :icon="formState.dueTime ? 'i-lucide-clock' : 'i-lucide-clock-plus'"
               :label="formState.dueTime || 'Ajouter une heure'"
               :color="formState.dueTime ? 'info' : 'neutral'"
