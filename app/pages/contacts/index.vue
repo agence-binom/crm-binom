@@ -5,8 +5,18 @@ const { data, refresh } = await useFetch('/api/contacts/dashboard')
 const allContacts = computed<Contact[]>(() => data.value?.contacts || [])
 const clientOptions = computed<Array<Pick<Client, 'id' | 'name'>>>(() => data.value?.clientOptions || [])
 
+const route = useRoute()
+const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
+
 const showArchived = ref(false)
-const contacts = computed<Contact[]>(() => allContacts.value.filter(contact => Boolean(contact.archived) === showArchived.value))
+const contacts = computed<Contact[]>(() => {
+  const term = search.value.trim().toLowerCase()
+  return allContacts.value.filter((contact) => {
+    const matchesArchived = Boolean(contact.archived) === showArchived.value
+    const matchesSearch = term.length === 0 || `${contact.firstName} ${contact.lastName}`.toLowerCase().includes(term)
+    return matchesArchived && matchesSearch
+  })
+})
 const toggleArchived = () => {
   showArchived.value = !showArchived.value
 }
@@ -117,6 +127,7 @@ console.log(contacts.value)
 <template>
   <div class="container mx-auto p-6">
     <ContactsTable
+      v-model:search="search"
       :contacts="contacts"
       :show-archived="showArchived"
       @create="openCreateContact"

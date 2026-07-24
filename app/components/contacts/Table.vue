@@ -5,16 +5,18 @@ import type { Contact } from '~/types'
 const props = defineProps<{
   contacts: Contact[]
   showArchived: boolean
+  search: string
 }>()
 
 const emit = defineEmits<{
-  create: []
-  edit: [contactId: number]
-  delete: [contactId: number]
-  archive: [contactId: number]
-  restore: [contactId: number]
-  createClient: [contactId: number]
-  toggleArchived: []
+  'create': []
+  'edit': [contactId: number]
+  'delete': [contactId: number]
+  'archive': [contactId: number]
+  'restore': [contactId: number]
+  'createClient': [contactId: number]
+  'toggleArchived': []
+  'update:search': [value: string]
 }>()
 
 const getContactFullName = (contact: Contact) => `${contact.firstName} ${contact.lastName}`
@@ -100,6 +102,13 @@ const columns: TableColumn<Contact>[] = [
       </div>
 
       <div class="flex items-center gap-2">
+        <UInput
+          :model-value="props.search"
+          icon="i-lucide-search"
+          placeholder="Rechercher un contact..."
+          class="w-full sm:w-64"
+          @update:model-value="value => emit('update:search', String(value))"
+        />
         <UButton
           :icon="showArchived ? 'i-lucide-users' : 'i-lucide-archive'"
           variant="ghost"
