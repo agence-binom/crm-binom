@@ -37,6 +37,8 @@ const items = ref<DropdownMenuItem[][]>([
 
 <template>
   <UDashboardGroup>
+    <GlobalSearch />
+
     <UDashboardSidebar
       v-model:collapsed="collapsed"
       collapsible
@@ -77,6 +79,7 @@ const items = ref<DropdownMenuItem[][]>([
       <UDashboardNavbar>
         <template #left>
           <UDashboardSidebarCollapse />
+          <UDashboardSearchButton label="Rechercher..." />
         </template>
 
         <template #right>
