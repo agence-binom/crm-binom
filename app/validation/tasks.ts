@@ -1,10 +1,12 @@
 import { z } from 'zod'
 import {
   taskPriorities,
-  taskStatuses
+  taskStatuses,
+  taskWorkspaces
 } from '~/constants/tasks'
 
 const taskStatusSchema = z.enum(taskStatuses)
+const taskWorkspaceSchema = z.enum(taskWorkspaces)
 const optionalDateSchema = z.preprocess(
   value => (value === '' || value == null ? undefined : value),
   z.coerce.date().optional()
@@ -22,7 +24,8 @@ export const taskCreateSchema = z.object({
   title: z.string().min(1, 'Le titre est requis').max(255, 'Le titre est trop long'),
   notes: z.string().optional().or(z.literal('')),
   dueDate: optionalDateSchema,
-  priority: z.enum(taskPriorities).default('low')
+  priority: z.enum(taskPriorities).default('low'),
+  workspace: taskWorkspaceSchema.default('externe')
 })
 
 export const taskUpdateSchema = z.object({
@@ -39,6 +42,10 @@ export const taskUpdateSchema = z.object({
 
 export const taskIdSchema = z.object({
   id: z.coerce.number().int('L\'ID doit être un entier').positive('L\'ID doit être positif')
+})
+
+export const taskDashboardQuerySchema = z.object({
+  workspace: taskWorkspaceSchema.default('externe')
 })
 
 export type TaskCreate = z.infer<typeof taskCreateSchema>
