@@ -4,12 +4,16 @@ import { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
 import { tasksTable } from '~/db/schema/tasks'
 import { usersTable } from '~/db/schema/users'
+import { taskDashboardQuerySchema } from '~/validation/tasks'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  const query = await getValidatedQuery(event, taskDashboardQuerySchema.parse)
+
   const [tasks, users, projectOptions] = await Promise.all([
     db
       .select()
       .from(tasksTable)
+      .where(eq(tasksTable.workspace, query.workspace))
       .orderBy(asc(tasksTable.createdAt), asc(tasksTable.id)),
     db
       .select({

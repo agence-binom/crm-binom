@@ -1,4 +1,4 @@
-import type { TaskPriority, TaskStatus } from '~/constants/tasks'
+import type { TaskPriority, TaskStatus, TaskWorkspace } from '~/constants/tasks'
 
 export type Task = {
   id: number
@@ -8,6 +8,7 @@ export type Task = {
   notes: string | null
   status: TaskStatus
   priority: TaskPriority
+  workspace: TaskWorkspace
   dueDate: string | null
   startedAt: string | null
   completedAt: string | null
