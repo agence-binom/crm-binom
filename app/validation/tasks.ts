@@ -9,6 +9,12 @@ const optionalDateSchema = z.preprocess(
   value => (value === '' || value == null ? undefined : value),
   z.coerce.date().optional()
 )
+// null est préservé (contrairement à optionalDateSchema) pour distinguer
+// "champ non fourni" (undefined, ignoré par le update SQL) de "date à effacer" (null).
+const nullableDateSchema = z.preprocess(
+  value => (value === '' ? undefined : value),
+  z.coerce.date().nullable().optional()
+)
 
 export const taskCreateSchema = z.object({
   projectId: z.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif').optional(),
@@ -24,7 +30,7 @@ export const taskUpdateSchema = z.object({
   assignedTo: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional(),
   title: z.string().min(1, 'Le titre ne peut pas être vide').max(255, 'Le titre est trop long').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
-  dueDate: optionalDateSchema,
+  dueDate: nullableDateSchema,
   status: taskStatusSchema.default('todo').optional(),
   priority: z.enum(taskPriorities).optional()
 }).refine(data => Object.keys(data).length > 0, {
