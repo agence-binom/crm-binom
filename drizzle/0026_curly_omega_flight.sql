@@ -1,0 +1,1 @@
+ALTER TABLE "tasks" ADD COLUMN "workspace" varchar(20) DEFAULT 'externe' NOT NULL;

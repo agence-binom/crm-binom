@@ -1,0 +1,56 @@
+<script setup lang="ts">
+import type { Task, User } from '~/types'
+
+const { data, refresh, status } = await useFetch('/api/tasks/dashboard', {
+  query: { workspace: 'interne' }
+})
+const allTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
+const availableUsers = computed<User[]>(() => data.value?.users || [])
+const projectOptions = computed(() => data.value?.projectOptions || [])
+
+const { selectedUser, userOptions, filteredTasks } = useUserFilter(allTasks, availableUsers)
+const isLoading = computed(() => status.value === 'pending' && !data.value)
+</script>
+
+<template>
+  <div class="container mx-auto p-6">
+    <div
+      v-if="isLoading"
+      class="space-y-4"
+    >
+      <USkeleton class="h-10 w-64" />
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <USkeleton
+          v-for="i in 3"
+          :key="i"
+          class="h-96"
+        />
+      </div>
+    </div>
+    <TasksToDoList
+      v-else
+      :tasks="filteredTasks"
+      :available-users="availableUsers"
+      :available-projects="projectOptions"
+      workspace="interne"
+      title="Agence"
+      title-heading="h1"
+      @refresh="refresh"
+    >
+      <template #filters>
+        <USelectMenu
+          v-model="selectedUser"
+          :items="userOptions"
+          placeholder="Filtrer par utilisateur"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-64"
+        >
+          <template #leading>
+            <UIcon name="i-lucide-filter" />
+          </template>
+        </USelectMenu>
+      </template>
+    </TasksToDoList>
+  </div>
+</template>
