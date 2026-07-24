@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import type { TaskPriority, TaskStatus } from '~/constants/tasks'
 import { taskPriorities, taskStatuses } from '~/constants/tasks'
+import { formatDateOnly } from '~/lib/utils'
 import {
   getTaskPriorityClass,
   getTaskPriorityIcon,
@@ -18,6 +20,14 @@ type TaskModalProjectOption = {
 }
 
 type EditableTaskField = 'title' | 'projectId' | 'dueDate' | 'priority' | 'status' | 'assignedTo' | 'notes'
+
+// Un horodatage à minuit pile est traité comme "sans heure" : la donnée ne permet
+// pas de distinguer une heure explicitement mise à 00:00 d'une date sans heure.
+const splitDueDate = (dueDate: string | null | undefined) => {
+  if (!dueDate) return { date: '', time: '' }
+  const time = dueDate.slice(11, 16)
+  return { date: dueDate.slice(0, 10), time: time !== '00:00' ? time : '' }
+}
 
 const props = defineProps<{
   open: boolean
@@ -60,11 +70,35 @@ const formState = reactive({
   title: '',
   notes: '',
   dueDate: '',
+  dueTime: '',
   priority: 'low' as TaskPriority,
   status: 'todo' as TaskStatus,
   projectId: props.projectId ?? undefined as number | undefined,
   assignedTo: undefined as number | undefined
 })
+
+const selectedCalendarDate = computed({
+  get: () => (formState.dueDate ? parseDate(formState.dueDate) : undefined),
+  set: (value) => {
+    formState.dueDate = value ? value.toString() : ''
+    onDueDateChange()
+  }
+})
+
+const formattedDueDate = computed(() =>
+  selectedCalendarDate.value ? formatDateOnly(selectedCalendarDate.value.toDate(getLocalTimeZone())) : ''
+)
+
+const clearDueDate = () => {
+  formState.dueDate = ''
+  formState.dueTime = ''
+  onDueDateChange()
+}
+
+const clearDueTime = () => {
+  formState.dueTime = ''
+  onDueDateChange()
+}
 
 const selectedProject = computed({
   get: () => projectsOptions.value.find(p => p.value === formState.projectId),
@@ -123,6 +157,7 @@ const resetForm = () => {
     title: '',
     notes: '',
     dueDate: '',
+    dueTime: '',
     priority: 'low',
     status: 'todo',
     projectId: props.projectId ?? undefined,
@@ -136,6 +171,7 @@ const lastKnownTask = ref<Task | null>(null)
 
 const fillFromTask = (task: Task) => {
   lastKnownTask.value = task
+  const { date: dueDate, time: dueTime } = splitDueDate(task.dueDate)
   Object.assign(formState, {
     title: task.title ?? '',
     notes: task.notes ?? '',
@@ -143,7 +179,8 @@ const fillFromTask = (task: Task) => {
     priority: task.priority ?? 'low',
     projectId: task.projectId ?? undefined,
     assignedTo: task.assignedTo ?? undefined,
-    dueDate: task.dueDate ? task.dueDate.slice(0, 10) : ''
+    dueDate,
+    dueTime
   })
 }
 
@@ -244,8 +281,11 @@ const onNotesBlur = () => {
 }
 
 const onDueDateChange = () => {
-  const previousValue = lastKnownTask.value?.dueDate ? lastKnownTask.value.dueDate.slice(0, 10) : ''
-  if (formState.dueDate !== previousValue) saveField('dueDate', formState.dueDate || undefined)
+  const previous = splitDueDate(lastKnownTask.value?.dueDate)
+  if (formState.dueDate === previous.date && formState.dueTime === previous.time) return
+
+  const value = formState.dueDate ? `${formState.dueDate}T${formState.dueTime || '00:00'}:00.000Z` : null
+  saveField('dueDate', value)
 }
 
 const selectProject = (value: number | undefined) => {
@@ -286,14 +326,14 @@ const priorityChipUi = computed(() => ({
 }))
 const statusChipUi = computed(() => ({
   base: `rounded-full ring-1 ring-inset px-2.5 py-1 text-xs font-medium transition-colors hover:brightness-95 aria-expanded:brightness-95 ${getTaskStatusClass(formState.status)}`,
-  leadingIcon: 'text-current'
+  leadingIcon: 'text-current',
+  content: 'w-48'
 }))
 </script>
 
 <template>
   <UModal
     v-model:open="isOpen"
-    title="Tâche"
     aria-describedby="Détail de la tâche"
     :close="{
       color: 'error',
@@ -304,6 +344,35 @@ const statusChipUi = computed(() => ({
     }"
     class="w-full max-w-2xl rounded-2xl"
   >
+    <template #title>
+      <div class="flex items-center gap-2">
+        <USelect
+          :model-value="formState.status"
+          :items="taskStatusOptions"
+          :icon="getTaskStatusIcon(formState.status)"
+          value-attribute="value"
+          option-attribute="label"
+          variant="none"
+          size="sm"
+          aria-label="Statut"
+          :ui="statusChipUi"
+          @update:model-value="value => selectStatus(value as TaskStatus)"
+        />
+        <USelect
+          :model-value="formState.priority"
+          :items="taskPriorityOptions"
+          :icon="getTaskPriorityIcon(formState.priority)"
+          value-attribute="value"
+          option-attribute="label"
+          variant="none"
+          size="sm"
+          aria-label="Priorité"
+          :ui="priorityChipUi"
+          @update:model-value="value => selectPriority(value as TaskPriority)"
+        />
+      </div>
+    </template>
+
     <template #body>
       <div
         v-if="isCreatingDraft"
@@ -319,91 +388,84 @@ const statusChipUi = computed(() => ({
         v-else
         class="space-y-4"
       >
-        <div class="flex items-center gap-3">
-          <UInput
-            ref="titleInput"
-            v-model="formState.title"
-            variant="none"
-            fixed
-            trailing-icon="i-lucide-pencil"
-            aria-label="Titre de la tâche"
-            class="w-full"
-            :ui="{
-              root: 'group',
-              base: 'text-2xl font-semibold tracking-tight text-slate-900 -mx-2 px-2 py-1 rounded-lg ring-1 ring-transparent transition-colors group-hover:bg-slate-50 focus:bg-white focus:ring-slate-300',
-              trailingIcon: 'opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 size-4'
-            }"
-            placeholder="Sans titre"
-            @blur="onTitleBlur"
-            @keydown.enter.prevent="($event.target as HTMLInputElement)?.blur()"
-          />
-          <div class="flex items-center gap-2">
-            <USelect
-              :model-value="formState.status"
-              :items="taskStatusOptions"
-              :icon="getTaskStatusIcon(formState.status)"
-              value-attribute="value"
-              option-attribute="label"
+        <UInput
+          ref="titleInput"
+          v-model="formState.title"
+          variant="none"
+          fixed
+          trailing-icon="i-lucide-pencil"
+          aria-label="Titre de la tâche"
+          class="w-full"
+          :ui="{
+            root: 'group',
+            base: 'text-2xl font-semibold tracking-tight text-slate-900 -mx-2 px-2 py-1 rounded-lg ring-1 ring-transparent transition-colors group-hover:bg-slate-50 focus:bg-white focus:ring-slate-300',
+            trailingIcon: 'opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 size-4'
+          }"
+          placeholder="Sans titre"
+          @blur="onTitleBlur"
+          @keydown.enter.prevent="($event.target as HTMLInputElement)?.blur()"
+        />
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3">
+            <USelectMenu
+              v-model="selectedAssignee"
+              :items="assigneeOptions"
+              :icon="selectedAssignee?.icon"
               variant="none"
               size="sm"
-              aria-label="Statut"
-              :ui="statusChipUi"
-              @update:model-value="value => selectStatus(value as TaskStatus)"
+              aria-label="Attribution"
+              :ui="{
+                base: 'rounded-full px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-transparent transition-colors hover:bg-slate-100 aria-expanded:bg-slate-100',
+                leadingIcon: 'text-current'
+              }"
             />
-            <USelect
-              :model-value="formState.priority"
-              :items="taskPriorityOptions"
-              :icon="getTaskPriorityIcon(formState.priority)"
-              value-attribute="value"
-              option-attribute="label"
+            <USelectMenu
+              v-model="selectedProject"
+              :items="projectsOptions"
+              :icon="selectedProject ? 'i-lucide-briefcase-business' : 'i-lucide-circle-slash'"
               variant="none"
               size="sm"
-              aria-label="Priorité"
-              :ui="priorityChipUi"
-              @update:model-value="value => selectPriority(value as TaskPriority)"
+              placeholder="Aucun projet"
+              aria-label="Projet"
+              :ui="{
+                base: 'rounded-full px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-transparent transition-colors hover:bg-slate-100 aria-expanded:bg-slate-100',
+                leadingIcon: 'text-current'
+              }"
+              @update:model-value="option => selectProject(option?.value)"
             />
           </div>
-        </div>
+          <div class="flex flex-wrap items-center gap-1 border-b border-slate-100 pb-3">
+            <TasksDuePillButton
+              :icon="formState.dueDate ? 'i-lucide-calendar' : 'i-lucide-calendar-plus'"
+              :label="formState.dueDate ? formattedDueDate : 'Ajouter une date'"
+              :color="formState.dueDate ? 'info' : 'neutral'"
+              :clear-label="formState.dueDate ? 'Retirer la date' : undefined"
+              @clear="clearDueDate"
+            >
+              <UCalendar
+                v-model="selectedCalendarDate"
+                class="p-2"
+              />
+            </TasksDuePillButton>
 
-        <div class="flex flex-wrap items-center gap-1.5 border-y border-slate-100 py-3">
-          <USelectMenu
-            v-model="selectedAssignee"
-            :items="assigneeOptions"
-            :icon="selectedAssignee?.icon"
-            variant="none"
-            size="sm"
-            aria-label="Attribution"
-            :ui="{
-              base: 'rounded-full px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-transparent transition-colors hover:bg-slate-100 aria-expanded:bg-slate-100',
-              leadingIcon: 'text-current'
-            }"
-          />
-          <USelectMenu
-            v-model="selectedProject"
-            :items="projectsOptions"
-            :icon="selectedProject ? 'i-lucide-briefcase-business' : 'i-lucide-circle-slash'"
-            variant="none"
-            size="sm"
-            placeholder="Aucun projet"
-            aria-label="Projet"
-            :ui="{
-              base: 'rounded-full px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-transparent transition-colors hover:bg-slate-100 aria-expanded:bg-slate-100',
-              leadingIcon: 'text-current'
-            }"
-            @update:model-value="option => selectProject(option?.value)"
-          />
-          <UInput
-            v-model="formState.dueDate"
-            type="date"
-            variant="none"
-            size="sm"
-            aria-label="Date d'échéance"
-            class="w-auto"
-            :ui="{
-              base: 'rounded-full px-2.5 py-1 text-xs font-medium text-sky-700 bg-sky-50 ring-1 ring-transparent transition-colors hover:bg-sky-50/50 focus:bg-slate-100 focus:ring-slate-300'
-            }"
-            @blur="onDueDateChange"
-          />
+            <TasksDuePillButton
+              v-if="formState.dueDate"
+              :icon="formState.dueTime ? 'i-lucide-clock' : 'i-lucide-clock-plus'"
+              :label="formState.dueTime || 'Ajouter une heure'"
+              :color="formState.dueTime ? 'info' : 'neutral'"
+              :clear-label="formState.dueTime ? 'Retirer l\'heure' : undefined"
+              @clear="clearDueTime"
+            >
+              <div class="p-3">
+                <UInput
+                  v-model="formState.dueTime"
+                  type="time"
+                  aria-label="Heure d'échéance"
+                  @blur="onDueDateChange"
+                />
+              </div>
+            </TasksDuePillButton>
+          </div>
         </div>
 
         <UTextarea
