@@ -10,6 +10,7 @@ import { projectsTable } from '~/db/schema/projects'
 import { quotesTable } from '~/db/schema/quotes'
 import { tasksTable } from '~/db/schema/tasks'
 import { getDocumentValidationError, sanitizeDocumentFilename, sanitizeDocumentPathSegment } from '~~/server/lib/documents-upload'
+import { translateSupabaseError } from '~/lib/utils'
 
 const DOCUMENT_SIGNED_URL_TTL_SECONDS = 60 * 60
 
@@ -161,7 +162,7 @@ export const uploadDocumentFile = async (
   if (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: `Impossible de téléverser le document: ${error.message}`
+      statusMessage: `Impossible de téléverser le document: ${translateSupabaseError(error.message) ?? error.message}`
     })
   }
 }
@@ -181,7 +182,7 @@ export const deleteStoredDocumentFile = async (
   if (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: `Impossible de supprimer le fichier stocké: ${error.message}`
+      statusMessage: `Impossible de supprimer le fichier stocké: ${translateSupabaseError(error.message) ?? error.message}`
     })
   }
 }
