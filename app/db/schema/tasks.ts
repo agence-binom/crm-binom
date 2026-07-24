@@ -10,6 +10,7 @@ export const tasksTable = pgTable('tasks', {
   notes: text(),
   status: varchar({ length: 50 }).notNull().default('todo'), // 'todo' | 'in_progress' | 'waiting' | 'validationBinom' | 'validationClient' | 'done'
   priority: varchar({ length: 50 }).notNull().default('low'), // 'low' | 'medium' | 'high'
+  workspace: varchar({ length: 20 }).notNull().default('externe'), // 'interne' | 'externe'
   dueDate: timestamp(),
   startedAt: timestamp(),
   completedAt: timestamp(),

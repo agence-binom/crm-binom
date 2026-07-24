@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
-import type { TaskPriority, TaskStatus } from '~/constants/tasks'
+import type { TaskPriority, TaskStatus, TaskWorkspace } from '~/constants/tasks'
 import { taskPriorities, taskStatuses } from '~/constants/tasks'
 import { formatDateOnly } from '~/lib/utils'
 import {
@@ -34,6 +34,7 @@ const props = defineProps<{
   taskId?: number | null
   task?: Task | null
   projectId?: number | null
+  workspace?: TaskWorkspace
   projects?: TaskModalProjectOption[]
   users?: User[]
 }>()
@@ -205,7 +206,11 @@ watch(
       try {
         const created = await $fetch<Task>('/api/tasks', {
           method: 'POST',
-          body: { title: 'Sans titre', projectId: props.projectId ?? undefined }
+          body: {
+            title: 'Sans titre',
+            projectId: props.projectId ?? undefined,
+            workspace: props.workspace ?? 'externe'
+          }
         })
         draftTaskId.value = created.id
         fillFromTask(created)
