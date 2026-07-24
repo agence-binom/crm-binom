@@ -31,7 +31,7 @@ jobs:
                   }
                 }
               }
-            }' -f org=TON_ORG -f repo=TON_REPO -F issue=${{ steps.extract.outputs.issue_number }})
+            }' -f org=agence-binom -f repo=crm-binom -F issue=${{ steps.extract.outputs.issue_number }})
           
           ITEM_ID=$(echo "$RESULT" | jq -r '.data.repository.issue.projectItems.nodes[] | select(.project.id=="PVT_kwDOEjUZ2c4BdeI3") | .id')
           echo "item_id=$ITEM_ID" >> "$GITHUB_OUTPUT"
