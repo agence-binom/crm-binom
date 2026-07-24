@@ -73,7 +73,7 @@ const statuSettings: Record<TaskStatus, {
     label: 'À valider par binōm',
     bgClass: 'bg-violet-50/90 ring-1 ring-violet-200/80',
     badgeColor: 'primary',
-    badgeIcon: 'i-lucide-badge-check',
+    badgeIcon: 'i-lucide-user-check',
     badgeClass: 'bg-violet-100 text-violet-700 ring-1 ring-inset ring-violet-200',
     emptyIconClass: 'text-violet-300'
   },
