@@ -13,6 +13,7 @@ const props = defineProps<{
   projectName?: string
   clientName?: string | null
   clientId?: number
+  showProjectBadge?: boolean
 }>()
 
 const emit = defineEmits<{
