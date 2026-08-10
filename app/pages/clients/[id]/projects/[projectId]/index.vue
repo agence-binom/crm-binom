@@ -221,7 +221,7 @@ const handleDocumentsChange = async () => {
             <div
               v-for="document in quoteDocuments"
               :key="document.id"
-              class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
+              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
             >
               <DocumentItem
                 :document="document"
@@ -283,7 +283,7 @@ const handleDocumentsChange = async () => {
             <div
               v-for="document in invoiceDocuments"
               :key="document.id"
-              class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
+              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
             >
               <DocumentItem
                 :document="document"
