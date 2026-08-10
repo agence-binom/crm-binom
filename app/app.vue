@@ -1,4 +1,7 @@
 <script setup>
+const { public: { appEnv } } = useRuntimeConfig()
+const isStaging = appEnv === 'staging'
+
 useHead({
   meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
   link: [{ rel: 'icon', href: '/favicon.ico' }],
@@ -20,6 +23,12 @@ useSeoMeta({
 
 <template>
   <UApp :toaster="{ position: 'bottom-right' }">
+    <div
+      v-if="isStaging"
+      class="flex items-center justify-center bg-orange-500 px-4 py-1.5 text-center text-sm font-medium text-white"
+    >
+      Environnement de STAGING — ceci n'est pas la production
+    </div>
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

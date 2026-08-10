@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TaskStatus } from '~/constants/tasks'
+import type { TaskStatus, TaskWorkspace } from '~/constants/tasks'
 import { sortTasksByDueDate } from '~/lib/tasks'
 import type { Task, User } from '~/types'
 
@@ -14,6 +14,7 @@ const props = withDefaults(defineProps<{
   title?: string
   titleHeading?: 'h1' | 'h2' | 'h3'
   projectId?: number
+  workspace?: TaskWorkspace
   showUserFilter?: boolean
   availableProjects?: ToDoListProjectOption[]
   availableUsers?: User[]
@@ -196,9 +197,11 @@ const headingClass = computed(() => {
       :task-id="selectedTaskId"
       :task="taskToEdit"
       :project-id="projectId"
+      :workspace="workspace"
       :projects="availableProjects"
       :users="availableUsers"
       @saved="handleTaskChange"
+      @deleted="handleTaskDeleted"
     />
 
     <div class="overflow-x-auto p-1 pb-3 scrollbar-custom">

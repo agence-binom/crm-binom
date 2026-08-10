@@ -33,7 +33,7 @@ const href = computed(() => getExternalHref(props.resource))
     :href="href"
     :target="href ? '_blank' : undefined"
     :rel="href && resource.type === 'link' ? 'noopener noreferrer' : undefined"
-    class="flex flex-1 min-w-0 items-start gap-3"
+    class="group flex flex-1 min-w-0 items-start gap-3"
   >
     <div class="rounded-lg bg-primary-50 p-2 text-primary-600 ">
       <UIcon
@@ -81,31 +81,18 @@ const href = computed(() => getExternalHref(props.resource))
       </p>
     </div>
 
-    <div class="flex shrink-0 items-center gap-2">
-      <!-- <UButton
-      v-if="resource.type !== 'text'"
-      size="sm"
-      variant="soft"
-      color="primary"
-      :icon="resource.type === 'link' ? 'i-lucide-external-link' : 'i-lucide-download'"
-      :href="getExternalHref(resource)"
-      :disabled="!getExternalHref(resource)"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {{ resource.type === 'link' ? 'Ouvrir le lien' : 'Télécharger' }}
-    </UButton> -->
+    <div class="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
       <UButton
-        label="Modifier"
-        size="sm"
-        variant="soft"
-        color="primary"
+        size="xs"
+        variant="ghost"
+        color="neutral"
         icon="i-lucide-pencil"
+        aria-label="Modifier la ressource"
         @click.prevent="$emit('edit', resource.id)"
       />
       <UButton
-        size="sm"
-        variant="soft"
+        size="xs"
+        variant="ghost"
         color="error"
         icon="i-lucide-trash-2"
         aria-label="Supprimer la ressource"

@@ -15,7 +15,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     documentsBucket: process.env.DOCUMENTS_BUCKET,
     public: {
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL,
+      appEnv: process.env.NUXT_PUBLIC_APP_ENV || 'production'
     }
   },
 

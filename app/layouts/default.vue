@@ -61,8 +61,8 @@ const items = ref<DropdownMenuItem[][]>([
             {
               label: 'Agence',
               icon: 'i-lucide-building',
-              disabled: true,
               children: [
+                { label: 'Tâches', icon: 'i-lucide-list-checks', to: '/agence/taches' },
                 { label: 'Administratif', icon: 'i-lucide-pen', to: '/clients', disabled: true }
               ]
             }

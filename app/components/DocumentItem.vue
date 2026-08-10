@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatDate, formatFileSize, getErrorMessage } from '~/lib/utils'
+import { formatDate, formatFileSize, getErrorMessage, getFileTypeIcon } from '~/lib/utils'
 import type { ProjectDocument } from '~/types'
 
 const toast = useToast()
@@ -30,14 +30,6 @@ const getFactureNetHref = (document: ProjectDocument) => {
   return document.externalUrl.startsWith('http') ? document.externalUrl : undefined
 }
 
-const getFileIcon = (mimetype: string) => {
-  if (mimetype.includes('pdf')) return 'i-lucide-file-text'
-  if (mimetype.includes('image')) return 'i-lucide-image'
-  if (mimetype.includes('word') || mimetype.includes('document')) return 'i-lucide-file-text'
-  if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'i-lucide-file-spreadsheet'
-  return 'i-lucide-file'
-}
-
 const onDeleteDocument = async (documentId: number) => {
   try {
     await $fetch(`/api/documents/${documentId}`, { method: 'DELETE' })
@@ -63,7 +55,7 @@ const onDeleteDocument = async (documentId: number) => {
   <div class="flex min-w-0 flex-1 items-start gap-3">
     <div class="rounded-lg bg-primary-50 p-2 text-primary-600">
       <UIcon
-        :name="getFileIcon(document.mimetype)"
+        :name="getFileTypeIcon(document.mimetype)"
         class="text-lg"
       />
     </div>
@@ -105,7 +97,7 @@ const onDeleteDocument = async (documentId: number) => {
     </div>
   </div>
 
-  <div class="flex shrink-0 items-center gap-2">
+  <div class="flex shrink-0 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
     <UButton
       size="sm"
       variant="soft"

@@ -24,12 +24,7 @@ export default defineEventHandler(async (event) => {
     description: formData.get('description')
   })
 
-  const filepath = await buildDocumentStoragePath(
-    'project',
-    metadata.projectId,
-    fileEntry.name,
-    'resource'
-  )
+  const filepath = await buildDocumentStoragePath('project', metadata.projectId, fileEntry.name, 'resource')
   await uploadDocumentFile(event, filepath, fileEntry)
 
   try {

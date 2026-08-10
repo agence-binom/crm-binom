@@ -1,0 +1,58 @@
+name: Move issue to "À tester"
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  move-card:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extraire le numéro d'issue
+        id: extract
+        run: |
+          ISSUE=$(echo "${{ github.event.head_commit.message }}" | grep -oP '/\K[0-9]+' | head -1)
+          echo "issue_number=$ISSUE" >> "$GITHUB_OUTPUT"
+
+      - name: Trouver l'Item ID dans le Project
+        if: steps.extract.outputs.issue_number != ''
+        id: find_item
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          RESULT=$(gh api graphql -f query='
+            query($org: String!, $repo: String!, $issue: Int!) {
+              repository(owner: $org, name: $repo) {
+                issue(number: $issue) {
+                  projectItems(first: 10) {
+                    nodes {
+                      id
+                      project { id }
+                    }
+                  }
+                }
+              }
+            }' -f org=agence-binom -f repo=crm-binom -F issue=${{ steps.extract.outputs.issue_number }})
+          
+          ITEM_ID=$(echo "$RESULT" | jq -r '.data.repository.issue.projectItems.nodes[] | select(.project.id=="PVT_kwDOEjUZ2c4BdeI3") | .id')
+          echo "item_id=$ITEM_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Changer le statut en "À tester"
+        if: steps.find_item.outputs.item_id != ''
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          gh api graphql -f query='
+            mutation($project: ID!, $item: ID!, $field: ID!, $option: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $project
+                itemId: $item
+                fieldId: $field
+                value: { singleSelectOptionId: $option }
+              }) {
+                projectV2Item { id }
+              }
+            }' \
+            -f project="PVT_kwDOEjUZ2c4BdeI3" \
+            -f item="${{ steps.find_item.outputs.item_id }}" \
+            -f field="PVTSSF_lADOEjUZ2c4BdeI3zhX_cyE" \
+            -f option="98236657"

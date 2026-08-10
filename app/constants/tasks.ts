@@ -16,3 +16,10 @@ export const taskPriorities = [
 ] as const
 
 export type TaskPriority = typeof taskPriorities[number]
+
+export const taskWorkspaces = [
+  'interne',
+  'externe'
+] as const
+
+export type TaskWorkspace = typeof taskWorkspaces[number]
