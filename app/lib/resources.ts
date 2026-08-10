@@ -21,14 +21,3 @@ export function getResourceTypeIcon(type: ResourceType) {
       return 'i-lucide-file'
   }
 }
-
-export function getResourceTypeColor(type: ResourceType): 'primary' | 'info' | 'warning' {
-  switch (type) {
-    case 'link':
-      return 'info'
-    case 'text':
-      return 'warning'
-    default:
-      return 'primary'
-  }
-}
