@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { formatDate, formatFileSize } from '~/lib/utils'
-import { getResourceTypeColor, getResourceTypeIcon, getResourceTypeLabel } from '~/lib/resources'
+import { formatDate, formatFileSize, getFileTypeIcon } from '~/lib/utils'
+import { getResourceTypeIcon } from '~/lib/resources'
 import type { ProjectResource } from '~/types'
 
 const props = defineProps<{
@@ -9,20 +9,12 @@ const props = defineProps<{
 
 defineEmits<{
   delete: [resourceId: number]
+  edit: [resourceId: number]
 }>()
-
-const getFileIcon = (mimetype?: string | null) => {
-  if (!mimetype) return 'i-lucide-file'
-  if (mimetype.includes('pdf')) return 'i-lucide-file-text'
-  if (mimetype.includes('image')) return 'i-lucide-image'
-  if (mimetype.includes('word') || mimetype.includes('document')) return 'i-lucide-file-text'
-  if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'i-lucide-file-spreadsheet'
-  return 'i-lucide-file'
-}
 
 const icon = computed(() => (
   props.resource.type === 'document'
-    ? getFileIcon(props.resource.mimetype)
+    ? getFileTypeIcon(props.resource.mimetype)
     : getResourceTypeIcon(props.resource.type)
 ))
 
@@ -31,10 +23,18 @@ const getExternalHref = (resource: ProjectResource) => {
   if (resource.type === 'document') return resource.downloadUrl ?? undefined
   return undefined
 }
+
+const href = computed(() => getExternalHref(props.resource))
 </script>
 
 <template>
-  <div class="flex min-w-0 flex-1 items-start gap-3">
+  <component
+    :is="href ? 'a' : 'div'"
+    :href="href"
+    :target="href ? '_blank' : undefined"
+    :rel="href && resource.type === 'link' ? 'noopener noreferrer' : undefined"
+    class="flex flex-1 min-w-0 items-start gap-3"
+  >
     <div class="rounded-lg bg-primary-50 p-2 text-primary-600 ">
       <UIcon
         :name="icon"
@@ -44,17 +44,9 @@ const getExternalHref = (resource: ProjectResource) => {
     </div>
 
     <div class="min-w-0 flex-1 space-y-1.5">
-      <div class="flex flex-wrap items-center gap-2">
-        <p class="truncate font-medium">
-          {{ resource.name }}
-        </p>
-        <UBadge
-          variant="soft"
-          :color="getResourceTypeColor(resource.type)"
-        >
-          {{ getResourceTypeLabel(resource.type) }}
-        </UBadge>
-      </div>
+      <p class="truncate font-medium">
+        {{ resource.name }}
+      </p>
 
       <p
         v-if="resource.type === 'document'"
@@ -88,10 +80,9 @@ const getExternalHref = (resource: ProjectResource) => {
         Ajouté le {{ formatDate(resource.createdAt) }}
       </p>
     </div>
-  </div>
 
-  <div class="flex shrink-0 items-center gap-2">
-    <UButton
+    <div class="flex shrink-0 items-center gap-2">
+      <!-- <UButton
       v-if="resource.type !== 'text'"
       size="sm"
       variant="soft"
@@ -103,14 +94,23 @@ const getExternalHref = (resource: ProjectResource) => {
       rel="noopener noreferrer"
     >
       {{ resource.type === 'link' ? 'Ouvrir le lien' : 'Télécharger' }}
-    </UButton>
-    <UButton
-      size="sm"
-      variant="soft"
-      color="error"
-      icon="i-lucide-trash-2"
-      aria-label="Supprimer la ressource"
-      @click="$emit('delete', resource.id)"
-    />
-  </div>
+    </UButton> -->
+      <UButton
+        label="Modifier"
+        size="sm"
+        variant="soft"
+        color="primary"
+        icon="i-lucide-pencil"
+        @click.prevent="$emit('edit', resource.id)"
+      />
+      <UButton
+        size="sm"
+        variant="soft"
+        color="error"
+        icon="i-lucide-trash-2"
+        aria-label="Supprimer la ressource"
+        @click.prevent="$emit('delete', resource.id)"
+      />
+    </div>
+  </component>
 </template>
