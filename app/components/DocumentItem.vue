@@ -97,7 +97,7 @@ const onDeleteDocument = async (documentId: number) => {
     </div>
   </div>
 
-  <div class="flex shrink-0 items-center gap-2">
+  <div class="flex shrink-0 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
     <UButton
       size="sm"
       variant="soft"
