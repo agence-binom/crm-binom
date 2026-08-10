@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { resourceTypes } from '~/constants/resources'
-import type { ResourceType } from '~/constants/resources'
+import { resourceTypes, type ResourceType } from '~/constants/resources'
 import { getResourceTypeIcon, getResourceTypeLabel } from '~/lib/resources'
 import { formatFileSize } from '~/lib/utils'
 import { resourceFileInputAccept, resourceMaxSizeBytes } from '~/validation/resources'
+import type { ProjectResource } from '~/types'
 
 const props = defineProps<{
   open: boolean
   projectId: number
+  resource?: ProjectResource | null
 }>()
 
 const emit = defineEmits<{
@@ -24,6 +25,11 @@ const isOpen = computed({
 })
 
 const isSaving = ref(false)
+const isEditing = computed(() => Boolean(props.resource))
+
+const modalTitle = computed(() => (isEditing.value ? 'Modifier la ressource' : 'Nouvelle ressource'))
+const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer la ressource'))
+
 const selectedType = ref<ResourceType>('document')
 const name = ref('')
 const description = ref('')
@@ -56,10 +62,29 @@ const resetForm = () => {
   clearSelectedFile()
 }
 
+const fillFromResource = (resource: ProjectResource) => {
+  selectedType.value = resource.type
+  name.value = resource.name ?? ''
+  description.value = resource.description ?? ''
+  url.value = resource.type === 'link' ? (resource.url ?? '') : ''
+  content.value = resource.type === 'text' ? (resource.content ?? '') : ''
+  clearSelectedFile()
+}
+
 watch(
   () => props.open,
   (open) => {
-    if (open) resetForm()
+    if (!open) return
+    if (isEditing.value && props.resource) fillFromResource(props.resource)
+    else resetForm()
+  }
+)
+
+watch(
+  () => props.resource,
+  (resource) => {
+    if (!props.open) return
+    if (isEditing.value && resource) fillFromResource(resource)
   }
 )
 
@@ -88,7 +113,7 @@ const onFileSelected = (event: Event) => {
 
 const isValid = computed(() => {
   if (!name.value.trim()) return false
-  if (selectedType.value === 'document') return Boolean(selectedFile.value)
+  if (selectedType.value === 'document') return isEditing.value || Boolean(selectedFile.value)
   if (selectedType.value === 'link') return Boolean(url.value.trim())
   return Boolean(content.value.trim())
 })
@@ -99,7 +124,19 @@ const onSubmit = async () => {
   isSaving.value = true
 
   try {
-    if (selectedType.value === 'document') {
+    if (isEditing.value) {
+      if (!props.resource) throw new Error('resource manquante pour la mise à jour')
+
+      await $fetch(`/api/resources/${props.resource.id}`, {
+        method: 'PUT',
+        body: {
+          name: name.value.trim(),
+          description: description.value.trim(),
+          ...(selectedType.value === 'link' ? { url: url.value.trim() } : {}),
+          ...(selectedType.value === 'text' ? { content: content.value } : {})
+        }
+      })
+    } else if (selectedType.value === 'document') {
       const formData = new FormData()
       formData.set('file', selectedFile.value as File)
       formData.set('projectId', String(props.projectId))
@@ -123,7 +160,12 @@ const onSubmit = async () => {
     emit('saved')
     isOpen.value = false
   } catch (error) {
-    showError('Enregistrement impossible', error, 'Impossible d\'ajouter la ressource.')
+    console.error('Erreur lors de la sauvegarde de la ressource:', error)
+    showError(
+      'Enregistrement impossible',
+      error,
+      isEditing.value ? 'Impossible de mettre à jour la ressource.' : 'Impossible d\'ajouter la ressource.'
+    )
   } finally {
     isSaving.value = false
   }
@@ -133,8 +175,8 @@ const onSubmit = async () => {
 <template>
   <UModal
     v-model:open="isOpen"
-    title="Ajouter une ressource"
-    aria-describedby="Ajouter un document, un lien ou une note au projet"
+    :title="modalTitle"
+    :aria-describedby="isEditing ? 'Modifier les informations de la ressource' : 'Ajouter un document, un lien ou une note au projet'"
     :close="{
       color: 'error',
       variant: 'solid',
@@ -145,12 +187,22 @@ const onSubmit = async () => {
     class="w-full max-w-2xl rounded-2xl"
   >
     <template #body>
-      <div class="space-y-6">
+      <div class="space-y-5">
         <div class="space-y-2.5">
           <p class="text-sm font-medium text-slate-700">
             Type de ressource
           </p>
-          <div class="flex flex-wrap gap-2">
+          <div
+            v-if="isEditing"
+            class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-slate-600 ring-1 ring-inset ring-slate-200"
+          >
+            <UIcon :name="getResourceTypeIcon(selectedType)" />
+            {{ getResourceTypeLabel(selectedType) }}
+          </div>
+          <div
+            v-else
+            class="flex flex-wrap gap-2"
+          >
             <UButton
               v-for="option in typeOptions"
               :key="option.value"
@@ -193,7 +245,19 @@ const onSubmit = async () => {
           <label class="text-sm font-medium text-slate-700">
             Fichier
           </label>
-          <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+          <div
+            v-if="isEditing"
+            class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
+          >
+            {{ resource?.filename }} • {{ formatFileSize(resource?.size || 0) }}
+            <p class="mt-1 text-xs text-slate-400">
+              Le fichier ne peut pas être modifié après l'ajout.
+            </p>
+          </div>
+          <div
+            v-else
+            class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4"
+          >
             <input
               ref="fileInput"
               type="file"
@@ -264,10 +328,10 @@ const onSubmit = async () => {
           <UButton
             :disabled="!isValid || isSaving"
             :loading="isSaving"
-            icon="i-lucide-plus"
+            :icon="isEditing ? 'i-lucide-check' : 'i-lucide-plus'"
             @click="onSubmit"
           >
-            Ajouter
+            {{ submitLabel }}
           </UButton>
         </div>
       </div>
