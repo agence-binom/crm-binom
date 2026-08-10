@@ -11,6 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const isModalOpen = ref(false)
+const selectedResourceId = ref<number | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
@@ -27,6 +28,16 @@ const onDeleteResource = async (resourceId: number) => {
     emit('refresh')
   })
 }
+
+const openEditResource = (resourceId: number) => {
+  selectedResourceId.value = resourceId
+  isModalOpen.value = true
+}
+
+const resourceToEdit = computed(() => {
+  if (!selectedResourceId.value) return null
+  return props.resources.find(r => r.id === selectedResourceId.value) ?? null
+})
 </script>
 
 <template>
@@ -52,7 +63,7 @@ const onDeleteResource = async (resourceId: number) => {
 
     <div
       v-if="sortedResources.length"
-      class="space-y-3"
+      class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
       <div
         v-for="resource in sortedResources"
@@ -62,6 +73,7 @@ const onDeleteResource = async (resourceId: number) => {
         <ResourcesCard
           :resource="resource"
           @delete="onDeleteResource"
+          @edit="openEditResource"
         />
       </div>
     </div>
@@ -85,6 +97,7 @@ const onDeleteResource = async (resourceId: number) => {
     <ResourcesModal
       v-model:open="isModalOpen"
       :project-id="projectId"
+      :resource="resourceToEdit"
       @saved="onSaved"
     />
 
