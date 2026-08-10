@@ -21,8 +21,6 @@ type TaskModalProjectOption = {
 
 type EditableTaskField = 'title' | 'projectId' | 'dueDate' | 'priority' | 'status' | 'assignedTo' | 'notes'
 
-// Un horodatage à minuit pile est traité comme "sans heure" : la donnée ne permet
-// pas de distinguer une heure explicitement mise à 00:00 d'une date sans heure.
 const splitDueDate = (dueDate: string | null | undefined) => {
   if (!dueDate) return { date: '', time: '' }
   const time = dueDate.slice(11, 16)

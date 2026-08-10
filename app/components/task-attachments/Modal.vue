@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { taskAttachmentTypes } from '~/constants/task-attachments'
-import type { TaskAttachmentType } from '~/constants/task-attachments'
+import { taskAttachmentTypes, type TaskAttachmentType } from '~/constants/task-attachments'
 import { getTaskAttachmentTypeIcon, getTaskAttachmentTypeLabel } from '~/lib/task-attachments'
 import { formatFileSize } from '~/lib/utils'
 import { taskAttachmentFileInputAccept, taskAttachmentMaxSizeBytes } from '~/validation/task-attachments'
+import type { TaskAttachment } from '~/types'
 
 const props = defineProps<{
   open: boolean
   taskId: number
+  attachment?: TaskAttachment | null
 }>()
 
 const emit = defineEmits<{
@@ -15,7 +16,6 @@ const emit = defineEmits<{
   'saved': []
 }>()
 
-const toast = useToast()
 const { showError } = useFeedbackToast()
 
 const isOpen = computed({
@@ -24,12 +24,16 @@ const isOpen = computed({
 })
 
 const isSaving = ref(false)
+const isEditing = computed(() => Boolean(props.attachment))
+
+const modalTitle = computed(() => (isEditing.value ? 'Modifier la pièce jointe' : 'Ajouter un document ou un lien'))
+const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Ajouter'))
+
 const selectedType = ref<TaskAttachmentType>('document')
 const name = ref('')
 const description = ref('')
 const url = ref('')
 const selectedFile = ref<File | null>(null)
-const fileInput = ref<HTMLInputElement>()
 
 const typeOptions = taskAttachmentTypes.map(type => ({
   label: getTaskAttachmentTypeLabel(type),
@@ -39,54 +43,34 @@ const typeOptions = taskAttachmentTypes.map(type => ({
 
 const maxFileSizeLabel = formatFileSize(taskAttachmentMaxSizeBytes)
 
-const clearSelectedFile = () => {
-  selectedFile.value = null
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-}
-
 const resetForm = () => {
   selectedType.value = 'document'
   name.value = ''
   description.value = ''
   url.value = ''
-  clearSelectedFile()
+  selectedFile.value = null
+}
+
+const fillFromAttachment = (attachment: TaskAttachment) => {
+  selectedType.value = attachment.type
+  name.value = attachment.name ?? ''
+  description.value = attachment.description ?? ''
+  url.value = attachment.type === 'link' ? (attachment.url ?? '') : ''
+  selectedFile.value = null
 }
 
 watch(
-  () => props.open,
-  (open) => {
-    if (open) resetForm()
+  () => [props.open, props.attachment] as const,
+  ([open, attachment]) => {
+    if (!open) return
+    if (attachment) fillFromAttachment(attachment)
+    else resetForm()
   }
 )
 
-const onFileSelected = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0] || null
-
-  if (!file) {
-    clearSelectedFile()
-    return
-  }
-
-  if (file.size > taskAttachmentMaxSizeBytes) {
-    clearSelectedFile()
-    toast.add({
-      title: 'Fichier refusé',
-      description: `Le fichier dépasse la taille maximale autorisée de ${maxFileSizeLabel}.`,
-      color: 'error',
-      icon: 'i-lucide-circle-alert'
-    })
-    return
-  }
-
-  selectedFile.value = file
-}
-
 const isValid = computed(() => {
   if (!name.value.trim()) return false
-  if (selectedType.value === 'document') return Boolean(selectedFile.value)
+  if (selectedType.value === 'document') return isEditing.value || Boolean(selectedFile.value)
   return Boolean(url.value.trim())
 })
 
@@ -96,7 +80,18 @@ const onSubmit = async () => {
   isSaving.value = true
 
   try {
-    if (selectedType.value === 'document') {
+    if (isEditing.value) {
+      if (!props.attachment) throw new Error('attachment manquant pour la mise à jour')
+
+      await $fetch(`/api/task-attachments/${props.attachment.id}`, {
+        method: 'PUT',
+        body: {
+          name: name.value.trim(),
+          description: description.value.trim(),
+          ...(selectedType.value === 'link' ? { url: url.value.trim() } : {})
+        }
+      })
+    } else if (selectedType.value === 'document') {
       const formData = new FormData()
       formData.set('file', selectedFile.value as File)
       formData.set('taskId', String(props.taskId))
@@ -120,7 +115,12 @@ const onSubmit = async () => {
     emit('saved')
     isOpen.value = false
   } catch (error) {
-    showError('Enregistrement impossible', error, 'Impossible d\'ajouter la pièce jointe.')
+    console.error('Erreur lors de la sauvegarde de la pièce jointe:', error)
+    showError(
+      'Enregistrement impossible',
+      error,
+      isEditing.value ? 'Impossible de mettre à jour la pièce jointe.' : 'Impossible d\'ajouter la pièce jointe.'
+    )
   } finally {
     isSaving.value = false
   }
@@ -130,8 +130,8 @@ const onSubmit = async () => {
 <template>
   <UModal
     v-model:open="isOpen"
-    title="Ajouter un document ou un lien"
-    aria-describedby="Ajouter un document ou un lien à la tâche"
+    :title="modalTitle"
+    :aria-describedby="isEditing ? 'Modifier les informations de la pièce jointe' : 'Ajouter un document ou un lien à la tâche'"
     :close="{
       color: 'error',
       variant: 'solid',
@@ -147,28 +147,11 @@ const onSubmit = async () => {
           <p class="text-sm font-medium text-slate-700">
             Type
           </p>
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              v-for="option in typeOptions"
-              :key="option.value"
-              type="button"
-              variant="soft"
-              color="neutral"
-              :class="[
-                'rounded-full px-3.5 transition-colors',
-                selectedType === option.value
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-200/70'
-              ]"
-              @click="selectedType = option.value"
-            >
-              <UIcon
-                :name="option.icon"
-                class="mr-1"
-              />
-              {{ option.label }}
-            </UButton>
-          </div>
+          <AttachmentTypeSelector
+            v-model="selectedType"
+            :options="typeOptions"
+            :locked="isEditing"
+          />
         </div>
 
         <UFormField
@@ -190,24 +173,15 @@ const onSubmit = async () => {
           <label class="text-sm font-medium text-slate-700">
             Fichier
           </label>
-          <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
-            <input
-              ref="fileInput"
-              type="file"
-              :accept="taskAttachmentFileInputAccept"
-              class="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
-              @change="onFileSelected"
-            >
-            <p class="mt-3 text-xs text-slate-500">
-              Formats acceptés : PDF, images, Word, Excel. Taille maximale : {{ maxFileSizeLabel }}.
-            </p>
-            <p
-              v-if="selectedFile"
-              class="mt-2 text-sm font-medium text-slate-700"
-            >
-              {{ selectedFile.name }}
-            </p>
-          </div>
+          <AttachmentFileInput
+            v-model="selectedFile"
+            :accept="taskAttachmentFileInputAccept"
+            :max-size-bytes="taskAttachmentMaxSizeBytes"
+            :max-size-label="maxFileSizeLabel"
+            :locked="isEditing"
+            :locked-filename="attachment?.filename"
+            :locked-file-size="attachment?.size"
+          />
         </div>
 
         <UFormField
@@ -247,10 +221,10 @@ const onSubmit = async () => {
           <UButton
             :disabled="!isValid || isSaving"
             :loading="isSaving"
-            icon="i-lucide-plus"
+            :icon="isEditing ? 'i-lucide-check' : 'i-lucide-plus'"
             @click="onSubmit"
           >
-            Ajouter
+            {{ submitLabel }}
           </UButton>
         </div>
       </div>
