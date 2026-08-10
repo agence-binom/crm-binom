@@ -11,6 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const isModalOpen = ref(false)
+const selectedAttachmentId = ref<number | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
@@ -27,6 +28,16 @@ const onDeleteAttachment = async (attachmentId: number) => {
     emit('refresh')
   })
 }
+
+const openEditAttachment = (attachmentId: number) => {
+  selectedAttachmentId.value = attachmentId
+  isModalOpen.value = true
+}
+
+const attachmentToEdit = computed(() => {
+  if (!selectedAttachmentId.value) return null
+  return props.attachments.find(a => a.id === selectedAttachmentId.value) ?? null
+})
 </script>
 
 <template>
@@ -52,16 +63,17 @@ const onDeleteAttachment = async (attachmentId: number) => {
 
     <div
       v-if="sortedAttachments.length"
-      class="space-y-3"
+      class="grid grid-cols-1 gap-4"
     >
       <div
         v-for="attachment in sortedAttachments"
         :key="attachment.id"
         class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
       >
-        <TaskAttachmentsCard
-          :attachment="attachment"
+        <ResourcesCard
+          :resource="attachment"
           @delete="onDeleteAttachment"
+          @edit="openEditAttachment"
         />
       </div>
     </div>
@@ -85,6 +97,7 @@ const onDeleteAttachment = async (attachmentId: number) => {
     <TaskAttachmentsModal
       v-model:open="isModalOpen"
       :task-id="taskId"
+      :attachment="attachmentToEdit"
       @saved="onSaved"
     />
 
