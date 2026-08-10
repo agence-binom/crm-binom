@@ -16,7 +16,6 @@ const emit = defineEmits<{
   'saved': []
 }>()
 
-const toast = useToast()
 const { showError } = useFeedbackToast()
 
 const isOpen = computed({
@@ -36,7 +35,6 @@ const description = ref('')
 const url = ref('')
 const content = ref('')
 const selectedFile = ref<File | null>(null)
-const fileInput = ref<HTMLInputElement>()
 
 const typeOptions = resourceTypes.map(type => ({
   label: getResourceTypeLabel(type),
@@ -46,20 +44,13 @@ const typeOptions = resourceTypes.map(type => ({
 
 const maxFileSizeLabel = formatFileSize(resourceMaxSizeBytes)
 
-const clearSelectedFile = () => {
-  selectedFile.value = null
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
-}
-
 const resetForm = () => {
   selectedType.value = 'document'
   name.value = ''
   description.value = ''
   url.value = ''
   content.value = ''
-  clearSelectedFile()
+  selectedFile.value = null
 }
 
 const fillFromResource = (resource: ProjectResource) => {
@@ -68,48 +59,17 @@ const fillFromResource = (resource: ProjectResource) => {
   description.value = resource.description ?? ''
   url.value = resource.type === 'link' ? (resource.url ?? '') : ''
   content.value = resource.type === 'text' ? (resource.content ?? '') : ''
-  clearSelectedFile()
+  selectedFile.value = null
 }
 
 watch(
-  () => props.open,
-  (open) => {
+  () => [props.open, props.resource] as const,
+  ([open, resource]) => {
     if (!open) return
-    if (isEditing.value && props.resource) fillFromResource(props.resource)
+    if (resource) fillFromResource(resource)
     else resetForm()
   }
 )
-
-watch(
-  () => props.resource,
-  (resource) => {
-    if (!props.open) return
-    if (isEditing.value && resource) fillFromResource(resource)
-  }
-)
-
-const onFileSelected = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0] || null
-
-  if (!file) {
-    clearSelectedFile()
-    return
-  }
-
-  if (file.size > resourceMaxSizeBytes) {
-    clearSelectedFile()
-    toast.add({
-      title: 'Fichier refusé',
-      description: `Le fichier dépasse la taille maximale autorisée de ${maxFileSizeLabel}.`,
-      color: 'error',
-      icon: 'i-lucide-circle-alert'
-    })
-    return
-  }
-
-  selectedFile.value = file
-}
 
 const isValid = computed(() => {
   if (!name.value.trim()) return false
@@ -192,38 +152,11 @@ const onSubmit = async () => {
           <p class="text-sm font-medium text-slate-700">
             Type de ressource
           </p>
-          <div
-            v-if="isEditing"
-            class="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3.5 py-1.5 text-sm font-medium text-slate-600 ring-1 ring-inset ring-slate-200"
-          >
-            <UIcon :name="getResourceTypeIcon(selectedType)" />
-            {{ getResourceTypeLabel(selectedType) }}
-          </div>
-          <div
-            v-else
-            class="flex flex-wrap gap-2"
-          >
-            <UButton
-              v-for="option in typeOptions"
-              :key="option.value"
-              type="button"
-              variant="soft"
-              color="neutral"
-              :class="[
-                'rounded-full px-3.5 transition-colors',
-                selectedType === option.value
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-200/70'
-              ]"
-              @click="selectedType = option.value"
-            >
-              <UIcon
-                :name="option.icon"
-                class="mr-1"
-              />
-              {{ option.label }}
-            </UButton>
-          </div>
+          <AttachmentTypeSelector
+            v-model="selectedType"
+            :options="typeOptions"
+            :locked="isEditing"
+          />
         </div>
 
         <UFormField
@@ -245,36 +178,15 @@ const onSubmit = async () => {
           <label class="text-sm font-medium text-slate-700">
             Fichier
           </label>
-          <div
-            v-if="isEditing"
-            class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
-          >
-            {{ resource?.filename }} • {{ formatFileSize(resource?.size || 0) }}
-            <p class="mt-1 text-xs text-slate-400">
-              Le fichier ne peut pas être modifié après l'ajout.
-            </p>
-          </div>
-          <div
-            v-else
-            class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4"
-          >
-            <input
-              ref="fileInput"
-              type="file"
-              :accept="resourceFileInputAccept"
-              class="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
-              @change="onFileSelected"
-            >
-            <p class="mt-3 text-xs text-slate-500">
-              Formats acceptés : PDF, images, Word, Excel. Taille maximale : {{ maxFileSizeLabel }}.
-            </p>
-            <p
-              v-if="selectedFile"
-              class="mt-2 text-sm font-medium text-slate-700"
-            >
-              {{ selectedFile.name }}
-            </p>
-          </div>
+          <AttachmentFileInput
+            v-model="selectedFile"
+            :accept="resourceFileInputAccept"
+            :max-size-bytes="resourceMaxSizeBytes"
+            :max-size-label="maxFileSizeLabel"
+            :locked="isEditing"
+            :locked-filename="resource?.filename"
+            :locked-file-size="resource?.size"
+          />
         </div>
 
         <UFormField
