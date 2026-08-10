@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const documentEntityTypes = ['quote', 'invoice', 'project', 'client'] as const
-export const billingDocumentTypes = ['quote', 'invoice'] as const
+export const billingDocumentTypes = ['quote', 'invoice', 'commercial_proposal'] as const
 
 export const documentAcceptedMimeTypes = [
   'application/pdf'
@@ -13,6 +13,7 @@ export const documentFileInputAccept = documentAcceptedMimeTypes.join(',')
 const documentExternalUrlSchema = z.url('Le lien Facture.net doit être une URL valide')
   .max(2048, 'Le lien Facture.net est trop long')
   .optional()
+  .or(z.literal(''))
 
 export const isFactureNetUrl = (value: string) => {
   try {
@@ -23,11 +24,13 @@ export const isFactureNetUrl = (value: string) => {
   }
 }
 
+const documentTypesRequiringFactureNetLink = ['quote', 'invoice'] as const
+
 const refineBillingDocumentSource = (
   data: { documentType?: typeof billingDocumentTypes[number], externalUrl?: string },
   ctx: z.RefinementCtx
 ) => {
-  if (!data.documentType) {
+  if (!data.documentType || !documentTypesRequiringFactureNetLink.includes(data.documentType as typeof documentTypesRequiringFactureNetLink[number])) {
     return
   }
 
@@ -55,7 +58,7 @@ export const documentCreateSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
   filename: z.string().min(1, 'Le nom du fichier est requis').max(255, 'Le nom du fichier est trop long'),
   filepath: z.string().min(1, 'Le chemin est requis').max(500, 'Le chemin est trop long'),
-  externalUrl: documentExternalUrlSchema,
+  externalUrl: documentExternalUrlSchema.optional(),
   mimetype: z.string().min(1, 'Le type MIME est requis').max(100, 'Le type MIME est trop long'),
   size: z.number().int('La taille doit être un entier').positive('La taille doit être positive'),
   entityType: z.enum(documentEntityTypes, {
@@ -72,7 +75,7 @@ export const documentUploadMetadataSchema = z.object({
   }),
   entityId: z.coerce.number().int('L\'ID entité doit être un entier').positive('L\'ID entité doit être positif'),
   documentType: z.enum(billingDocumentTypes).optional(),
-  externalUrl: documentExternalUrlSchema,
+  externalUrl: documentExternalUrlSchema.optional(),
   name: z.string().trim().max(255, 'Le nom est trop long').optional().or(z.literal('')),
   description: z.string().trim().max(1000, 'La description est trop longue').optional().or(z.literal(''))
 }).superRefine(refineBillingDocumentSource)
@@ -81,7 +84,7 @@ export const documentUpdateSchema = z.object({
   name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional(),
   filename: z.string().min(1, 'Le nom du fichier ne peut pas être vide').max(255, 'Le nom du fichier est trop long').optional(),
   filepath: z.string().min(1, 'Le chemin ne peut pas être vide').max(500, 'Le chemin est trop long').optional(),
-  externalUrl: documentExternalUrlSchema,
+  externalUrl: documentExternalUrlSchema.optional(),
   mimetype: z.string().min(1, 'Le type MIME ne peut pas être vide').max(100, 'Le type MIME est trop long').optional(),
   size: z.number().int('La taille doit être un entier').positive('La taille doit être positive').optional(),
   entityType: z.enum(documentEntityTypes, {

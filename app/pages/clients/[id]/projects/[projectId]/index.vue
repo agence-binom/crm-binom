@@ -11,6 +11,7 @@ const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const quoteDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.quote || [])
 const invoiceDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.invoice || [])
+const commercialProposalDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.commercial_proposal || [])
 const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
@@ -87,7 +88,7 @@ const handleDocumentsChange = async () => {
       v-model:open="isUploadModalOpen"
       :entity-id="project.id"
       entity-type="project"
-      title="Ajouter un devis ou une facture"
+      title="Ajouter un document commercial"
       upload-label="Importer le PDF"
       @uploaded="handleDocumentsChange"
     />
@@ -305,6 +306,58 @@ const handleDocumentsChange = async () => {
             </p>
             <p class="mt-1 text-sm">
               Importez ici le PDF final après émission dans Facture.net, avec son lien dédié.
+            </p>
+          </div>
+        </UCard>
+
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-2">
+                <UIcon
+                  name="i-lucide-file-minus"
+                  class="text-lg"
+                />
+                <span class="font-semibold">Propositions commerciales</span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <UBadge
+                  variant="soft"
+                  color="success"
+                >
+                  {{ commercialProposalDocuments.length }} PDF
+                </UBadge>
+              </div>
+            </div>
+          </template>
+
+          <div
+            v-if="commercialProposalDocuments.length"
+            class="space-y-3"
+          >
+            <div
+              v-for="document in commercialProposalDocuments"
+              :key="document.id"
+              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
+            >
+              <DocumentItem
+                :document="document"
+                @delete-document="handleDocumentsChange"
+              />
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="rounded-xl border border-dashed border-default p-6 text-center text-gray-500"
+          >
+            <UIcon
+              name="i-lucide-file-x"
+              class="mb-2 text-4xl"
+            />
+            <p class="font-medium text-gray-700 dark:text-gray-200">
+              Aucune proposition commerciale PDF importée
             </p>
           </div>
         </UCard>

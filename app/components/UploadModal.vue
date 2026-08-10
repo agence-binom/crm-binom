@@ -29,7 +29,7 @@ const isUploading = ref(false)
 const selectedFile = ref<File | null>(null)
 const description = ref('')
 const externalUrl = ref('')
-const selectedDocumentType = ref<BillingDocumentType>(props.documentType ?? 'quote')
+const selectedDocumentType = ref<BillingDocumentType>(props.documentType ?? 'commercial_proposal')
 const fileInput = ref<HTMLInputElement>()
 
 const modalTitle = computed(() => props.title || 'Ajouter un document')
@@ -40,7 +40,8 @@ const requiresFactureNetLink = computed(() => currentDocumentType.value === 'quo
 
 const documentTypeOptions = [
   { label: 'Devis', value: 'quote' },
-  { label: 'Facture', value: 'invoice' }
+  { label: 'Facture', value: 'invoice' },
+  { label: 'Proposition commerciale', value: 'commercial_proposal' }
 ] satisfies { label: string, value: BillingDocumentType }[]
 
 const clearSelectedFile = () => {
@@ -203,14 +204,6 @@ const onUpload = async () => {
   >
     <template #body>
       <div class="space-y-6">
-        <UBadge
-          variant="soft"
-          color="neutral"
-          class="rounded-full bg-slate-50 px-3 py-1 text-slate-700 ring-1 ring-inset ring-slate-200"
-        >
-          {{ allowedDocumentTypesLabel }} · {{ maxFileSizeLabel }}
-        </UBadge>
-
         <UFormField
           v-if="!props.documentType"
           label="Type de document"
@@ -227,7 +220,7 @@ const onUpload = async () => {
         </UFormField>
 
         <UFormField
-          v-if="currentDocumentType"
+          v-if="currentDocumentType === 'quote' || currentDocumentType === 'invoice'"
           label="Lien Facture.net"
           name="externalUrl"
           :required="requiresFactureNetLink"

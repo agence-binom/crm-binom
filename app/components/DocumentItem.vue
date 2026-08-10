@@ -12,14 +12,6 @@ const emit = defineEmits<{
   'delete-document': [documentId: number]
 }>()
 
-const getDocumentTypeLabel = (documentType?: ProjectDocument['documentType']) => {
-  return documentType === 'invoice' ? 'Facture' : 'Devis'
-}
-
-const getDocumentTypeColor = (documentType?: ProjectDocument['documentType']): 'primary' | 'success' => {
-  return documentType === 'invoice' ? 'success' : 'primary'
-}
-
 const getDownloadHref = (document: ProjectDocument) => {
   if (document.downloadUrl) return document.downloadUrl
   return document.filepath.startsWith('http') ? document.filepath : undefined
@@ -66,13 +58,7 @@ const onDeleteDocument = async (documentId: number) => {
           {{ document.name }}
         </p>
         <UBadge
-          variant="soft"
-          :color="getDocumentTypeColor(document.documentType)"
-        >
-          {{ getDocumentTypeLabel(document.documentType) }}
-        </UBadge>
-        <UBadge
-          v-if="!getFactureNetHref(document)"
+          v-if="!getFactureNetHref(document) && (document.documentType === 'quote' || document.documentType === 'invoice')"
           variant="soft"
           color="warning"
         >
@@ -99,6 +85,7 @@ const onDeleteDocument = async (documentId: number) => {
 
   <div class="flex shrink-0 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
     <UButton
+      v-if="document.documentType === 'quote' || document.documentType === 'invoice'"
       size="sm"
       variant="soft"
       color="neutral"
