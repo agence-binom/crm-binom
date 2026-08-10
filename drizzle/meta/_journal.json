@@ -190,6 +190,13 @@
       "when": 1784888964342,
       "tag": "0026_curly_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786395582587,
+      "tag": "0027_powerful_songbird",
+      "breakpoints": true
     }
   ]
 }

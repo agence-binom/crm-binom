@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
       .where(and(
         eq(documentsTable.entityType, 'project'),
         eq(documentsTable.entityId, id),
-        inArray(documentsTable.documentType, ['quote', 'invoice'])
+        inArray(documentsTable.documentType, ['quote', 'invoice', 'commercial_proposal'])
       )),
     db
       .select()
@@ -108,7 +108,8 @@ export default defineEventHandler(async (event) => {
     projectOptions,
     documents: {
       quote: documentsWithUrls.filter(document => document.documentType === 'quote'),
-      invoice: documentsWithUrls.filter(document => document.documentType === 'invoice')
+      invoice: documentsWithUrls.filter(document => document.documentType === 'invoice'),
+      commercial_proposal: documentsWithUrls.filter(document => document.documentType === 'commercial_proposal')
     },
     resources: resourcesWithUrls
   }

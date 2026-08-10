@@ -11,7 +11,7 @@ export type BillingProjectDocument = {
   id: number
   projectId: number
   name: string
-  type: 'quote' | 'invoice'
+  type: 'quote' | 'invoice' | 'commercial_proposal'
   hasLink: boolean
   externalUrl?: string | null
   createdAt?: string | Date | null
