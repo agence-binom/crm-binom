@@ -5,7 +5,7 @@ import { toPublicDatabaseError } from '../server/utils/database-errors'
 test('toPublicDatabaseError transforme une erreur ENOTFOUND Supabase directe en erreur publique exploitable', () => {
   const error = toPublicDatabaseError({
     code: 'ENOTFOUND',
-    hostname: 'db.ztrmbahqjhomyrxemdtu.supabase.co'
+    hostname: 'db.example-project-ref.supabase.co'
   })
 
   assert.equal(error.statusCode, 503)
