@@ -12,6 +12,8 @@ const props = defineProps<{
   userName?: string
   projectName?: string
   clientName?: string | null
+  clientId?: number
+  showProjectBadge?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -28,7 +30,7 @@ const isOverdue = computed(() => {
 })
 
 const projectLabel = computed(() => {
-  if (!props.projectName) {
+  if (!props.showProjectBadge || !props.projectName) {
     return undefined
   }
 
@@ -37,6 +39,13 @@ const projectLabel = computed(() => {
   }
 
   return `${props.projectName} · ${props.clientName}`
+})
+
+const projectLink = computed(() => {
+  if (!props.task.projectId || !props.clientId) {
+    return
+  }
+  return `clients/${props.clientId}/projects/${props.task.projectId}`
 })
 </script>
 
@@ -96,19 +105,23 @@ const projectLabel = computed(() => {
         </div>
 
         <div class="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3 text-xs text-slate-600">
-          <div
+          <a
             v-if="projectLabel"
-            class="flex min-w-0 items-center gap-2"
+            :href="projectLink"
+            class="w-full flex min-w-0 items-center gap-2 border border-neutral-100 hover:bg-neutral-50 rounded-lg px-2 py-1 transition-colors"
           >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-              <UIcon
-                name="i-lucide-briefcase-business"
-              />
+              <UIcon name="i-lucide-briefcase-business" />
             </div>
-            <p class=" font-medium text-slate-700">
-              {{ projectLabel }}
-            </p>
-          </div>
+            <div class="space-y-0 min-w-0">
+              <p class="truncate font-medium text-slate-700">
+                {{ projectName }}
+              </p>
+              <p class="truncate text-slate-500">
+                {{ clientName }}
+              </p>
+            </div>
+          </a>
           <UBadge
             v-if="props.userName"
             variant="soft"

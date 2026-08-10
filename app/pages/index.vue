@@ -31,6 +31,7 @@ const isLoading = computed(() => status.value === 'pending')
       :available-users="availableUsers"
       :available-projects="projectOptions"
       title="Tableau de bord"
+      title-heading="h1"
       @refresh="refresh"
     >
       <template #filters>
