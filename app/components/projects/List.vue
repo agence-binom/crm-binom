@@ -105,6 +105,7 @@ const toggleArchived = () => {
         v-if="showCreateButton && !showArchived"
         icon="i-lucide-circle-plus"
         variant="soft"
+        color="neutral"
         @click="emit('create')"
       >
         Créer le premier projet
