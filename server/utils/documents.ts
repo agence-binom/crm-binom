@@ -5,9 +5,7 @@ import { useRuntimeConfig } from '#imports'
 import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
-import { invoicesTable } from '~/db/schema/invoices'
 import { projectsTable } from '~/db/schema/projects'
-import { quotesTable } from '~/db/schema/quotes'
 import { tasksTable } from '~/db/schema/tasks'
 import { getDocumentValidationError, sanitizeDocumentFilename, sanitizeDocumentPathSegment } from '~~/server/lib/documents-upload'
 import { translateSupabaseError } from '~/lib/utils'
@@ -60,6 +58,7 @@ export const assertValidDocumentFile = (file: File) => {
 const DOCUMENT_TYPE_FOLDERS: Record<string, string> = {
   quote: 'devis',
   invoice: 'factures',
+  commercial_proposal: 'propositions-commerciales',
   client: 'clients',
   project: 'projets',
   task: 'taches',
@@ -74,26 +73,6 @@ const getClientStorageSegment = async (entityType: string, entityId: number) => 
       .where(eq(clientsTable.id, entityId))
 
     return client?.name
-  }
-
-  if (entityType === 'quote') {
-    const [quote] = await db
-      .select({ clientName: clientsTable.name })
-      .from(quotesTable)
-      .innerJoin(clientsTable, eq(quotesTable.clientId, clientsTable.id))
-      .where(eq(quotesTable.id, entityId))
-
-    return quote?.clientName
-  }
-
-  if (entityType === 'invoice') {
-    const [invoice] = await db
-      .select({ clientName: clientsTable.name })
-      .from(invoicesTable)
-      .innerJoin(clientsTable, eq(invoicesTable.clientId, clientsTable.id))
-      .where(eq(invoicesTable.id, entityId))
-
-    return invoice?.clientName
   }
 
   if (entityType === 'project') {
