@@ -101,6 +101,7 @@ const projectLink = computed(() => {
             v-if="projectLabel"
             :to="projectLink"
             class="w-full"
+            @click.stop
           >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
               <UIcon name="i-lucide-briefcase-business" />
