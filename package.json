@@ -36,15 +36,24 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@emnapi/core": "1.11.1",
+    "@emnapi/runtime": "1.11.1",
+    "@emnapi/wasi-threads": "1.2.2",
     "@nuxt/eslint": "^1.12.1",
     "@nuxtjs/supabase": "^2.0.3",
     "@types/node": "^26.1.1",
     "drizzle-kit": "^0.31.8",
     "eslint": "^9.39.2",
     "husky": "^9.1.7",
+    "rolldown": "1.1.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.1"
   },
-  "packageManager": "npm@11.6.0"
+  "packageManager": "npm@11.6.0",
+  "overrides": {
+    "@emnapi/core": "1.11.1",
+    "@emnapi/runtime": "1.11.1",
+    "@emnapi/wasi-threads": "1.2.2"
+  }
 }
