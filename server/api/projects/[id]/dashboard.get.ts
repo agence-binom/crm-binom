@@ -1,14 +1,12 @@
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, eq, inArray } from 'drizzle-orm'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
 import { documentsTable } from '~/db/schema/documents'
 import { projectsTable } from '~/db/schema/projects'
-import { resourcesTable } from '~/db/schema/resources'
 import { tasksTable } from '~/db/schema/tasks'
 import { usersTable } from '~/db/schema/users'
 import { projectIdSchema } from '~/validation/projects'
 import { withDocumentsDownloadUrls } from '~~/server/utils/documents'
-import { withResourcesDownloadUrls } from '~~/server/utils/resources'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, projectIdSchema.parse)
@@ -42,7 +40,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const [tasks, users, projectOptions, documents, resources] = await Promise.all([
+  const [tasks, users, projectOptions, documents] = await Promise.all([
     db
       .select()
       .from(tasksTable)
@@ -72,16 +70,10 @@ export default defineEventHandler(async (event) => {
         eq(documentsTable.entityType, 'project'),
         eq(documentsTable.entityId, id),
         inArray(documentsTable.documentType, ['quote', 'invoice'])
-      )),
-    db
-      .select()
-      .from(resourcesTable)
-      .where(eq(resourcesTable.projectId, id))
-      .orderBy(desc(resourcesTable.createdAt))
+      ))
   ])
 
   const documentsWithUrls = await withDocumentsDownloadUrls(event, documents)
-  const resourcesWithUrls = await withResourcesDownloadUrls(event, resources)
 
   return {
     project: {
@@ -109,7 +101,6 @@ export default defineEventHandler(async (event) => {
     documents: {
       quote: documentsWithUrls.filter(document => document.documentType === 'quote'),
       invoice: documentsWithUrls.filter(document => document.documentType === 'invoice')
-    },
-    resources: resourcesWithUrls
+    }
   }
 })

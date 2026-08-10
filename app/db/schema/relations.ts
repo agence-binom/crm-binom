@@ -3,7 +3,6 @@ import { clientsTable } from './clients'
 import { contactsTable } from './contacts'
 import { projectsTable } from './projects'
 import { tasksTable } from './tasks'
-import { resourcesTable } from './resources'
 import { usersTable } from './users'
 import { quotesTable } from './quotes'
 import { invoicesTable } from './invoices'
@@ -29,7 +28,6 @@ export const projectsRelations = relations(projectsTable, ({ one, many }) => ({
     references: [clientsTable.id]
   }),
   tasks: many(tasksTable),
-  resources: many(resourcesTable),
   quotes: many(quotesTable),
   invoices: many(invoicesTable)
 }))
@@ -42,13 +40,6 @@ export const tasksRelations = relations(tasksTable, ({ one }) => ({
   assignee: one(usersTable, {
     fields: [tasksTable.assignedTo],
     references: [usersTable.id]
-  })
-}))
-
-export const resourcesRelations = relations(resourcesTable, ({ one }) => ({
-  project: one(projectsTable, {
-    fields: [resourcesTable.projectId],
-    references: [projectsTable.id]
   })
 }))
 

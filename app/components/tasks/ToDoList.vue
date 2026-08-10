@@ -12,7 +12,6 @@ type ToDoListProjectOption = {
 const props = withDefaults(defineProps<{
   tasks: Task[]
   title?: string
-  titleHeading?: 'h1' | 'h2' | 'h3'
   projectId?: number
   showUserFilter?: boolean
   availableProjects?: ToDoListProjectOption[]
@@ -141,32 +140,14 @@ const taskToEdit = computed(() => {
   if (!selectedTaskId.value) return null
   return visibleTasks.value.find(t => t.id === selectedTaskId.value) ?? null
 })
-
-const showProjectBadge = computed(() => !props.projectId)
-
-const headingClass = computed(() => {
-  switch (props.titleHeading) {
-    case 'h1':
-      return 'text-2xl font-bold'
-    case 'h2':
-      return 'text-xl font-semibold'
-    case 'h3':
-      return 'text-lg font-medium'
-    default:
-      return 'text-2xl font-bold'
-  }
-})
 </script>
 
 <template>
   <div>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-      <component
-        :is="titleHeading || 'h2'"
-        :class="headingClass"
-      >
+      <h2 class="text-2xl font-bold">
         {{ title }}
-      </component>
+      </h2>
 
       <div class="flex flex-wrap items-center gap-3">
         <slot name="filters" />
@@ -210,7 +191,6 @@ const headingClass = computed(() => {
           :tasks="tasksByStatus[status]"
           :users="availableUsers"
           :projects="availableProjects"
-          :show-project-badge="showProjectBadge"
           @task-deleted="handleTaskDeleted"
           @task-to-updated="handleTaskToUpdate"
           @task-moved="handleTaskMoved"

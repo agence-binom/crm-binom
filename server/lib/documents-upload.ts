@@ -3,22 +3,16 @@ import { documentAcceptedMimeTypes, documentMaxSizeBytes, type DocumentUploadMet
 
 type FileLike = Pick<File, 'name' | 'size' | 'type'>
 
-export const getDocumentValidationError = (
-  file: Pick<FileLike, 'size' | 'type'>,
-  options?: { acceptedMimeTypes?: readonly string[], maxSizeBytes?: number }
-) => {
-  const acceptedMimeTypes = options?.acceptedMimeTypes ?? documentAcceptedMimeTypes
-  const maxSizeBytes = options?.maxSizeBytes ?? documentMaxSizeBytes
-
+export const getDocumentValidationError = (file: Pick<FileLike, 'size' | 'type'>) => {
   if (!file.size) {
     return 'Le fichier est vide'
   }
 
-  if (file.size > maxSizeBytes) {
-    return `Le fichier dépasse la taille maximale autorisée de ${Math.round(maxSizeBytes / (1024 * 1024))} Mo`
+  if (file.size > documentMaxSizeBytes) {
+    return 'Le fichier dépasse la taille maximale autorisée de 10 Mo'
   }
 
-  if (!acceptedMimeTypes.includes(file.type)) {
+  if (!documentAcceptedMimeTypes.includes(file.type as typeof documentAcceptedMimeTypes[number])) {
     return 'Type de fichier non pris en charge'
   }
 

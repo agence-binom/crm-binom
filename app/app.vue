@@ -7,7 +7,7 @@ useHead({
   }
 })
 
-const title = 'CRM binōm'
+const title = 'CRM Binom'
 const description = 'Gérez vos clients et contacts efficacement'
 
 useSeoMeta({

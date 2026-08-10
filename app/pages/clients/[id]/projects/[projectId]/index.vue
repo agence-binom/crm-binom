@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
-import type { ProjectDocument, ProjectResource, Task, User } from '~/types'
+import type { ProjectDocument, Task, User } from '~/types'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
@@ -11,7 +11,6 @@ const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const quoteDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.quote || [])
 const invoiceDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.invoice || [])
-const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
 
@@ -96,7 +95,6 @@ const handleDocumentsChange = async () => {
       <TasksToDoList
         :tasks="filteredTasks"
         title="Tâches du projet"
-        title-heading="h2"
         :project-id="projectId"
         :available-projects="projectOptions"
         :available-users="availableUsers"
@@ -117,14 +115,6 @@ const handleDocumentsChange = async () => {
           </USelectMenu>
         </template>
       </TasksToDoList>
-    </div>
-
-    <div class="mt-8">
-      <ResourcesList
-        :resources="projectResources"
-        :project-id="projectId"
-        @refresh="refresh"
-      />
     </div>
 
     <div class="mt-8 space-y-6">

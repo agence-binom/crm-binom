@@ -26,15 +26,6 @@ export const formatDateOnly = (date: string | Date | null | undefined) => {
   })
 }
 
-export const getFileTypeIcon = (mimetype?: string | null) => {
-  if (!mimetype) return 'i-lucide-file'
-  if (mimetype.includes('pdf')) return 'i-lucide-file-text'
-  if (mimetype.includes('image')) return 'i-lucide-image'
-  if (mimetype.includes('word') || mimetype.includes('document')) return 'i-lucide-file-text'
-  if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return 'i-lucide-file-spreadsheet'
-  return 'i-lucide-file'
-}
-
 export const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === 'object') {
     const maybeStatusMessage = Reflect.get(error, 'statusMessage')

@@ -22,7 +22,7 @@ const isOpen = computed({
 })
 
 const isSaving = ref(false)
-const isEditing = computed(() => Boolean(props.project))
+const isEditing = computed(() => props.projectId != null)
 
 const schema = computed(() => (isEditing.value ? projectUpdateSchema : projectCreateSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier le projet' : 'Nouveau projet'))
