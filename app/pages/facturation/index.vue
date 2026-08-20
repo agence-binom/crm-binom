@@ -91,15 +91,7 @@ const isAllCaughtUp = computed(() =>
   && billingProjects.value.length === 0
 )
 
-const getProjectStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    en_cours: 'En cours',
-    termine: 'Terminé',
-    en_attente: 'En attente',
-    annule: 'Annulé'
-  }
-  return labels[status] || status
-}
+const { getStatusColor, getStatusLabel } = useStatusHelpers()
 
 const selectedProjectOption = computed({
   get: () => projectOptions.value.find(option => option.value === projectFilterId.value),
@@ -261,9 +253,14 @@ const columns: TableColumn<BillingProjectStatus>[] = [
                   <p class="flex items-center gap-1.5 font-semibold text-slate-900">
                     {{ row.original.project.name }}
                   </p>
-                  <p class="text-sm text-slate-500">
-                    {{ getProjectStatusLabel(getProjectDisplayStatus(row.original.project)) }} • {{ row.original.totalDocuments }} document{{ row.original.totalDocuments > 1 ? 's' : '' }}
-                  </p>
+                  <UBadge
+                    size="sm"
+                    variant="soft"
+                    :color="getStatusColor(getProjectDisplayStatus(row.original.project))"
+                    class="rounded-full px-2"
+                  >
+                    {{ getStatusLabel(getProjectDisplayStatus(row.original.project)) }}
+                  </UBadge>
                 </div>
               </AppLink>
             </template>

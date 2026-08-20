@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { annotateDocumentLifecycle, type BillingDocumentType } from '~/lib/documents'
 import type { BillingProjectStatus } from '~/lib/billing'
+import { getProjectDisplayStatus } from '~/lib/projects'
+import { formatDateOnly } from '~/lib/utils'
 import type { ProjectDocument } from '~/types'
 
 const props = defineProps<{
   open: boolean
   project: BillingProjectStatus | null
 }>()
+
+const { getStatusColor, getStatusLabel } = useStatusHelpers()
 
 const emit = defineEmits<{
   'update:open': [open: boolean]
@@ -58,11 +62,43 @@ const handleDocumentsChange = () => {
 <template>
   <USlideover
     v-model:open="isOpen"
-    :title="project?.project.name"
-    :description="project?.project.client.name"
     side="right"
     class="w-full max-w-xl"
   >
+    <template #title>
+      <div class="flex items-center gap-2">
+        <span>{{ project?.project.name }}</span>
+        <UBadge
+          v-if="project"
+          variant="soft"
+          :color="getStatusColor(getProjectDisplayStatus(project.project))"
+          class="rounded-full align-middle"
+        >
+          {{ getStatusLabel(getProjectDisplayStatus(project.project)) }}
+        </UBadge>
+      </div>
+    </template>
+    <template #description>
+      <div class="space-y-2">
+        <NuxtLink
+          :to="`/clients/${project?.project.client.id}`"
+          class="inline-flex max-w-full items-center gap-2 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-100"
+        >
+          <UIcon
+            name="i-lucide-building-2"
+            class="shrink-0"
+          />
+          <span class="truncate">{{ project?.project.client.name }}</span>
+        </NuxtLink>
+        <p
+          v-if="project?.project.startDate || project?.project.endDate"
+          class="text-xs text-slate-400"
+        >
+          {{ formatDateOnly(project?.project.startDate) }} → {{ formatDateOnly(project?.project.endDate) }}
+        </p>
+      </div>
+    </template>
+
     <template #body>
       <div
         v-if="isLoading"
