@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { type billingDocumentTypes, documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes, isFactureNetUrl } from '~/validation/documents'
+import { invoiceSubtypes, type billingDocumentTypes, documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes, isFactureNetUrl } from '~/validation/documents'
+import { invoiceSubtypeLabels, type InvoiceSubtype } from '~/lib/documents'
 import { formatFileSize } from '~/lib/utils'
 
 type BillingDocumentType = typeof billingDocumentTypes[number]
@@ -30,6 +31,7 @@ const selectedFile = ref<File | null>(null)
 const description = ref('')
 const externalUrl = ref('')
 const selectedDocumentType = ref<BillingDocumentType>(props.documentType ?? 'commercial_proposal')
+const selectedInvoiceSubtype = ref<InvoiceSubtype>('unique')
 const fileInput = ref<HTMLInputElement>()
 
 const modalTitle = computed(() => props.title || 'Ajouter un document')
@@ -44,6 +46,8 @@ const documentTypeOptions = [
   { label: 'Proposition commerciale', value: 'commercial_proposal' }
 ] satisfies { label: string, value: BillingDocumentType }[]
 
+const invoiceSubtypeOptions = invoiceSubtypes.map(subtype => ({ label: invoiceSubtypeLabels[subtype], value: subtype }))
+
 const clearSelectedFile = () => {
   selectedFile.value = null
 
@@ -57,6 +61,7 @@ const resetForm = () => {
   description.value = ''
   externalUrl.value = ''
   selectedDocumentType.value = props.documentType ?? 'quote'
+  selectedInvoiceSubtype.value = 'unique'
 }
 
 watch(
@@ -169,6 +174,9 @@ const onUpload = async () => {
     formData.set('externalUrl', externalUrl.value.trim())
     formData.set('name', selectedFile.value.name)
     formData.set('description', description.value.trim())
+    if (currentDocumentType.value === 'invoice') {
+      formData.set('subtype', selectedInvoiceSubtype.value)
+    }
 
     await $fetch('/api/documents', { method: 'POST', body: formData })
 
@@ -234,6 +242,21 @@ const onUpload = async () => {
           <p class="mt-2 text-xs text-slate-500">
             Collez l’URL de la page dédiée au devis ou à la facture dans Facture.net.
           </p>
+        </UFormField>
+
+        <UFormField
+          v-if="currentDocumentType === 'invoice'"
+          label="Type de facture"
+          name="subtype"
+          required
+        >
+          <USelect
+            v-model="selectedInvoiceSubtype"
+            :items="invoiceSubtypeOptions"
+            value-attribute="value"
+            option-attribute="label"
+            class="w-full"
+          />
         </UFormField>
 
         <div class="space-y-3">

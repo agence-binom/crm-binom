@@ -2,6 +2,8 @@ import { z } from 'zod'
 
 export const documentEntityTypes = ['quote', 'invoice', 'project', 'client'] as const
 export const billingDocumentTypes = ['quote', 'invoice', 'commercial_proposal'] as const
+export const documentStatuses = ['draft', 'sent', 'completed', 'cancelled'] as const
+export const invoiceSubtypes = ['acompte', 'solde', 'unique', 'avoir'] as const
 
 export const documentAcceptedMimeTypes = [
   'application/pdf'
@@ -27,9 +29,17 @@ export const isFactureNetUrl = (value: string) => {
 const documentTypesRequiringFactureNetLink = ['quote', 'invoice'] as const
 
 const refineBillingDocumentSource = (
-  data: { documentType?: typeof billingDocumentTypes[number], externalUrl?: string },
+  data: { documentType?: typeof billingDocumentTypes[number], externalUrl?: string, subtype?: string },
   ctx: z.RefinementCtx
 ) => {
+  if (data.subtype && data.documentType && data.documentType !== 'invoice') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['subtype'],
+      message: 'Le sous-type n\'est disponible que pour les factures'
+    })
+  }
+
   if (!data.documentType || !documentTypesRequiringFactureNetLink.includes(data.documentType as typeof documentTypesRequiringFactureNetLink[number])) {
     return
   }
@@ -66,6 +76,8 @@ export const documentCreateSchema = z.object({
   }),
   entityId: z.number().int('L\'ID entité doit être un entier').positive('L\'ID entité doit être positif'),
   documentType: z.enum(billingDocumentTypes).optional(),
+  status: z.enum(documentStatuses).optional().default('draft'),
+  subtype: z.enum(invoiceSubtypes).optional(),
   description: z.string().optional().or(z.literal(''))
 }).superRefine(refineBillingDocumentSource)
 
@@ -75,6 +87,8 @@ export const documentUploadMetadataSchema = z.object({
   }),
   entityId: z.coerce.number().int('L\'ID entité doit être un entier').positive('L\'ID entité doit être positif'),
   documentType: z.enum(billingDocumentTypes).optional(),
+  status: z.enum(documentStatuses).optional().default('draft'),
+  subtype: z.enum(invoiceSubtypes).optional(),
   externalUrl: documentExternalUrlSchema.optional(),
   name: z.string().trim().max(255, 'Le nom est trop long').optional().or(z.literal('')),
   description: z.string().trim().max(1000, 'La description est trop longue').optional().or(z.literal(''))
@@ -92,6 +106,8 @@ export const documentUpdateSchema = z.object({
   }).optional(),
   entityId: z.number().int('L\'ID entité doit être un entier').positive('L\'ID entité doit être positif').optional(),
   documentType: z.enum(billingDocumentTypes).optional(),
+  status: z.enum(documentStatuses).optional(),
+  subtype: z.enum(invoiceSubtypes).optional(),
   description: z.string().optional().or(z.literal(''))
 }).refine(
   data => Object.keys(data).length > 0,

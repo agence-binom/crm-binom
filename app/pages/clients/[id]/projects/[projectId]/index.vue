@@ -9,9 +9,9 @@ const projectId = computed(() => Number(route.params.projectId))
 const { data, error, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
 const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
-const quoteDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.quote || [])
-const invoiceDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.invoice || [])
-const commercialProposalDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.commercial_proposal || [])
+const quoteDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.quote as ProjectDocument[] | undefined) || [])
+const invoiceDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.invoice as ProjectDocument[] | undefined) || [])
+const commercialProposalDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.commercial_proposal as ProjectDocument[] | undefined) || [])
 const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
@@ -220,6 +220,7 @@ const handleDocumentsChange = async () => {
               <DocumentItem
                 :document="document"
                 @delete-document="handleDocumentsChange"
+                @update-document="handleDocumentsChange"
               />
             </div>
           </div>
@@ -279,6 +280,7 @@ const handleDocumentsChange = async () => {
               <DocumentItem
                 :document="document"
                 @delete-document="handleDocumentsChange"
+                @update-document="handleDocumentsChange"
               />
             </div>
           </div>
@@ -341,6 +343,7 @@ const handleDocumentsChange = async () => {
               <DocumentItem
                 :document="document"
                 @delete-document="handleDocumentsChange"
+                @update-document="handleDocumentsChange"
               />
             </div>
           </div>

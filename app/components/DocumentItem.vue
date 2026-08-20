@@ -1,16 +1,54 @@
 <script setup lang="ts">
 import { formatDate, formatFileSize, getErrorMessage, getFileTypeIcon } from '~/lib/utils'
+import { documentStatusLabels, type BillingDocumentType, type DocumentStatus } from '~/lib/documents'
+import { documentStatuses } from '~/validation/documents'
 import type { ProjectDocument } from '~/types'
 
 const toast = useToast()
 
-defineProps<{
+const props = defineProps<{
   document: ProjectDocument
 }>()
 
 const emit = defineEmits<{
   'delete-document': [documentId: number]
+  'update-document': []
 }>()
+
+const isBillingDocumentType = (documentType?: string | null): documentType is BillingDocumentType =>
+  documentType === 'quote' || documentType === 'invoice' || documentType === 'commercial_proposal'
+
+const statusOptions = computed(() => {
+  if (!isBillingDocumentType(props.document.documentType)) return []
+
+  const labels = documentStatusLabels[props.document.documentType]
+  return documentStatuses.map(status => ({ label: labels[status], value: status }))
+})
+
+const isUpdatingStatus = ref(false)
+
+const onStatusChange = async (status: DocumentStatus) => {
+  if (status === props.document.status) return
+
+  isUpdatingStatus.value = true
+
+  try {
+    await $fetch(`/api/documents/${props.document.id}`, {
+      method: 'PUT',
+      body: { status }
+    })
+    emit('update-document')
+  } catch (error) {
+    toast.add({
+      title: 'Échec de la mise à jour',
+      description: getErrorMessage(error, 'Impossible de mettre à jour le statut du document.'),
+      color: 'error',
+      icon: 'i-lucide-circle-alert'
+    })
+  } finally {
+    isUpdatingStatus.value = false
+  }
+}
 
 const getDownloadHref = (document: ProjectDocument) => {
   if (document.downloadUrl) return document.downloadUrl
@@ -57,6 +95,15 @@ const onDeleteDocument = async (documentId: number) => {
         <p class="truncate font-medium">
           {{ document.name }}
         </p>
+        <USelect
+          v-if="statusOptions.length > 0"
+          :model-value="document.status"
+          :items="statusOptions"
+          :loading="isUpdatingStatus"
+          size="sm"
+          class="w-32"
+          @update:model-value="onStatusChange"
+        />
         <UBadge
           v-if="!getFactureNetHref(document) && (document.documentType === 'quote' || document.documentType === 'invoice')"
           variant="soft"
