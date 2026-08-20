@@ -23,7 +23,8 @@ export default defineEventHandler(async (event) => {
     documentType: formData.get('documentType'),
     externalUrl: formData.get('externalUrl'),
     name: formData.get('name'),
-    description: formData.get('description')
+    description: formData.get('description'),
+    subtype: formData.get('subtype') || undefined
   })
 
   const filepath = await buildDocumentStoragePath(

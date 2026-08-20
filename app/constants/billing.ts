@@ -5,8 +5,10 @@ export const FACTURE_NET_PORTAL_LINKS = {
 
 export const billingDashboardStatuses = [
   'all',
+  'incomplete',
   'missing_quote_pdf',
   'missing_invoice_pdf',
+  'missing_proposal_pdf',
   'missing_facturenet_link',
   'complete'
 ] as const

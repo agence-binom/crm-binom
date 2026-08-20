@@ -52,6 +52,7 @@ test('documentUploadMetadataSchema parse et normalise les métadonnées', () => 
     entityType: 'project',
     entityId: 42,
     documentType: 'quote',
+    status: 'draft',
     externalUrl: 'https://www.facture.net/376761/quotations/abc123',
     name: 'Devis Avril 2026',
     description: 'Version signée'
@@ -127,6 +128,8 @@ test('createDocumentInsertValues construit les valeurs persistées avec fallback
       entityType: 'project',
       entityId: 7,
       documentType: 'invoice',
+      status: 'draft',
+      subtype: null,
       description: 'facture finale'
     }
   )

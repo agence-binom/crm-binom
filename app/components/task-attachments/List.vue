@@ -78,21 +78,13 @@ const attachmentToEdit = computed(() => {
       </div>
     </div>
 
-    <div
+    <AppEmptyState
       v-else
-      class="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-500"
-    >
-      <UIcon
-        name="i-lucide-folder-open"
-        class="mb-2 text-4xl"
-      />
-      <p class="font-medium text-gray-700 dark:text-gray-200">
-        Aucun document pour cette tâche
-      </p>
-      <p class="mt-1 text-sm">
-        Ajoutez un fichier ou un lien utile pour cette tâche.
-      </p>
-    </div>
+      variant="compact"
+      icon="i-lucide-folder-open"
+      title="Aucun document pour cette tâche"
+      description="Ajoutez un fichier ou un lien utile pour cette tâche."
+    />
 
     <TaskAttachmentsModal
       v-model:open="isModalOpen"

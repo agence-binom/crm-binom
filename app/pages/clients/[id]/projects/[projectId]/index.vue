@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
+import { annotateDocumentLifecycle } from '~/lib/documents'
 import type { ProjectDocument, ProjectResource, Task, User } from '~/types'
 
 const route = useRoute()
@@ -9,9 +9,9 @@ const projectId = computed(() => Number(route.params.projectId))
 const { data, error, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
 const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
-const quoteDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.quote || [])
-const invoiceDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.invoice || [])
-const commercialProposalDocuments = computed<ProjectDocument[]>(() => data.value?.documents?.commercial_proposal || [])
+const quoteDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.quote as ProjectDocument[] | undefined) || [])
+const invoiceDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.invoice as ProjectDocument[] | undefined) || [])
+const commercialProposalDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.commercial_proposal as ProjectDocument[] | undefined) || [])
 const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
@@ -24,8 +24,11 @@ const isUploadModalOpen = ref(false)
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 const { setArchived } = useArchiveAction()
 
-const quoteDocumentsMissingLinkCount = computed(() => quoteDocuments.value.filter(document => !document.externalUrl).length)
-const invoiceDocumentsMissingLinkCount = computed(() => invoiceDocuments.value.filter(document => !document.externalUrl).length)
+const billingDocuments = computed(() => annotateDocumentLifecycle([
+  ...commercialProposalDocuments.value.map(document => ({ ...document, type: 'commercial_proposal' as const })),
+  ...quoteDocuments.value.map(document => ({ ...document, type: 'quote' as const })),
+  ...invoiceDocuments.value.map(document => ({ ...document, type: 'invoice' as const }))
+]))
 
 const onDeleteProject = async (projectId: number) => {
   await deleteResource('projet', projectId, '/api/projects', async () => {
@@ -48,6 +51,12 @@ const handleProjectChange = async () => {
 const handleDocumentsChange = async () => {
   await refresh()
 }
+
+const onDeleteDocument = async (documentId: number) => {
+  await deleteResource('document', documentId, '/api/documents', async () => {
+    await refresh()
+  })
+}
 </script>
 
 <template>
@@ -55,17 +64,10 @@ const handleDocumentsChange = async () => {
     v-if="project"
     class="container mx-auto p-6 overflow-scroll"
   >
-    <div class="mb-4">
-      <UButton
-        icon="i-lucide-arrow-left"
-        variant="ghost"
-        color="neutral"
-        size="sm"
-        @click="navigateTo(`/clients/${clientId}`)"
-      >
-        Retour au client
-      </UButton>
-    </div>
+    <AppBackButton
+      :to="`/clients/${clientId}`"
+      label="Retour au client"
+    />
 
     <ProjectsHeader
       :project="project"
@@ -160,208 +162,15 @@ const handleDocumentsChange = async () => {
             </p>
           </div>
 
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-external-link"
-              :href="FACTURE_NET_PORTAL_LINKS.quotes"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Ouvrir les devis
-            </UButton>
-            <UButton
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-external-link"
-              :href="FACTURE_NET_PORTAL_LINKS.invoices"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Ouvrir les factures
-            </UButton>
-          </div>
+          <BillingFactureNetPortalLinks />
         </div>
       </UCard>
 
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex items-center gap-2">
-                <UIcon
-                  name="i-lucide-file-minus"
-                  class="text-lg"
-                />
-                <span class="font-semibold">Propositions commerciales</span>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <UBadge
-                  variant="soft"
-                  color="success"
-                >
-                  {{ commercialProposalDocuments.length }} PDF
-                </UBadge>
-              </div>
-            </div>
-          </template>
-
-          <div
-            v-if="commercialProposalDocuments.length"
-            class="space-y-3"
-          >
-            <div
-              v-for="document in commercialProposalDocuments"
-              :key="document.id"
-              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-            >
-              <DocumentItem
-                :document="document"
-                @delete-document="handleDocumentsChange"
-              />
-            </div>
-          </div>
-
-          <div
-            v-else
-            class="rounded-xl border border-dashed border-default p-6 text-center text-gray-500"
-          >
-            <UIcon
-              name="i-lucide-file-x"
-              class="mb-2 text-4xl"
-            />
-            <p class="font-medium text-gray-700 dark:text-gray-200">
-              Aucune proposition commerciale PDF importée
-            </p>
-          </div>
-        </UCard>
-
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex items-center gap-2">
-                <UIcon
-                  name="i-lucide-file-text"
-                  class="text-lg"
-                />
-                <span class="font-semibold">Devis</span>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <UBadge
-                  variant="soft"
-                  color="primary"
-                >
-                  {{ quoteDocuments.length }} PDF
-                </UBadge>
-                <UBadge
-                  v-if="quoteDocumentsMissingLinkCount > 0"
-                  variant="soft"
-                  color="warning"
-                >
-                  {{ quoteDocumentsMissingLinkCount }} lien manquant
-                </UBadge>
-              </div>
-            </div>
-          </template>
-
-          <div
-            v-if="quoteDocuments.length"
-            class="space-y-3"
-          >
-            <div
-              v-for="document in quoteDocuments"
-              :key="document.id"
-              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-            >
-              <DocumentItem
-                :document="document"
-                @delete-document="handleDocumentsChange"
-              />
-            </div>
-          </div>
-
-          <div
-            v-else
-            class="rounded-xl border border-dashed border-default p-6 text-center text-gray-500"
-          >
-            <UIcon
-              name="i-lucide-file-x"
-              class="mb-2 text-4xl"
-            />
-            <p class="font-medium text-gray-700 dark:text-gray-200">
-              Aucun devis PDF importé
-            </p>
-            <p class="mt-1 text-sm">
-              Ajoutez ici le PDF exporté depuis Facture.net pour garder une trace dans le CRM.
-            </p>
-          </div>
-        </UCard>
-
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex items-center gap-2">
-                <UIcon
-                  name="i-lucide-file-minus"
-                  class="text-lg"
-                />
-                <span class="font-semibold">Factures</span>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <UBadge
-                  variant="soft"
-                  color="success"
-                >
-                  {{ invoiceDocuments.length }} PDF
-                </UBadge>
-                <UBadge
-                  v-if="invoiceDocumentsMissingLinkCount > 0"
-                  variant="soft"
-                  color="warning"
-                >
-                  {{ invoiceDocumentsMissingLinkCount }} lien manquant
-                </UBadge>
-              </div>
-            </div>
-          </template>
-
-          <div
-            v-if="invoiceDocuments.length"
-            class="space-y-3"
-          >
-            <div
-              v-for="document in invoiceDocuments"
-              :key="document.id"
-              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-            >
-              <DocumentItem
-                :document="document"
-                @delete-document="handleDocumentsChange"
-              />
-            </div>
-          </div>
-
-          <div
-            v-else
-            class="rounded-xl border border-dashed border-default p-6 text-center text-gray-500"
-          >
-            <UIcon
-              name="i-lucide-file-x"
-              class="mb-2 text-4xl"
-            />
-            <p class="font-medium text-gray-700 dark:text-gray-200">
-              Aucune facture PDF importée
-            </p>
-            <p class="mt-1 text-sm">
-              Importez ici le PDF final après émission dans Facture.net, avec son lien dédié.
-            </p>
-          </div>
-        </UCard>
-      </div>
+      <BillingHorizontalTimeline
+        :documents="billingDocuments"
+        @delete-document="onDeleteDocument"
+        @update-document="handleDocumentsChange"
+      />
     </div>
 
     <ConfirmModal

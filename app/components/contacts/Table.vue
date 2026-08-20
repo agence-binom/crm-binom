@@ -85,21 +85,13 @@ const columns: TableColumn<Contact>[] = [
 
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center gap-3">
-        <h1 class="text-xl font-semibold tracking-tight text-slate-900">
-          Contacts
-        </h1>
-        <UBadge
-          color="neutral"
-          variant="soft"
-          class="rounded-full"
-        >
-          {{ contacts.length }}
-        </UBadge>
-      </div>
-
-      <div class="flex items-center gap-2">
+    <AppListHeader
+      title="Contacts"
+      level="h1"
+      :bordered="false"
+      :count="contacts.length"
+    >
+      <template #actions>
         <UButton
           :icon="showArchived ? 'i-lucide-users' : 'i-lucide-archive'"
           variant="ghost"
@@ -116,8 +108,8 @@ const columns: TableColumn<Contact>[] = [
         >
           Nouveau contact
         </UButton>
-      </div>
-    </div>
+      </template>
+    </AppListHeader>
 
     <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
       <UTable
@@ -250,15 +242,12 @@ const columns: TableColumn<Contact>[] = [
         </template>
 
         <template #empty>
-          <div class="flex flex-col items-center justify-center gap-3 px-6 text-center">
-            <UIcon
-              name="i-lucide-user-round-search"
-              class="text-4xl text-slate-300"
-            />
-            <div class="space-y-1">
-              <p class="font-medium text-slate-700">
-                Aucun contact
-              </p>
+          <AppEmptyState
+            icon="i-lucide-user-round-search"
+            variant="bare"
+            title="Aucun contact"
+          >
+            <template #actions>
               <UButton
                 icon="i-lucide-circle-plus"
                 color="neutral"
@@ -267,8 +256,8 @@ const columns: TableColumn<Contact>[] = [
               >
                 Créer un premier contact
               </UButton>
-            </div>
-          </div>
+            </template>
+          </AppEmptyState>
         </template>
       </UTable>
     </div>
