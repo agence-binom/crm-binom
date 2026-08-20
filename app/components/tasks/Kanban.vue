@@ -104,13 +104,11 @@ const [parent, taskList] = useDragAndDrop<Task>(props.tasks, {
     return !el.hasAttribute('data-no-drag')
   },
   onDragstart: (_data) => {
-    // Ajouter classe sur toutes les zones de drop
     document.querySelectorAll('[data-status]').forEach((zone) => {
       zone.setAttribute('data-drop-zone-active', 'true')
     })
   },
   onDragend: (data) => {
-    // Retirer classe des zones de drop
     document.querySelectorAll('[data-status]').forEach((zone) => {
       zone.removeAttribute('data-drop-zone-active')
     })

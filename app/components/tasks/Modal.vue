@@ -164,8 +164,7 @@ const resetForm = () => {
   })
 }
 
-// Dernière version confirmée par le serveur : sert de référence pour savoir
-// si un champ a changé, et pour revenir en arrière si une sauvegarde échoue.
+// Last server-confirmed version used for change detection and rollback after a failed save.
 const lastKnownTask = ref<Task | null>(null)
 
 const fillFromTask = (task: Task) => {

@@ -35,9 +35,7 @@ export const formatDateOnly = (date: string | Date | null | undefined) => {
   })
 }
 
-// Messages renvoyés en anglais par supabase-js (Auth et Storage) que l'on sait
-// reconnaître et traduire. Tout message non reconnu reste inchangé (ex: les
-// Error levées volontairement ailleurs dans le code, déjà en français).
+// Known Supabase Auth and Storage messages are translated; unknown messages are preserved.
 const SUPABASE_ERROR_TRANSLATIONS: Array<[RegExp, string]> = [
   [/^signups not allowed for otp$/i, 'Cette adresse email n\'est pas autorisée à se connecter.'],
   [/^email rate limit exceeded$/i, 'Trop de tentatives. Merci de réessayer dans quelques minutes.'],

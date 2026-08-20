@@ -73,5 +73,7 @@ export const createDocumentInsertValues = (
   entityType: metadata.entityType,
   entityId: metadata.entityId,
   documentType: metadata.documentType,
+  status: metadata.status,
+  subtype: metadata.subtype ?? null,
   description: metadata.description?.trim() || ''
 })

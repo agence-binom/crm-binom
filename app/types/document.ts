@@ -10,6 +10,8 @@ export type ProjectDocument = {
   entityType: string
   entityId: number
   documentType?: string | null
+  status: 'draft' | 'sent' | 'completed' | 'cancelled'
+  subtype?: string | null
   description?: string | null
   createdAt: string | Date
 }
