@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui'
-import { FACTURE_NET_PORTAL_LINKS, billingDashboardStatuses } from '~/constants/billing'
+import { billingDashboardStatuses } from '~/constants/billing'
 import type { BillingDashboardStatus } from '~/constants/billing'
 import type { BillingProjectStatus } from '~/lib/billing'
 import { getProjectDisplayStatus } from '~/lib/projects'
@@ -156,28 +156,7 @@ const columns: TableColumn<BillingProjectStatus>[] = [
           Une vue simple de l’état devis / facture pour chaque projet.
         </p>
       </div>
-      <div class="flex flex-wrap gap-2">
-        <UButton
-          variant="soft"
-          color="neutral"
-          icon="i-lucide-external-link"
-          :href="FACTURE_NET_PORTAL_LINKS.quotes"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Page devis
-        </UButton>
-        <UButton
-          variant="soft"
-          color="neutral"
-          icon="i-lucide-external-link"
-          :href="FACTURE_NET_PORTAL_LINKS.invoices"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Page factures
-        </UButton>
-      </div>
+      <BillingFactureNetPortalLinks />
     </div>
 
     <div class="space-y-2">
@@ -246,7 +225,7 @@ const columns: TableColumn<BillingProjectStatus>[] = [
           >
             <template #project-cell="{ row }">
               <AppLink
-                :to="`clients/${row.original.project.clientId}/projects/${row.original.project.id}`"
+                :to="`/clients/${row.original.project.clientId}/projects/${row.original.project.id}`"
                 class="group min-w-48"
               >
                 <div class="space-y-1">
@@ -315,32 +294,29 @@ const columns: TableColumn<BillingProjectStatus>[] = [
         </div>
       </div>
 
-      <div
+      <AppEmptyState
         v-else
-        class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center"
+        :icon="isAllCaughtUp ? 'i-lucide-circle-check' : 'i-lucide-inbox'"
+        :icon-class="isAllCaughtUp ? 'text-success-400' : 'text-slate-300'"
+        size="lg"
+        :title="isLoading ? 'Chargement...' : (isAllCaughtUp ? 'Tous les documents sont à jour' : 'Aucun projet trouvé')"
+        :description="isLoading || isAllCaughtUp
+          ? 'Aucun devis, proposition ou facture manquant pour le moment.'
+          : (hasActiveFilters ? 'Essayez de modifier vos filtres' : 'Créez votre premier projet depuis la page clients')"
       >
-        <UIcon
-          :name="isAllCaughtUp ? 'i-lucide-circle-check' : 'i-lucide-inbox'"
-          class="mb-4 text-6xl"
-          :class="isAllCaughtUp ? 'text-success-400' : 'text-slate-300'"
-        />
-        <p class="mb-2 text-xl text-bold text-slate-600">
-          {{ isLoading ? 'Chargement...' : (isAllCaughtUp ? 'Tous les documents sont à jour' : 'Aucun projet trouvé') }}
-        </p>
-        <p class="mb-4 text-slate-500">
-          {{ isLoading || isAllCaughtUp
-            ? 'Aucun devis, proposition ou facture manquant pour le moment.'
-            : (hasActiveFilters ? 'Essayez de modifier vos filtres' : 'Créez votre premier projet depuis la page clients') }}
-        </p>
-        <UButton
+        <template
           v-if="!isLoading && statusFilter !== 'all'"
-          variant="soft"
-          color="neutral"
-          @click="statusFilter = 'all'"
+          #actions
         >
-          Voir tous les projets
-        </UButton>
-      </div>
+          <UButton
+            variant="soft"
+            color="neutral"
+            @click="statusFilter = 'all'"
+          >
+            Voir tous les projets
+          </UButton>
+        </template>
+      </AppEmptyState>
     </div>
 
     <BillingProjectDetailPanel

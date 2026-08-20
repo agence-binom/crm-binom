@@ -28,22 +28,13 @@ const toggleArchived = () => {
 
 <template>
   <div class="space-y-6">
-    <div
+    <AppListHeader
       v-if="showHeader"
-      class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4"
+      title="Projets"
+      icon="i-lucide-folder"
+      :count="filteredProjects.length"
     >
-      <h2 class="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">
-        <UIcon name="i-lucide-folder" />
-        Projets
-        <UBadge
-          color="neutral"
-          variant="soft"
-          class="rounded-full"
-        >
-          {{ filteredProjects.length }}
-        </UBadge>
-      </h2>
-      <div class="flex items-center gap-2">
+      <template #actions>
         <UButton
           :icon="showArchived ? 'i-lucide-folder' : 'i-lucide-archive'"
           variant="ghost"
@@ -61,8 +52,8 @@ const toggleArchived = () => {
         >
           Nouveau projet
         </UButton>
-      </div>
-    </div>
+      </template>
+    </AppListHeader>
 
     <TransitionGroup
       v-if="filteredProjects.length > 0"
@@ -90,26 +81,24 @@ const toggleArchived = () => {
       </li>
     </TransitionGroup>
 
-    <div
+    <AppEmptyState
       v-else
-      class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white/80 px-6 py-10 text-center"
+      icon="i-lucide-folder-open"
+      :title="showArchived ? 'Aucun projet archivé' : (emptyMessage || 'Aucun projet')"
     >
-      <UIcon
-        name="i-lucide-folder-open"
-        class="mb-3 text-4xl text-slate-300"
-      />
-      <p class="mb-4 text-slate-600">
-        {{ showArchived ? 'Aucun projet archivé' : (emptyMessage || 'Aucun projet') }}
-      </p>
-      <UButton
+      <template
         v-if="showCreateButton && !showArchived"
-        icon="i-lucide-circle-plus"
-        variant="soft"
-        color="neutral"
-        @click="emit('create')"
+        #actions
       >
-        Créer le premier projet
-      </UButton>
-    </div>
+        <UButton
+          icon="i-lucide-circle-plus"
+          variant="soft"
+          color="neutral"
+          @click="emit('create')"
+        >
+          Créer le premier projet
+        </UButton>
+      </template>
+    </AppEmptyState>
   </div>
 </template>

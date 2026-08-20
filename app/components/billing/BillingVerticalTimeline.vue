@@ -14,13 +14,7 @@ const props = defineProps<{
   documents: TimelineDocument[]
 }>()
 
-const indicatorClassByStatus: Partial<Record<TimelineDocument['status'], string>> = {
-  draft: 'bg-slate-200 text-slate-600',
-  sent: 'bg-warning-100 text-warning-700',
-  completed: 'bg-success-500 text-white',
-  cancelled: 'bg-error-500 text-white'
-}
-const defaultIndicatorClass = 'bg-slate-200 text-slate-600'
+const { getDocumentStatusIndicatorClass } = useDocumentStatusHelpers()
 
 // Full history here (unlike the row timeline): most recent first, superseded documents included.
 const timelineItems = computed(() => [...props.documents]
@@ -36,7 +30,7 @@ const timelineItems = computed(() => [...props.documents]
     title: `${document.subtype ? invoiceSubtypeLabels[document.subtype as keyof typeof invoiceSubtypeLabels] : billingDocumentTypeLabels[document.type]} (${document.filename})`,
     description: document.description ?? undefined,
     status: document.status,
-    ui: { indicator: indicatorClassByStatus[document.status] ?? defaultIndicatorClass },
+    ui: { indicator: getDocumentStatusIndicatorClass(document.status) },
     class: document.lifecycle === 'superseded' ? 'opacity-60' : '',
     document
   })))
@@ -97,10 +91,10 @@ const timelineItems = computed(() => [...props.documents]
       </div>
     </template>
   </UTimeline>
-  <p
+  <AppEmptyState
     v-else
-    class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400"
-  >
-    Aucun document
-  </p>
+    variant="compact"
+    icon="i-lucide-file-x"
+    title="Aucun document"
+  />
 </template>

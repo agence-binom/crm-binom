@@ -102,17 +102,10 @@ const projectToEdit = computed(() => {
     v-if="client"
     class="container mx-auto p-6 overflow-scroll"
   >
-    <div class="mb-4">
-      <UButton
-        icon="i-lucide-arrow-left"
-        variant="ghost"
-        color="neutral"
-        size="sm"
-        @click="navigateTo(`/clients`)"
-      >
-        Retour aux clients
-      </UButton>
-    </div>
+    <AppBackButton
+      to="/clients"
+      label="Retour aux clients"
+    />
     <ClientsHeader
       :client="client"
       @open-info="isClientInfoModalOpen = true"
