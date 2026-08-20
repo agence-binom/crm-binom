@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { annotateDocumentLifecycle } from '~/lib/documents'
 import type { ProjectDocument, ProjectResource, Task, User } from '~/types'
 
 const route = useRoute()
@@ -23,8 +24,11 @@ const isUploadModalOpen = ref(false)
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 const { setArchived } = useArchiveAction()
 
-const quoteDocumentsMissingLinkCount = computed(() => quoteDocuments.value.filter(document => !document.externalUrl).length)
-const invoiceDocumentsMissingLinkCount = computed(() => invoiceDocuments.value.filter(document => !document.externalUrl).length)
+const billingDocuments = computed(() => annotateDocumentLifecycle([
+  ...commercialProposalDocuments.value.map(document => ({ ...document, type: 'commercial_proposal' as const })),
+  ...quoteDocuments.value.map(document => ({ ...document, type: 'quote' as const })),
+  ...invoiceDocuments.value.map(document => ({ ...document, type: 'invoice' as const }))
+]))
 
 const onDeleteProject = async (projectId: number) => {
   await deleteResource('projet', projectId, '/api/projects', async () => {
@@ -162,164 +166,11 @@ const onDeleteDocument = async (documentId: number) => {
         </div>
       </UCard>
 
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex items-center gap-2">
-                <UIcon
-                  name="i-lucide-file-minus"
-                  class="text-lg"
-                />
-                <span class="font-semibold">Propositions commerciales</span>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <UBadge
-                  variant="soft"
-                  color="success"
-                >
-                  {{ commercialProposalDocuments.length }} PDF
-                </UBadge>
-              </div>
-            </div>
-          </template>
-
-          <div
-            v-if="commercialProposalDocuments.length"
-            class="space-y-3"
-          >
-            <div
-              v-for="document in commercialProposalDocuments"
-              :key="document.id"
-              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-            >
-              <DocumentItem
-                :document="document"
-                @delete-document="onDeleteDocument"
-                @update-document="handleDocumentsChange"
-              />
-            </div>
-          </div>
-
-          <AppEmptyState
-            v-else
-            variant="compact"
-            icon="i-lucide-file-x"
-            title="Aucune proposition commerciale"
-          />
-        </UCard>
-
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex items-center gap-2">
-                <UIcon
-                  name="i-lucide-file-text"
-                  class="text-lg"
-                />
-                <span class="font-semibold">Devis</span>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <UBadge
-                  variant="soft"
-                  color="primary"
-                >
-                  {{ quoteDocuments.length }} PDF
-                </UBadge>
-                <UBadge
-                  v-if="quoteDocumentsMissingLinkCount > 0"
-                  variant="soft"
-                  color="warning"
-                >
-                  {{ quoteDocumentsMissingLinkCount }} lien manquant
-                </UBadge>
-              </div>
-            </div>
-          </template>
-
-          <div
-            v-if="quoteDocuments.length"
-            class="space-y-3"
-          >
-            <div
-              v-for="document in quoteDocuments"
-              :key="document.id"
-              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-            >
-              <DocumentItem
-                :document="document"
-                @delete-document="onDeleteDocument"
-                @update-document="handleDocumentsChange"
-              />
-            </div>
-          </div>
-
-          <AppEmptyState
-            v-else
-            variant="compact"
-            icon="i-lucide-file-x"
-            title="Aucun devis"
-            description="Ajoutez ici le PDF exporté depuis Facture.net pour garder une trace."
-          />
-        </UCard>
-
-        <UCard>
-          <template #header>
-            <div class="flex items-center justify-between gap-4">
-              <div class="flex items-center gap-2">
-                <UIcon
-                  name="i-lucide-file-minus"
-                  class="text-lg"
-                />
-                <span class="font-semibold">Factures</span>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <UBadge
-                  variant="soft"
-                  color="success"
-                >
-                  {{ invoiceDocuments.length }} PDF
-                </UBadge>
-                <UBadge
-                  v-if="invoiceDocumentsMissingLinkCount > 0"
-                  variant="soft"
-                  color="warning"
-                >
-                  {{ invoiceDocumentsMissingLinkCount }} lien manquant
-                </UBadge>
-              </div>
-            </div>
-          </template>
-
-          <div
-            v-if="invoiceDocuments.length"
-            class="space-y-3"
-          >
-            <div
-              v-for="document in invoiceDocuments"
-              :key="document.id"
-              class="group flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-            >
-              <DocumentItem
-                :document="document"
-                @delete-document="onDeleteDocument"
-                @update-document="handleDocumentsChange"
-              />
-            </div>
-          </div>
-
-          <AppEmptyState
-            v-else
-            variant="compact"
-            icon="i-lucide-file-x"
-            title="Aucune facture"
-            description="Importez ici le PDF final après émission dans Facture.net, avec son lien dédié."
-          />
-        </UCard>
-      </div>
+      <BillingHorizontalTimeline
+        :documents="billingDocuments"
+        @delete-document="onDeleteDocument"
+        @update-document="handleDocumentsChange"
+      />
     </div>
 
     <ConfirmModal
