@@ -66,7 +66,10 @@ const handleDocumentsChange = () => {
     class="w-full max-w-xl"
   >
     <template #title>
-      <div class="flex items-center gap-2">
+      <AppLink
+        :to="`/clients/${project?.project.clientId}/projects/${project?.project.id}`"
+        class="group min-w-48"
+      >
         <span>{{ project?.project.name }}</span>
         <UBadge
           v-if="project"
@@ -76,7 +79,7 @@ const handleDocumentsChange = () => {
         >
           {{ getStatusLabel(getProjectDisplayStatus(project.project)) }}
         </UBadge>
-      </div>
+      </AppLink>
     </template>
     <template #description>
       <div class="space-y-2">
@@ -97,19 +100,6 @@ const handleDocumentsChange = () => {
           {{ formatDateOnly(project?.project.startDate) }} → {{ formatDateOnly(project?.project.endDate) }}
         </p>
       </div>
-    </template>
-
-    <template #actions>
-      <UButton
-        v-if="project"
-        size="sm"
-        variant="soft"
-        color="neutral"
-        icon="i-lucide-external-link"
-        :to="`/clients/${project.project.clientId}/projects/${project.project.id}`"
-      >
-        Voir la fiche projet
-      </UButton>
     </template>
 
     <template #body>
