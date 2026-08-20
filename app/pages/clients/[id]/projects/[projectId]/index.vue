@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { FACTURE_NET_PORTAL_LINKS } from '~/constants/billing'
 import type { ProjectDocument, ProjectResource, Task, User } from '~/types'
 
 const route = useRoute()
@@ -48,6 +47,12 @@ const handleProjectChange = async () => {
 const handleDocumentsChange = async () => {
   await refresh()
 }
+
+const onDeleteDocument = async (documentId: number) => {
+  await deleteResource('document', documentId, '/api/documents', async () => {
+    await refresh()
+  })
+}
 </script>
 
 <template>
@@ -55,17 +60,10 @@ const handleDocumentsChange = async () => {
     v-if="project"
     class="container mx-auto p-6 overflow-scroll"
   >
-    <div class="mb-4">
-      <UButton
-        icon="i-lucide-arrow-left"
-        variant="ghost"
-        color="neutral"
-        size="sm"
-        @click="navigateTo(`/clients/${clientId}`)"
-      >
-        Retour au client
-      </UButton>
-    </div>
+    <AppBackButton
+      :to="`/clients/${clientId}`"
+      label="Retour au client"
+    />
 
     <ProjectsHeader
       :project="project"
@@ -160,28 +158,7 @@ const handleDocumentsChange = async () => {
             </p>
           </div>
 
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-external-link"
-              :href="FACTURE_NET_PORTAL_LINKS.quotes"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Ouvrir les devis
-            </UButton>
-            <UButton
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-external-link"
-              :href="FACTURE_NET_PORTAL_LINKS.invoices"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Ouvrir les factures
-            </UButton>
-          </div>
+          <BillingFactureNetPortalLinks />
         </div>
       </UCard>
 
@@ -219,24 +196,18 @@ const handleDocumentsChange = async () => {
             >
               <DocumentItem
                 :document="document"
-                @delete-document="handleDocumentsChange"
+                @delete-document="onDeleteDocument"
                 @update-document="handleDocumentsChange"
               />
             </div>
           </div>
 
-          <div
+          <AppEmptyState
             v-else
-            class="rounded-xl border border-dashed border-default p-6 text-center text-gray-500"
-          >
-            <UIcon
-              name="i-lucide-file-x"
-              class="mb-2 text-4xl"
-            />
-            <p class="font-medium text-gray-700 dark:text-gray-200">
-              Aucune proposition commerciale PDF importée
-            </p>
-          </div>
+            variant="compact"
+            icon="i-lucide-file-x"
+            title="Aucune proposition commerciale"
+          />
         </UCard>
 
         <UCard>
@@ -279,27 +250,19 @@ const handleDocumentsChange = async () => {
             >
               <DocumentItem
                 :document="document"
-                @delete-document="handleDocumentsChange"
+                @delete-document="onDeleteDocument"
                 @update-document="handleDocumentsChange"
               />
             </div>
           </div>
 
-          <div
+          <AppEmptyState
             v-else
-            class="rounded-xl border border-dashed border-default p-6 text-center text-gray-500"
-          >
-            <UIcon
-              name="i-lucide-file-x"
-              class="mb-2 text-4xl"
-            />
-            <p class="font-medium text-gray-700 dark:text-gray-200">
-              Aucun devis PDF importé
-            </p>
-            <p class="mt-1 text-sm">
-              Ajoutez ici le PDF exporté depuis Facture.net pour garder une trace dans le CRM.
-            </p>
-          </div>
+            variant="compact"
+            icon="i-lucide-file-x"
+            title="Aucun devis"
+            description="Ajoutez ici le PDF exporté depuis Facture.net pour garder une trace."
+          />
         </UCard>
 
         <UCard>
@@ -342,27 +305,19 @@ const handleDocumentsChange = async () => {
             >
               <DocumentItem
                 :document="document"
-                @delete-document="handleDocumentsChange"
+                @delete-document="onDeleteDocument"
                 @update-document="handleDocumentsChange"
               />
             </div>
           </div>
 
-          <div
+          <AppEmptyState
             v-else
-            class="rounded-xl border border-dashed border-default p-6 text-center text-gray-500"
-          >
-            <UIcon
-              name="i-lucide-file-x"
-              class="mb-2 text-4xl"
-            />
-            <p class="font-medium text-gray-700 dark:text-gray-200">
-              Aucune facture PDF importée
-            </p>
-            <p class="mt-1 text-sm">
-              Importez ici le PDF final après émission dans Facture.net, avec son lien dédié.
-            </p>
-          </div>
+            variant="compact"
+            icon="i-lucide-file-x"
+            title="Aucune facture"
+            description="Importez ici le PDF final après émission dans Facture.net, avec son lien dédié."
+          />
         </UCard>
       </div>
     </div>

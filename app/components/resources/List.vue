@@ -78,21 +78,13 @@ const resourceToEdit = computed(() => {
       </div>
     </div>
 
-    <div
+    <AppEmptyState
       v-else
-      class="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-500"
-    >
-      <UIcon
-        name="i-lucide-folder-open"
-        class="mb-2 text-4xl"
-      />
-      <p class="font-medium text-gray-700 dark:text-gray-200">
-        Aucune ressource pour ce projet
-      </p>
-      <p class="mt-1 text-sm">
-        Ajoutez un document, un lien ou une note utile pour ce projet.
-      </p>
-    </div>
+      variant="compact"
+      icon="i-lucide-folder-open"
+      title="Aucune ressource pour ce projet"
+      description="Ajoutez un document, un lien ou une note utile pour ce projet."
+    />
 
     <ResourcesModal
       v-model:open="isModalOpen"

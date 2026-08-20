@@ -42,7 +42,7 @@ const projectLabel = computed(() => {
 })
 
 const projectLink = computed(() => {
-  return `clients/${props.clientId}/projects/${props.task.projectId}`
+  return `/clients/${props.clientId}/projects/${props.task.projectId}`
 })
 </script>
 

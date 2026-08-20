@@ -99,6 +99,19 @@ const handleDocumentsChange = () => {
       </div>
     </template>
 
+    <template #actions>
+      <UButton
+        v-if="project"
+        size="sm"
+        variant="soft"
+        color="neutral"
+        icon="i-lucide-external-link"
+        :to="`/clients/${project.project.clientId}/projects/${project.project.id}`"
+      >
+        Voir la fiche projet
+      </UButton>
+    </template>
+
     <template #body>
       <div
         v-if="isLoading"

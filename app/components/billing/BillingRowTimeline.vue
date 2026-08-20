@@ -6,25 +6,12 @@ const props = defineProps<{
   documents: BillingProjectDocumentWithLifecycle[]
 }>()
 
+const { getDocumentStatusIndicatorClass, getDocumentStatusSeparatorClass } = useDocumentStatusHelpers()
+
 // `!` (important) forces these to win over UTimeline's own conditional `group-data-[state=completed]:bg-*`
 // classes, which would otherwise sometimes out-specificity a plain override on the segments the built-in
 // default-value/"current" mechanism marks as completed.
-const indicatorClassByStatus: Record<DocumentStatus, string> = {
-  draft: '!bg-slate-200 !text-slate-600',
-  sent: '!bg-warning-100 !text-warning-700',
-  completed: '!bg-success-500 !text-white',
-  cancelled: '!bg-error-500 !text-white'
-}
 const placeholderIndicatorClass = '!bg-slate-100 !text-slate-300 ring-1 ring-inset ring-slate-200'
-
-// The separator BEFORE a node is rendered as part of the PREVIOUS node's markup (UTimeline draws it right
-// after the previous indicator), so this maps a node's status to the color of the line leading into it.
-const separatorClassByStatus: Record<DocumentStatus, string> = {
-  draft: '!bg-slate-300',
-  sent: '!bg-warning-300',
-  completed: '!bg-success-400',
-  cancelled: '!bg-error-300'
-}
 const placeholderSeparatorClass = '!bg-slate-200'
 
 type TimelineNode = {
@@ -47,7 +34,7 @@ const buildDocumentNode = (document: BillingProjectDocumentWithLifecycle): Timel
     icon: billingDocumentTypeIcons[document.type],
     title,
     status: document.status,
-    ui: { indicator: indicatorClassByStatus[document.status] },
+    ui: { indicator: getDocumentStatusIndicatorClass(document.status, { important: true }) },
     isPlaceholder: false
   }
 }
@@ -93,7 +80,7 @@ const timelineItems = computed(() => {
 
   for (let index = 0; index < nodes.length - 1; index += 1) {
     const nextNode = nodes[index + 1]!
-    nodes[index]!.ui.separator = nextNode.status ? separatorClassByStatus[nextNode.status] : placeholderSeparatorClass
+    nodes[index]!.ui.separator = nextNode.status ? getDocumentStatusSeparatorClass(nextNode.status, { important: true }) : placeholderSeparatorClass
   }
 
   return nodes

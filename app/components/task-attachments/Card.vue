@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatDate, formatFileSize, getFileTypeIcon } from '~/lib/utils'
+import { formatFileSize, getFileTypeIcon } from '~/lib/utils'
 import { getTaskAttachmentTypeColor, getTaskAttachmentTypeIcon, getTaskAttachmentTypeLabel } from '~/lib/task-attachments'
 import type { TaskAttachment } from '~/types'
 
@@ -24,28 +24,24 @@ const getExternalHref = (attachment: TaskAttachment) => {
 </script>
 
 <template>
-  <div class="flex min-w-0 flex-1 items-start gap-3">
-    <div class="rounded-lg bg-primary-50 p-2 text-primary-600 ">
-      <UIcon
-        :name="icon"
-        mode="svg"
-        size="lg"
-      />
-    </div>
+  <AppAttachmentMeta
+    :icon="icon"
+    :description="attachment.description"
+    :created-at="attachment.createdAt"
+  >
+    <template #title>
+      <p class="truncate font-medium">
+        {{ attachment.name }}
+      </p>
+      <UBadge
+        variant="soft"
+        :color="getTaskAttachmentTypeColor(attachment.type)"
+      >
+        {{ getTaskAttachmentTypeLabel(attachment.type) }}
+      </UBadge>
+    </template>
 
-    <div class="min-w-0 flex-1 space-y-1.5">
-      <div class="flex flex-wrap items-center gap-2">
-        <p class="truncate font-medium">
-          {{ attachment.name }}
-        </p>
-        <UBadge
-          variant="soft"
-          :color="getTaskAttachmentTypeColor(attachment.type)"
-        >
-          {{ getTaskAttachmentTypeLabel(attachment.type) }}
-        </UBadge>
-      </div>
-
+    <template #meta>
       <p
         v-if="attachment.type === 'document'"
         class="mt-1 text-sm text-gray-600"
@@ -59,19 +55,8 @@ const getExternalHref = (attachment: TaskAttachment) => {
       >
         {{ attachment.url }}
       </p>
-
-      <p
-        v-if="attachment.description"
-        class="mt-1 text-sm text-gray-500"
-      >
-        {{ attachment.description }}
-      </p>
-
-      <p class="mt-1 text-xs text-gray-400">
-        Ajouté le {{ formatDate(attachment.createdAt) }}
-      </p>
-    </div>
-  </div>
+    </template>
+  </AppAttachmentMeta>
 
   <div class="flex shrink-0 items-center gap-2">
     <UButton
