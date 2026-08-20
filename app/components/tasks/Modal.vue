@@ -446,6 +446,7 @@ const statusChipUi = computed(() => ({
             >
               <UCalendar
                 v-model="selectedCalendarDate"
+                :week-starts-on="1"
                 class="p-2"
               />
             </TasksDuePillButton>
