@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { formatDate, formatFileSize, getErrorMessage, getFileTypeIcon } from '~/lib/utils'
-import { documentStatusLabels, type BillingDocumentType, type DocumentStatus } from '~/lib/documents'
+import { documentStatusLabels, getDocumentDownloadHref, getDocumentFactureNetHref, type BillingDocumentType, type DocumentStatus } from '~/lib/documents'
 import { documentStatuses } from '~/validation/documents'
 import type { ProjectDocument } from '~/types'
 
@@ -50,16 +50,6 @@ const onStatusChange = async (status: DocumentStatus) => {
   }
 }
 
-const getDownloadHref = (document: ProjectDocument) => {
-  if (document.downloadUrl) return document.downloadUrl
-  return document.filepath.startsWith('http') ? document.filepath : undefined
-}
-
-const getFactureNetHref = (document: ProjectDocument) => {
-  if (!document.externalUrl) return undefined
-  return document.externalUrl.startsWith('http') ? document.externalUrl : undefined
-}
-
 const onDeleteDocument = async (documentId: number) => {
   try {
     await $fetch(`/api/documents/${documentId}`, { method: 'DELETE' })
@@ -105,7 +95,7 @@ const onDeleteDocument = async (documentId: number) => {
           @update:model-value="onStatusChange"
         />
         <UBadge
-          v-if="!getFactureNetHref(document) && (document.documentType === 'quote' || document.documentType === 'invoice')"
+          v-if="!getDocumentFactureNetHref(document) && (document.documentType === 'quote' || document.documentType === 'invoice')"
           variant="soft"
           color="warning"
         >
@@ -137,8 +127,8 @@ const onDeleteDocument = async (documentId: number) => {
       variant="soft"
       color="neutral"
       icon="i-lucide-external-link"
-      :href="getFactureNetHref(document)"
-      :disabled="!getFactureNetHref(document)"
+      :href="getDocumentFactureNetHref(document)"
+      :disabled="!getDocumentFactureNetHref(document)"
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -149,8 +139,8 @@ const onDeleteDocument = async (documentId: number) => {
       variant="soft"
       color="primary"
       icon="i-lucide-download"
-      :href="getDownloadHref(document)"
-      :disabled="!getDownloadHref(document)"
+      :href="getDocumentDownloadHref(document)"
+      :disabled="!getDocumentDownloadHref(document)"
       target="_blank"
       rel="noopener noreferrer"
     >

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { billingDocumentTypeIcons, type BillingDocumentType, type DocumentLifecycle } from '~/lib/documents'
-import { billingDocumentTypeLabels, invoiceSubtypeLabels } from '~/lib/documents'
+import { billingDocumentTypeLabels, getDocumentDownloadHref, getDocumentFactureNetHref, invoiceSubtypeLabels } from '~/lib/documents'
 import { formatDate } from '~/lib/utils'
 import type { ProjectDocument } from '~/types'
 
@@ -21,7 +21,7 @@ const indicatorClassByStatus: Partial<Record<TimelineDocument['status'], string>
   cancelled: 'bg-error-500 text-white'
 }
 const defaultIndicatorClass = 'bg-slate-200 text-slate-600'
-console.log(props.documents)
+
 // Full history here (unlike the row timeline): most recent first, superseded documents included.
 const timelineItems = computed(() => [...props.documents]
   .sort((a, b) => {
@@ -48,7 +48,55 @@ const timelineItems = computed(() => [...props.documents]
     :items="timelineItems"
     orientation="vertical"
     size="md"
-  />
+  >
+    <template #description="{ item }">
+      <p
+        v-if="item.description"
+        class="text-sm text-slate-500"
+      >
+        {{ item.description }}
+      </p>
+      <div class="mt-2 flex flex-wrap items-center gap-2">
+        <UButton
+          v-if="item.document.type === 'quote' || item.document.type === 'invoice'"
+          size="xs"
+          variant="soft"
+          color="neutral"
+          icon="i-lucide-external-link"
+          :href="getDocumentFactureNetHref(item.document)"
+          :disabled="!getDocumentFactureNetHref(item.document)"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Facture.net
+        </UButton>
+        <UButton
+          size="xs"
+          variant="soft"
+          color="neutral"
+          icon="i-lucide-eye"
+          :href="getDocumentDownloadHref(item.document)"
+          :disabled="!getDocumentDownloadHref(item.document)"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Aperçu
+        </UButton>
+        <UButton
+          size="xs"
+          variant="soft"
+          color="primary"
+          icon="i-lucide-download"
+          :href="getDocumentDownloadHref(item.document)"
+          :disabled="!getDocumentDownloadHref(item.document)"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Télécharger
+        </UButton>
+      </div>
+    </template>
+  </UTimeline>
   <p
     v-else
     class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400"

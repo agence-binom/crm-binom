@@ -55,6 +55,16 @@ export const billingDocumentTypeLabels: Record<BillingDocumentType, string> = {
   invoice: 'Facture'
 }
 
+export const getDocumentDownloadHref = (document: { downloadUrl?: string | null, filepath: string }) => {
+  if (document.downloadUrl) return document.downloadUrl
+  return document.filepath.startsWith('http') ? document.filepath : undefined
+}
+
+export const getDocumentFactureNetHref = (document: { externalUrl?: string | null }) => {
+  if (!document.externalUrl) return undefined
+  return document.externalUrl.startsWith('http') ? document.externalUrl : undefined
+}
+
 export const invoiceSubtypeLabels: Record<InvoiceSubtype, string> = {
   acompte: 'Facture d\'acompte',
   solde: 'Facture de solde',
