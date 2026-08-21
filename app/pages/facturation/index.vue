@@ -232,9 +232,9 @@ const columns: TableColumn<BillingProjectStatus>[] = [
             <template #project-cell="{ row }">
               <AppLink
                 :to="`/clients/${row.original.project.clientId}/projects/${row.original.project.id}`"
-                class="group block max-w-64"
+                class="group w-full"
               >
-                <div class="space-y-1">
+                <div class="space-y-1 w-full">
                   <p class="truncate font-semibold text-slate-900">
                     {{ row.original.project.name }}
                   </p>
