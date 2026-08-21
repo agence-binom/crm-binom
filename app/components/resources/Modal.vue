@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { resourceCreateSchema, resourceUpdateSchema, resourceFileInputAccept, resourceMaxSizeBytes } from '~/validation/resources'
 import { resourceTypes, type ResourceType } from '~/constants/resources'
 import { getResourceTypeIcon, getResourceTypeLabel } from '~/lib/resources'
 import { formatFileSize } from '~/lib/utils'
-import { resourceFileInputAccept, resourceMaxSizeBytes } from '~/validation/resources'
 import type { ProjectResource } from '~/types'
 
 const props = defineProps<{
@@ -26,8 +26,17 @@ const isOpen = computed({
 const isSaving = ref(false)
 const isEditing = computed(() => Boolean(props.resource))
 
+const schema = computed(() => (isEditing.value ? resourceUpdateSchema : resourceCreateSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier la ressource' : 'Nouvelle ressource'))
 const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer la ressource'))
+
+const formState = reactive({
+  type: 'document' as ResourceType,
+  name: '',
+  description: '',
+  url: '',
+  content: ''
+})
 
 const selectedType = ref<ResourceType>('document')
 const name = ref('')
@@ -175,7 +184,12 @@ const onSubmit = async () => {
     class="w-full max-w-2xl rounded-2xl"
   >
     <template #body>
-      <div class="space-y-5">
+      <UForm
+        :state="formState"
+        :schema="schema"
+        class="space-y-5"
+        @submit="onSubmit"
+      >
         <div class="space-y-2.5">
           <p class="text-sm font-medium text-slate-700">
             Type de ressource
@@ -281,7 +295,7 @@ const onSubmit = async () => {
             {{ submitLabel }}
           </UButton>
         </div>
-      </div>
+      </Uform>
     </template>
   </UModal>
 </template>
