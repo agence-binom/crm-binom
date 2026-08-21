@@ -34,7 +34,7 @@ const name = ref('')
 const description = ref('')
 const url = ref('')
 const content = ref('')
-const selectedFile = ref<File | null>(null)
+const selectedFiles = ref<File[]>([])
 
 const typeOptions = resourceTypes.map(type => ({
   label: getResourceTypeLabel(type),
@@ -50,7 +50,7 @@ const resetForm = () => {
   description.value = ''
   url.value = ''
   content.value = ''
-  selectedFile.value = null
+  selectedFiles.value = []
 }
 
 const fillFromResource = (resource: ProjectResource) => {
@@ -59,7 +59,7 @@ const fillFromResource = (resource: ProjectResource) => {
   description.value = resource.description ?? ''
   url.value = resource.type === 'link' ? (resource.url ?? '') : ''
   content.value = resource.type === 'text' ? (resource.content ?? '') : ''
-  selectedFile.value = null
+  selectedFiles.value = []
 }
 
 watch(
@@ -71,9 +71,15 @@ watch(
   }
 )
 
+const isMultipleFiles = computed(() => selectedFiles.value.length > 1)
+
 const isValid = computed(() => {
+  if (selectedType.value === 'document') {
+    if (isEditing.value) return Boolean(name.value.trim())
+    if (isMultipleFiles.value) return selectedFiles.value.length > 0
+    return Boolean(name.value.trim()) && selectedFiles.value.length > 0
+  }
   if (!name.value.trim()) return false
-  if (selectedType.value === 'document') return isEditing.value || Boolean(selectedFile.value)
   if (selectedType.value === 'link') return Boolean(url.value.trim())
   return Boolean(content.value.trim())
 })
@@ -97,13 +103,35 @@ const onSubmit = async () => {
         }
       })
     } else if (selectedType.value === 'document') {
-      const formData = new FormData()
-      formData.set('file', selectedFile.value as File)
-      formData.set('projectId', String(props.projectId))
-      formData.set('name', name.value.trim())
-      formData.set('description', description.value.trim())
+      const filesToUpload = selectedFiles.value
+      const sharedName = isMultipleFiles.value ? '' : name.value.trim()
 
-      await $fetch('/api/resources/upload', { method: 'POST', body: formData })
+      const results = await Promise.allSettled(filesToUpload.map((file) => {
+        const formData = new FormData()
+        formData.set('file', file)
+        formData.set('projectId', String(props.projectId))
+        formData.set('name', sharedName)
+        formData.set('description', description.value.trim())
+
+        return $fetch('/api/resources/upload', { method: 'POST', body: formData })
+      }))
+
+      const failures = results
+        .map((result, index) => ({ result, file: filesToUpload[index] }))
+        .filter((entry): entry is { result: PromiseRejectedResult, file: File } => entry.result.status === 'rejected')
+
+      selectedFiles.value = failures.map(entry => entry.file)
+
+      if (failures.length) {
+        showError(
+          failures.length === filesToUpload.length ? 'Enregistrement impossible' : 'Ajout partiellement réussi',
+          failures[0]?.result.reason,
+          `${failures.length} fichier(s) sur ${filesToUpload.length} n'ont pas pu être ajoutés.`
+        )
+      }
+
+      if (failures.length < filesToUpload.length) emit('saved')
+      if (failures.length) return
     } else {
       await $fetch('/api/resources', {
         method: 'POST',
@@ -160,6 +188,7 @@ const onSubmit = async () => {
         </div>
 
         <UFormField
+          v-if="!isMultipleFiles"
           label="Nom"
           name="name"
           required
@@ -170,16 +199,22 @@ const onSubmit = async () => {
             class="w-full"
           />
         </UFormField>
+        <p
+          v-else
+          class="text-xs text-slate-500"
+        >
+          Chaque fichier sera ajouté comme une ressource distincte, nommée d'après son nom de fichier.
+        </p>
 
         <div
           v-if="selectedType === 'document'"
           class="space-y-3"
         >
           <label class="text-sm font-medium text-slate-700">
-            Fichier
+            Fichier(s)
           </label>
           <AttachmentFileInput
-            v-model="selectedFile"
+            v-model="selectedFiles"
             :accept="resourceFileInputAccept"
             :max-size-bytes="resourceMaxSizeBytes"
             :max-size-label="maxFileSizeLabel"
