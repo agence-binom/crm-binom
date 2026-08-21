@@ -5,16 +5,18 @@ import type { Contact } from '~/types'
 const props = defineProps<{
   contacts: Contact[]
   showArchived: boolean
+  search: string
 }>()
 
 const emit = defineEmits<{
-  create: []
-  edit: [contactId: number]
-  delete: [contactId: number]
-  archive: [contactId: number]
-  restore: [contactId: number]
-  createClient: [contactId: number]
-  toggleArchived: []
+  'create': []
+  'edit': [contactId: number]
+  'delete': [contactId: number]
+  'archive': [contactId: number]
+  'restore': [contactId: number]
+  'createClient': [contactId: number]
+  'toggleArchived': []
+  'update:search': [value: string]
 }>()
 
 const getContactFullName = (contact: Contact) => `${contact.firstName} ${contact.lastName}`
@@ -111,7 +113,7 @@ const columns: TableColumn<Contact>[] = [
       </template>
     </AppListHeader>
 
-    <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <UTable
         :data="props.contacts"
         :columns="columns"
