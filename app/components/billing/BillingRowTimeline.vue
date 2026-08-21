@@ -96,7 +96,7 @@ const timelineItems = computed(() => {
     class="w-full"
     :ui="{
       item: 'gap-0.5 min-w-0',
-      title: 'text-xs'
+      title: 'text-xs truncate'
     }"
   />
 </template>
