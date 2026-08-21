@@ -79,10 +79,13 @@ const items = ref<DropdownMenuItem[][]>([
       <UDashboardNavbar>
         <template #left>
           <UDashboardSidebarCollapse />
-          <UDashboardSearchButton label="Rechercher..." />
         </template>
 
         <template #right>
+          <UDashboardSearchButton
+            label="Rechercher..."
+            class="w-54"
+          />
           <UButton
             icon="i-lucide-bell"
             color="neutral"
