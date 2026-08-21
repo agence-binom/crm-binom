@@ -128,7 +128,13 @@ const onRowClick = (event: Event, row: TableRow<BillingProjectStatus>) => {
 const columns: TableColumn<BillingProjectStatus>[] = [
   {
     id: 'project',
-    header: 'Projet'
+    header: 'Projet',
+    meta: {
+      class: {
+        th: 'w-64 max-w-64',
+        td: 'w-64 max-w-64'
+      }
+    }
   },
   {
     id: 'client',
@@ -226,10 +232,10 @@ const columns: TableColumn<BillingProjectStatus>[] = [
             <template #project-cell="{ row }">
               <AppLink
                 :to="`/clients/${row.original.project.clientId}/projects/${row.original.project.id}`"
-                class="group min-w-48"
+                class="group block max-w-64"
               >
                 <div class="space-y-1">
-                  <p class="flex items-center gap-1.5 font-semibold text-slate-900">
+                  <p class="truncate font-semibold text-slate-900">
                     {{ row.original.project.name }}
                   </p>
                   <UBadge
