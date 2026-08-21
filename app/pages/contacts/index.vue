@@ -110,8 +110,6 @@ const onArchiveContact = async (contactId: number) => {
 const onRestoreContact = async (contactId: number) => {
   await setArchived('contact', contactId, '/api/contacts', false, refresh)
 }
-
-console.log(contacts.value)
 </script>
 
 <template>
