@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { invoiceSubtypes, type billingDocumentTypes, documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes, isFactureNetUrl } from '~/validation/documents'
+import { invoiceSubtypes, type billingDocumentTypes, isFactureNetUrl } from '~/validation/billing-documents'
+import { documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes } from '~/validation/documents'
 import { invoiceSubtypeLabels, type InvoiceSubtype } from '~/lib/documents'
 import { formatFileSize } from '~/lib/utils'
 
@@ -7,9 +8,9 @@ type BillingDocumentType = typeof billingDocumentTypes[number]
 
 const props = defineProps<{
   open: boolean
-  entityType: 'quote' | 'invoice' | 'project' | 'client'
-  entityId: number
+  projectId: number
   documentType?: BillingDocumentType
+  subtype?: InvoiceSubtype
   title?: string
   uploadLabel?: string
 }>()
@@ -31,7 +32,7 @@ const selectedFile = ref<File | null>(null)
 const description = ref('')
 const externalUrl = ref('')
 const selectedDocumentType = ref<BillingDocumentType>(props.documentType ?? 'commercial_proposal')
-const selectedInvoiceSubtype = ref<InvoiceSubtype>('unique')
+const selectedInvoiceSubtype = ref<InvoiceSubtype>(props.subtype ?? 'unique')
 const fileInput = ref<HTMLInputElement>()
 
 const modalTitle = computed(() => props.title || 'Ajouter un document')
@@ -61,7 +62,7 @@ const resetForm = () => {
   description.value = ''
   externalUrl.value = ''
   selectedDocumentType.value = props.documentType ?? 'quote'
-  selectedInvoiceSubtype.value = 'unique'
+  selectedInvoiceSubtype.value = props.subtype ?? 'unique'
 }
 
 watch(
@@ -77,6 +78,13 @@ watch(
   () => props.documentType,
   (documentType) => {
     selectedDocumentType.value = documentType ?? 'quote'
+  }
+)
+
+watch(
+  () => props.subtype,
+  (subtype) => {
+    selectedInvoiceSubtype.value = subtype ?? 'unique'
   }
 )
 
@@ -168,17 +176,16 @@ const onUpload = async () => {
   try {
     const formData = new FormData()
     formData.set('file', selectedFile.value)
-    formData.set('entityType', props.entityType)
-    formData.set('entityId', String(props.entityId))
+    formData.set('projectId', String(props.projectId))
     formData.set('documentType', props.documentType ?? selectedDocumentType.value)
     formData.set('externalUrl', externalUrl.value.trim())
     formData.set('name', selectedFile.value.name)
     formData.set('description', description.value.trim())
     if (currentDocumentType.value === 'invoice') {
-      formData.set('subtype', selectedInvoiceSubtype.value)
+      formData.set('subtype', props.subtype ?? selectedInvoiceSubtype.value)
     }
 
-    await $fetch('/api/documents', { method: 'POST', body: formData })
+    await $fetch('/api/billing-documents/upload', { method: 'POST', body: formData })
 
     emit('uploaded')
     isOpen.value = false
@@ -245,7 +252,7 @@ const onUpload = async () => {
         </UFormField>
 
         <UFormField
-          v-if="currentDocumentType === 'invoice'"
+          v-if="currentDocumentType === 'invoice' && !props.subtype"
           label="Type de facture"
           name="subtype"
           required

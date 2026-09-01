@@ -1,48 +1,45 @@
 import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
 import { db } from '~/db'
 import { buildBillingProjectStatus, type BillingProjectDocument } from '~/lib/billing'
+import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { clientsTable } from '~/db/schema/clients'
-import { documentsTable } from '~/db/schema/documents'
 import { projectsTable } from '~/db/schema/projects'
 import { billingDashboardQuerySchema, type BillingDashboardQuery } from '~/validation/billing'
 
 const toNumber = (value: unknown) => Number(value ?? 0)
 
-// A document is "current" if it's the most recent one within its lifecycle group: quotes/proposals form a
-// single group per project (most recent wins), invoices are grouped by their effective subtype (an "acompte"
-// and a "solde" are both current at once), and each "avoir" is its own group (it never supersedes/is
-// superseded). This mirrors `annotateDocumentLifecycle` in app/lib/documents.ts — kept in sync manually since
-// this SQL version only needs to answer "is there at least one current, linked document" across ALL projects
-// for filtering/pagination, before any per-project document list is fetched.
+// A billing document is "current" if it's the most recent one within its lifecycle group: quotes/
+// proposals form a single group per project (most recent wins), invoices are grouped by their
+// effective subtype (an "acompte" and a "solde" are both current at once), and each "avoir" is its
+// own group (it never supersedes/is superseded). This mirrors `annotateDocumentLifecycle` in
+// app/lib/documents.ts — kept in sync manually since this SQL version only needs to answer "is there
+// at least one current, linked document" across ALL projects for filtering/pagination, before any
+// per-project document list is fetched.
 const isCurrentDocumentSql = sql<boolean>`(
   row_number() over (
     partition by
-      ${documentsTable.entityId},
-      ${documentsTable.documentType},
+      ${billingDocumentsTable.projectId},
+      ${billingDocumentsTable.documentType},
       case
-        when ${documentsTable.documentType} = 'invoice' and coalesce(${documentsTable.subtype}, 'unique') = 'avoir'
-          then 'avoir-' || ${documentsTable.id}::text
-        when ${documentsTable.documentType} = 'invoice'
-          then coalesce(${documentsTable.subtype}, 'unique')
+        when ${billingDocumentsTable.documentType} = 'invoice' and coalesce(${billingDocumentsTable.subtype}, 'unique') = 'avoir'
+          then 'avoir-' || ${billingDocumentsTable.id}::text
+        when ${billingDocumentsTable.documentType} = 'invoice'
+          then coalesce(${billingDocumentsTable.subtype}, 'unique')
         else 'na'
       end
-    order by ${documentsTable.createdAt} desc, ${documentsTable.id} desc
+    order by ${billingDocumentsTable.createdAt} desc, ${billingDocumentsTable.id} desc
   ) = 1
 )`
 
 const buildDocumentLifecycleQuery = () => db
   .select({
-    entityId: documentsTable.entityId,
-    documentType: documentsTable.documentType,
-    subtype: documentsTable.subtype,
-    externalUrl: documentsTable.externalUrl,
+    projectId: billingDocumentsTable.projectId,
+    documentType: billingDocumentsTable.documentType,
+    subtype: billingDocumentsTable.subtype,
+    externalUrl: billingDocumentsTable.externalUrl,
     isCurrent: isCurrentDocumentSql.as('is_current')
   })
-  .from(documentsTable)
-  .where(and(
-    eq(documentsTable.entityType, 'project'),
-    inArray(documentsTable.documentType, ['quote', 'invoice', 'commercial_proposal'])
-  ))
+  .from(billingDocumentsTable)
   .as('document_lifecycle')
 
 const buildDocumentsByProjectQuery = () => {
@@ -53,7 +50,7 @@ const buildDocumentsByProjectQuery = () => {
 
   return db
     .select({
-      projectId: documentLifecycle.entityId,
+      projectId: documentLifecycle.projectId,
       quoteTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'quote' then 1 else 0 end)`.as('quote_total'),
       invoiceTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'invoice' then 1 else 0 end)`.as('invoice_total'),
       proposalTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'commercial_proposal' then 1 else 0 end)`.as('proposal_total'),
@@ -64,7 +61,7 @@ const buildDocumentsByProjectQuery = () => {
       proposalCurrentTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'commercial_proposal' and ${documentLifecycle.isCurrent} then 1 else 0 end)`.as('proposal_current_total')
     })
     .from(documentLifecycle)
-    .groupBy(documentLifecycle.entityId)
+    .groupBy(documentLifecycle.projectId)
     .as('documents_by_project')
 }
 
@@ -155,6 +152,7 @@ export default defineEventHandler(async (event) => {
       status: projectsTable.status,
       startDate: projectsTable.startDate,
       endDate: projectsTable.endDate,
+      requiresAcompte: projectsTable.requiresAcompte,
       clientEntityId: clientsTable.id,
       clientName: clientsTable.name,
       quoteTotal: sql<number>`coalesce(${documentsByProject.quoteTotal}, 0)`,
@@ -173,22 +171,17 @@ export default defineEventHandler(async (event) => {
   const documents = projectIds.length > 0
     ? await db
         .select({
-          id: documentsTable.id,
-          projectId: documentsTable.entityId,
-          name: documentsTable.name,
-          type: documentsTable.documentType,
-          status: documentsTable.status,
-          subtype: documentsTable.subtype,
-          externalUrl: documentsTable.externalUrl,
-          createdAt: documentsTable.createdAt
+          id: billingDocumentsTable.id,
+          projectId: billingDocumentsTable.projectId,
+          type: billingDocumentsTable.documentType,
+          status: billingDocumentsTable.status,
+          subtype: billingDocumentsTable.subtype,
+          externalUrl: billingDocumentsTable.externalUrl,
+          createdAt: billingDocumentsTable.createdAt
         })
-        .from(documentsTable)
-        .where(and(
-          eq(documentsTable.entityType, 'project'),
-          inArray(documentsTable.entityId, projectIds),
-          inArray(documentsTable.documentType, ['quote', 'invoice', 'commercial_proposal'])
-        ))
-        .orderBy(asc(documentsTable.entityId), asc(documentsTable.documentType), desc(documentsTable.createdAt), desc(documentsTable.id))
+        .from(billingDocumentsTable)
+        .where(inArray(billingDocumentsTable.projectId, projectIds))
+        .orderBy(asc(billingDocumentsTable.projectId), asc(billingDocumentsTable.documentType), desc(billingDocumentsTable.createdAt), desc(billingDocumentsTable.id))
     : []
 
   const documentsByProjectId = new Map<number, BillingProjectDocument[]>()
@@ -197,7 +190,6 @@ export default defineEventHandler(async (event) => {
     const item: BillingProjectDocument = {
       id: document.id,
       projectId: document.projectId,
-      name: document.name,
       type: document.type as 'quote' | 'invoice' | 'commercial_proposal',
       status: document.status as 'draft' | 'sent' | 'completed',
       subtype: document.subtype,
@@ -234,6 +226,7 @@ export default defineEventHandler(async (event) => {
         status: row.status,
         startDate: row.startDate,
         endDate: row.endDate,
+        requiresAcompte: row.requiresAcompte,
         client: {
           id: row.clientEntityId,
           name: row.clientName
