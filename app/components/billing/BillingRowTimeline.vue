@@ -7,9 +7,6 @@ const props = defineProps<{
   project: BillingProjectStatus
 }>()
 
-// Per the Figma state-machine spec: draft/sent/completed/negative each have a fixed icon + color,
-// except "draft" which is only ever painted blue for the single step currently blocking progress —
-// every other draft step (not yet reached) stays a plain gray placeholder.
 type StepPalette = { icon?: string, indicator: string, line: string, titleClass: string }
 
 const palettes: Record<'completed' | 'sent' | 'negative' | 'active' | 'pending', StepPalette> = {
@@ -20,8 +17,6 @@ const palettes: Record<'completed' | 'sent' | 'negative' | 'active' | 'pending',
   pending: { indicator: 'bg-slate-100 text-slate-300', line: 'bg-slate-200', titleClass: 'text-slate-400' }
 }
 
-// A "Sans suite" project (a real refusal/cancellation happened somewhere) is grayed out entirely —
-// even previously-validated steps lose their green check — to signal the whole flow is dead.
 const mutedPalette: Record<'completed' | 'other', StepPalette> = {
   completed: { icon: 'i-lucide-check', indicator: 'bg-slate-200 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 font-semibold' },
   other: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' }
