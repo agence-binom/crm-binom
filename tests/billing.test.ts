@@ -124,6 +124,17 @@ test('un document d\'acompte réel prime même quand requiresAcompte est désact
   assert.equal(steps.find(step => step.key === 'acompte')?.documentId, 3)
 })
 
+test('un acompte marqué non applicable active directement la facture', () => {
+  const steps = computeProjectBillingSteps([
+    doc({ id: 1, type: 'commercial_proposal', status: 'completed' }),
+    doc({ id: 2, type: 'quote', status: 'completed' }),
+    doc({ id: 3, type: 'invoice', subtype: 'acompte', status: 'non_applicable' })
+  ], true)
+
+  assert.equal(steps.find(step => step.key === 'acompte')?.status, 'non_applicable')
+  assert.equal(steps.find(step => step.key === 'invoice')?.status, 'draft')
+})
+
 test('un devis refusé cascade en non applicable et déclenche le CTA "Sans suite"', () => {
   const steps = computeProjectBillingSteps([
     doc({ id: 1, type: 'commercial_proposal', status: 'completed' }),
