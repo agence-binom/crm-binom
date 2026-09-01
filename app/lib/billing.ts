@@ -27,6 +27,7 @@ export type BillingProjectDocument = {
   status: DocumentStatus
   subtype?: string | null
   hasLink: boolean
+  hasFile: boolean
   externalUrl?: string | null
   createdAt?: string | Date | null
   statusDate?: string | Date | null

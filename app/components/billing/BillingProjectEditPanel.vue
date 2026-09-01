@@ -5,6 +5,12 @@ import { getProjectDisplayStatus } from '~/lib/projects'
 import { formatDateOnly } from '~/lib/utils'
 import type { BillingDocumentRecord } from '~/types'
 
+type StepEditorHandle = {
+  isDirty: boolean
+  save: () => Promise<void>
+  reset: () => void
+}
+
 const props = defineProps<{
   open: boolean
   project: BillingProjectStatus | null
@@ -15,6 +21,7 @@ const { showError } = useFeedbackToast()
 
 const emit = defineEmits<{
   'update:open': [open: boolean]
+  'saved': []
 }>()
 
 const isOpen = computed({
@@ -24,8 +31,8 @@ const isOpen = computed({
 
 const documents = ref<BillingDocumentRecord[]>([])
 const isLoading = ref(false)
+const isSaving = ref(false)
 const requiresAcompte = ref(true)
-const isSavingRequiresAcompte = ref(false)
 
 const loadDocuments = async () => {
   const projectId = props.project?.project.id
@@ -73,22 +80,60 @@ const invoiceDocument = computed(() => findCurrentDocument((document) => {
 
 const handleStepSaved = () => {
   loadDocuments()
+  emit('saved')
 }
 
-const onRequiresAcompteChange = async (value: boolean) => {
-  const projectId = props.project?.project.id
-  if (!projectId || value === requiresAcompte.value) return
-
+// The toggle only stages a local change now — the actual PUT happens from onSave, alongside
+// whichever step editors are also dirty, so everything commits (or fails) together.
+const onRequiresAcompteChange = (value: boolean) => {
   requiresAcompte.value = value
-  isSavingRequiresAcompte.value = true
+}
+
+const proposalEditorRef = ref<StepEditorHandle | null>(null)
+const quoteEditorRef = ref<StepEditorHandle | null>(null)
+const acompteEditorRef = ref<StepEditorHandle | null>(null)
+const invoiceEditorRef = ref<StepEditorHandle | null>(null)
+
+const editorRefs = computed(() => [
+  proposalEditorRef.value,
+  quoteEditorRef.value,
+  acompteEditorRef.value,
+  invoiceEditorRef.value
+].filter((editor): editor is StepEditorHandle => editor !== null))
+
+const isRequiresAcompteDirty = computed(() => requiresAcompte.value !== (props.project?.project.requiresAcompte ?? true))
+
+const isDirty = computed(() => isRequiresAcompteDirty.value || editorRefs.value.some(editor => editor.isDirty))
+
+const onSave = async () => {
+  const projectId = props.project?.project.id
+  if (!projectId) return
+
+  isSaving.value = true
   try {
-    await $fetch(`/api/projects/${projectId}`, { method: 'PUT', body: { requiresAcompte: value } })
-  } catch (error) {
-    requiresAcompte.value = !value
-    showError('Échec de la mise à jour', error, 'Impossible de mettre à jour le besoin d\'acompte.')
+    const tasks = editorRefs.value.filter(editor => editor.isDirty).map(editor => editor.save())
+
+    if (isRequiresAcompteDirty.value) {
+      tasks.push($fetch(`/api/projects/${projectId}`, { method: 'PUT', body: { requiresAcompte: requiresAcompte.value } })
+        .catch((error) => {
+          showError('Échec de la mise à jour', error, 'Impossible de mettre à jour le besoin d\'acompte.')
+          throw error
+        }) as Promise<void>)
+    }
+
+    await Promise.all(tasks)
+    await loadDocuments()
+    emit('saved')
+  } catch {
+    // Each failed task already surfaced its own toast — nothing left to unwind changes still stand.
   } finally {
-    isSavingRequiresAcompte.value = false
+    isSaving.value = false
   }
+}
+
+const onCancel = () => {
+  editorRefs.value.forEach(editor => editor.reset())
+  requiresAcompte.value = props.project?.project.requiresAcompte ?? true
 }
 </script>
 
@@ -149,44 +194,75 @@ const onRequiresAcompteChange = async (value: boolean) => {
 
       <div
         v-else-if="project"
-        :class="{ 'pointer-events-none opacity-60': isSavingRequiresAcompte }"
+        :class="{ 'pointer-events-none opacity-60': isSaving }"
       >
         <BillingStepEditor
+          ref="proposalEditorRef"
           title="Proposition commerciale"
           :project-id="project.project.id"
           document-type="commercial_proposal"
           date-label="Date de signature"
           :document="proposalDocument"
+          :upload-disabled="isDirty"
           @saved="handleStepSaved"
         />
         <BillingStepEditor
+          ref="quoteEditorRef"
           title="Devis"
           :project-id="project.project.id"
           document-type="quote"
           date-label="Date de signature"
           :document="quoteDocument"
           :requires-acompte="requiresAcompte"
+          :upload-disabled="isDirty"
           @saved="handleStepSaved"
           @update:requires-acompte="onRequiresAcompteChange"
         />
         <BillingStepEditor
+          v-if="requiresAcompte"
+          ref="acompteEditorRef"
           title="Facture d'acompte"
           :project-id="project.project.id"
           document-type="invoice"
           subtype="acompte"
           date-label="Date de paiement"
           :document="acompteDocument"
+          :upload-disabled="isDirty"
           @saved="handleStepSaved"
         />
         <BillingStepEditor
+          ref="invoiceEditorRef"
           title="Facture"
           :project-id="project.project.id"
           document-type="invoice"
           :subtype="invoiceDocument ? getEffectiveInvoiceSubtype(invoiceDocument) ?? 'unique' : 'unique'"
           date-label="Date de règlement"
           :document="invoiceDocument"
+          :upload-disabled="isDirty"
           @saved="handleStepSaved"
         />
+      </div>
+    </template>
+
+    <template
+      v-if="isDirty"
+      #footer
+    >
+      <div class="flex w-full items-center justify-end gap-3">
+        <UButton
+          variant="soft"
+          color="neutral"
+          :disabled="isSaving"
+          @click="onCancel"
+        >
+          Annuler
+        </UButton>
+        <UButton
+          :loading="isSaving"
+          @click="onSave"
+        >
+          Enregistrer
+        </UButton>
       </div>
     </template>
   </USlideover>

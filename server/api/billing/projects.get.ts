@@ -12,7 +12,7 @@ const toNumber = (value: unknown) => Number(value ?? 0)
 // proposals form a single group per project (most recent wins), invoices are grouped by their
 // effective subtype (an "acompte" and a "solde" are both current at once), and each "avoir" is its
 // own group (it never supersedes/is superseded). This mirrors `annotateDocumentLifecycle` in
-// app/lib/documents.ts — kept in sync manually since this SQL version only needs to answer "is there
+// app/lib/documents.ts - kept in sync manually since this SQL version only needs to answer "is there
 // at least one current, linked document" across ALL projects for filtering/pagination, before any
 // per-project document list is fetched.
 const isCurrentDocumentSql = sql<boolean>`(
@@ -177,6 +177,7 @@ export default defineEventHandler(async (event) => {
           status: billingDocumentsTable.status,
           subtype: billingDocumentsTable.subtype,
           externalUrl: billingDocumentsTable.externalUrl,
+          documentId: billingDocumentsTable.documentId,
           createdAt: billingDocumentsTable.createdAt,
           statusDate: billingDocumentsTable.statusDate,
           description: billingDocumentsTable.description
@@ -196,6 +197,7 @@ export default defineEventHandler(async (event) => {
       status: document.status as 'draft' | 'sent' | 'completed',
       subtype: document.subtype,
       hasLink: Boolean(document.externalUrl?.trim()),
+      hasFile: document.documentId !== null,
       externalUrl: document.externalUrl,
       createdAt: document.createdAt,
       statusDate: document.statusDate,

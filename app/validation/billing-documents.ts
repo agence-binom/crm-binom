@@ -1,11 +1,12 @@
 import { z } from 'zod'
+import { billingDocumentTypesRequiringFactureNetLink } from '../lib/documents'
 
 export const billingDocumentTypes = ['quote', 'invoice', 'commercial_proposal'] as const
 export const documentStatuses = ['draft', 'sent', 'completed', 'cancelled', 'refused', 'non_applicable'] as const
 export const invoiceSubtypes = ['acompte', 'solde', 'unique', 'avoir'] as const
 
 // Valid states per document type, per the Figma state-machine spec. `invoice` covers both the
-// 'acompte' and 'unique'/'solde' subtypes — they share the exact same set of valid states.
+// 'acompte' and 'unique'/'solde' subtypes - they share the exact same set of valid states.
 export const documentStatusesByType: Record<typeof billingDocumentTypes[number], readonly typeof documentStatuses[number][]> = {
   commercial_proposal: ['draft', 'sent', 'refused', 'completed', 'cancelled'],
   quote: ['draft', 'sent', 'refused', 'completed', 'cancelled', 'non_applicable'],
@@ -25,8 +26,6 @@ export const isFactureNetUrl = (value: string) => {
     return false
   }
 }
-
-const documentTypesRequiringFactureNetLink = ['quote', 'invoice'] as const
 
 const refineBillingDocument = (
   data: { documentType?: typeof billingDocumentTypes[number], externalUrl?: string, subtype?: string, status?: typeof documentStatuses[number] },
@@ -48,7 +47,7 @@ const refineBillingDocument = (
     })
   }
 
-  if (!data.documentType || !documentTypesRequiringFactureNetLink.includes(data.documentType as typeof documentTypesRequiringFactureNetLink[number])) {
+  if (!data.documentType || !billingDocumentTypesRequiringFactureNetLink.includes(data.documentType)) {
     return
   }
 
@@ -72,7 +71,10 @@ const refineBillingDocument = (
   }
 }
 
-// Creates a billing step record with no attached file yet (status/date/description only).
+// Creates a billing step record with no attached file yet (status/date/description only) - e.g.
+// marking "Devis: Validée" ahead of attaching the PDF, or a step "Non applicable". A quote/invoice
+// still needs its Facture.net link even at this stage — the drawer's own "Lien Facture.net" field
+// is meant to be filled in alongside the status, not deferred until a file is uploaded.
 export const billingDocumentCreateSchema = z.object({
   projectId: z.coerce.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif'),
   documentType: z.enum(billingDocumentTypes),
@@ -84,7 +86,7 @@ export const billingDocumentCreateSchema = z.object({
 }).superRefine(refineBillingDocument)
 
 // Metadata for the "upload a file for this billing step" multipart route. Deliberately excludes
-// `status` — the workflow status of a step is never implied by uploading its file.
+// `status` - the workflow status of a step is never implied by uploading its file.
 export const billingDocumentUploadMetadataSchema = z.object({
   projectId: z.coerce.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif'),
   documentType: z.enum(billingDocumentTypes),

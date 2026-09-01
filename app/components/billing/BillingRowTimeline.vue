@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BillingProjectStatus } from '~/lib/billing'
-import { billingDocumentTypeLabels, invoiceSubtypeLabels, type BillingStep } from '~/lib/documents'
+import { billingDocumentTypeLabels, getDocumentWarning, invoiceSubtypeLabels, type BillingStep } from '~/lib/documents'
 import { formatDateOnly } from '~/lib/utils'
 
 const props = defineProps<{
@@ -52,12 +52,23 @@ const timelineItems = computed(() => {
     const document = step.documentId ? documentsById.get(step.documentId) : undefined
     const palette = paletteFor(step, index)
 
+    const warning = document
+      ? getDocumentWarning({
+          type: document.type,
+          status: document.status,
+          hasFile: document.hasFile,
+          hasLink: document.hasLink,
+          statusDate: document.statusDate
+        })
+      : null
+
     return {
       value: step.documentId ?? step.key,
       icon: palette.icon,
       date: step.status === 'completed' ? formatDateOnly(document?.statusDate ?? document?.createdAt) : undefined,
       title: stepLabel(step),
       description: document?.description || undefined,
+      warning,
       ui: { indicator: palette.indicator, title: palette.titleClass, separator: undefined as string | undefined },
       line: palette.line
     }
@@ -81,8 +92,18 @@ const timelineItems = computed(() => {
       item: 'gap-0.5 min-w-0',
       wrapper: 'max-w-40',
       date: 'text-xs',
-      title: 'text-xs truncate',
-      description: 'text-xs text-slate-400 truncate'
+      title: 'text-xs truncate'
     }"
-  />
+  >
+    <template #description="{ item }">
+      <p
+        v-if="item.warning || item.description"
+        class="truncate text-xs"
+        :class="item.warning ? 'font-medium text-error-500' : 'text-slate-400'"
+        :title="item.warning || item.description"
+      >
+        {{ item.warning || item.description }}
+      </p>
+    </template>
+  </UTimeline>
 </template>

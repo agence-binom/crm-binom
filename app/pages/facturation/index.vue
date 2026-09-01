@@ -47,7 +47,7 @@ onBeforeUnmount(() => {
   }
 })
 
-const { data, status } = await useFetch('/api/billing/projects', {
+const { data, status, refresh } = await useFetch('/api/billing/projects', {
   query: computed(() => ({
     search: searchQuery.value || undefined,
     projectId: projectFilterId.value || undefined,
@@ -349,6 +349,7 @@ const actionCtaColors: Record<string, 'info' | 'warning' | 'success' | 'neutral'
     <BillingProjectEditPanel
       v-model:open="isDetailPanelOpen"
       :project="selectedProject"
+      @saved="refresh"
     />
   </div>
 </template>

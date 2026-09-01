@@ -58,16 +58,48 @@ export const translateSupabaseError = (message: string): string | undefined => {
   return SUPABASE_ERROR_TRANSLATIONS.find(([pattern]) => pattern.test(trimmed))?.[1]
 }
 
+// h3's readValidatedBody/getValidatedQuery wrap every failed Zod parse behind the generic
+// "Validation Error" statusMessage — the actual field-level message is the ZodError's own
+// `.message`, a JSON-stringified array of issues, nested a level or two down depending on how
+// the client wraps the response. This pulls it back out so the toast says something useful.
+const extractZodIssueMessage = (raw: unknown): string | null => {
+  if (typeof raw !== 'string') return null
+
+  try {
+    const issues = JSON.parse(raw)
+    if (!Array.isArray(issues) || issues.length === 0) return null
+
+    const messages = issues
+      .map(issue => (issue && typeof issue === 'object' ? Reflect.get(issue, 'message') : null))
+      .filter((message): message is string => typeof message === 'string' && message.length > 0)
+
+    return messages.length > 0 ? messages.join(' ') : null
+  } catch {
+    return null
+  }
+}
+
 export const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === 'object') {
+    const maybeData = Reflect.get(error, 'data')
+    const dataObject = maybeData && typeof maybeData === 'object' ? maybeData : null
+    const nestedData = dataObject ? Reflect.get(dataObject, 'data') : null
+    const nestedDataObject = nestedData && typeof nestedData === 'object' ? nestedData : null
+
+    const zodMessage = [
+      dataObject ? Reflect.get(dataObject, 'message') : null,
+      nestedDataObject ? Reflect.get(nestedDataObject, 'message') : null,
+      Reflect.get(error, 'message')
+    ].map(extractZodIssueMessage).find((message): message is string => message !== null)
+    if (zodMessage) return zodMessage
+
     const maybeStatusMessage = Reflect.get(error, 'statusMessage')
     if (typeof maybeStatusMessage === 'string' && maybeStatusMessage) {
       return maybeStatusMessage
     }
 
-    const maybeData = Reflect.get(error, 'data')
-    if (maybeData && typeof maybeData === 'object') {
-      const dataStatusMessage = Reflect.get(maybeData, 'statusMessage')
+    if (dataObject) {
+      const dataStatusMessage = Reflect.get(dataObject, 'statusMessage')
       if (typeof dataStatusMessage === 'string' && dataStatusMessage) {
         return dataStatusMessage
       }

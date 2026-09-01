@@ -1,4 +1,4 @@
-// A generic file attachment (documents table) — always a real uploaded file.
+// A generic file attachment (documents table) - always a real uploaded file.
 export type ProjectDocument = {
   id: number
   name: string
