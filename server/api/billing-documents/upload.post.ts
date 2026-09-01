@@ -7,7 +7,7 @@ import { buildDocumentStoragePath, uploadDocumentFile, deleteUploadedDocumentIfE
 
 // Uploads the PDF for a billing step. If a file-less record already exists for this exact step
 // (created via POST /api/billing-documents to set a status ahead of the upload), the file attaches
-// to that same record — preserving whatever status/date/description was already set — instead of
+// to that same record - preserving whatever status/date/description was already set - instead of
 // creating a duplicate. Otherwise a fresh billing_documents record is created alongside the file.
 export default defineEventHandler(async (event) => {
   const formData = await readFormData(event)

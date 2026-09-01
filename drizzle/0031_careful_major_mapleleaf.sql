@@ -39,7 +39,7 @@ SELECT
 FROM "documents"
 WHERE "documentType" IS NOT NULL AND "entityType" = 'project';
 
--- The file-less rows have now been copied into `billing_documents` with `documentId` null —
+-- The file-less rows have now been copied into `billing_documents` with `documentId` null -
 -- remove them from `documents`, which is going back to "always a real file" below.
 --> statement-breakpoint
 DELETE FROM "documents" WHERE "documentType" IS NOT NULL AND "filename" IS NULL;

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// Generic file attachments — currently only used by billing uploads (entityType 'project'), kept
+// Generic file attachments - currently only used by billing uploads (entityType 'project'), kept
 // generic since it's plain storage metadata with no reason to be billing-specific.
 export const documentEntityTypes = ['project', 'client', 'task', 'resource'] as const
 

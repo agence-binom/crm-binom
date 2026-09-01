@@ -2,7 +2,7 @@ import { db } from '~/db'
 import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { billingDocumentCreateSchema } from '~/validation/billing-documents'
 
-// Creates a billing step record with no attached file yet — the workflow status/date/description
+// Creates a billing step record with no attached file yet - the workflow status/date/description
 // for a step (e.g. marking "Devis: Validée" ahead of attaching the PDF, or explicitly marking a
 // step "Non applicable" with an explanatory description). File uploads go through
 // POST /api/billing-documents/upload instead.

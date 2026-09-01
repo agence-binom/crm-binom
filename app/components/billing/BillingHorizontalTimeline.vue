@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { billingDocumentTypeIcons, billingDocumentTypeLabels, documentStatusLabels, getDocumentDownloadHref, getDocumentFactureNetHref, invoiceSubtypeLabels, type BillingDocumentType, type DocumentLifecycle, type DocumentStatus } from '~/lib/documents'
+import { billingDocumentTypeIcons, billingDocumentTypeLabels, billingDocumentTypesRequiringFactureNetLink, documentStatusLabels, getDocumentFactureNetHref, invoiceSubtypeLabels, type BillingDocumentType, type DocumentLifecycle, type DocumentStatus } from '~/lib/documents'
 import { documentStatusesByType } from '~/validation/billing-documents'
 import { formatDate, getErrorMessage } from '~/lib/utils'
 import type { BillingDocumentRecord } from '~/types'
@@ -128,7 +128,7 @@ const timelineItems = computed(() => {
             </UDropdownMenu>
 
             <UTooltip
-              v-if="(item.document.type === 'quote' || item.document.type === 'invoice') && !getDocumentFactureNetHref(item.document)"
+              v-if="billingDocumentTypesRequiringFactureNetLink.includes(item.document.type) && !getDocumentFactureNetHref(item.document)"
               text="Lien Facture.net manquant"
             >
               <UIcon
@@ -139,48 +139,10 @@ const timelineItems = computed(() => {
           </div>
 
           <div class="flex items-center gap-1">
-            <UTooltip
-              v-if="item.document.type === 'quote' || item.document.type === 'invoice'"
-              text="Ouvrir sur Facture.net"
-            >
-              <UButton
-                size="sm"
-                variant="soft"
-                color="neutral"
-                icon="i-lucide-external-link"
-                :href="getDocumentFactureNetHref(item.document)"
-                :disabled="!getDocumentFactureNetHref(item.document)"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Ouvrir le document sur Facture.net"
-              />
-            </UTooltip>
-            <UTooltip text="Aperçu">
-              <UButton
-                size="sm"
-                variant="soft"
-                color="neutral"
-                icon="i-lucide-eye"
-                :href="getDocumentDownloadHref(item.document)"
-                :disabled="!getDocumentDownloadHref(item.document)"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Aperçu du document"
-              />
-            </UTooltip>
-            <UTooltip text="Télécharger">
-              <UButton
-                size="sm"
-                variant="soft"
-                color="primary"
-                icon="i-lucide-download"
-                :href="getDocumentDownloadHref(item.document)"
-                :disabled="!getDocumentDownloadHref(item.document)"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Télécharger le document"
-              />
-            </UTooltip>
+            <BillingDocumentActionButtons
+              :document="item.document"
+              :document-type="item.document.type"
+            />
 
             <div class="mx-0.5 h-4 w-px shrink-0 bg-slate-200" />
 
