@@ -177,7 +177,9 @@ export default defineEventHandler(async (event) => {
           status: billingDocumentsTable.status,
           subtype: billingDocumentsTable.subtype,
           externalUrl: billingDocumentsTable.externalUrl,
-          createdAt: billingDocumentsTable.createdAt
+          createdAt: billingDocumentsTable.createdAt,
+          statusDate: billingDocumentsTable.statusDate,
+          description: billingDocumentsTable.description
         })
         .from(billingDocumentsTable)
         .where(inArray(billingDocumentsTable.projectId, projectIds))
@@ -195,7 +197,9 @@ export default defineEventHandler(async (event) => {
       subtype: document.subtype,
       hasLink: Boolean(document.externalUrl?.trim()),
       externalUrl: document.externalUrl,
-      createdAt: document.createdAt
+      createdAt: document.createdAt,
+      statusDate: document.statusDate,
+      description: document.description
     }
 
     const current = documentsByProjectId.get(document.projectId) ?? []

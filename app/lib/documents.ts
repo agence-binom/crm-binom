@@ -204,9 +204,12 @@ export const computeProjectBillingSteps = <T extends BillingDocumentLike>(
     : (acompteDocument?.status ?? 'non_applicable')
 
   // A deliberately skipped Devis ("non_applicable") clears the way forward like a completed step would —
-  // only a genuinely negative outcome (refused/cancelled) should cascade "non_applicable" onward.
+  // only a genuinely negative outcome (refused/cancelled) should cascade "non_applicable" onward. Same
+  // rule for a deliberately skipped acompte: its *own* status being "non_applicable" (not a cascade from
+  // a refused/cancelled quote) activates Facture, per the Figma "Facture d'acompte" state table.
+  const acompteSkipsToInvoice = acompteDocument?.status === 'non_applicable'
   const invoicePreviousStatus = acompteApplies
-    ? acompteStatus
+    ? (acompteSkipsToInvoice ? 'completed' : acompteStatus)
     : (quoteSkipsAcompte ? 'completed' : quoteStatus)
   const invoiceStatus = deriveStepStatus(invoicePreviousStatus, invoiceDocument?.status)
 

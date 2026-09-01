@@ -131,8 +131,8 @@ const columns: TableColumn<BillingProjectStatus>[] = [
     header: 'Projet',
     meta: {
       class: {
-        th: 'w-64 max-w-64',
-        td: 'w-64 max-w-64'
+        th: 'w-48 max-w-48',
+        td: 'w-48 max-w-48'
       }
     }
   },
@@ -150,8 +150,8 @@ const columns: TableColumn<BillingProjectStatus>[] = [
   }
 ]
 
-const actionCtaColors: Record<string, 'neutral' | 'warning' | 'success' | 'error'> = {
-  neutral: 'neutral',
+const actionCtaColors: Record<string, 'info' | 'warning' | 'success' | 'neutral'> = {
+  neutral: 'info',
   warning: 'warning',
   success: 'success',
   muted: 'neutral'
@@ -275,7 +275,7 @@ const actionCtaColors: Record<string, 'neutral' | 'warning' | 'success' | 'error
             </template>
 
             <template #progress-cell="{ row }">
-              <BillingRowTimeline :documents="row.original.documents" />
+              <BillingRowTimeline :project="row.original" />
             </template>
 
             <template #action-cell="{ row }">

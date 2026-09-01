@@ -29,6 +29,8 @@ export type BillingProjectDocument = {
   hasLink: boolean
   externalUrl?: string | null
   createdAt?: string | Date | null
+  statusDate?: string | Date | null
+  description?: string | null
 }
 
 export type BillingProjectDocumentWithLifecycle = BillingProjectDocument & {
