@@ -67,13 +67,9 @@ export const createDocumentInsertValues = (
   name: metadata.name?.trim() || file.name,
   filename: file.name,
   filepath,
-  externalUrl: metadata.externalUrl?.trim() || null,
   mimetype: file.type,
   size: file.size,
   entityType: metadata.entityType,
   entityId: metadata.entityId,
-  documentType: metadata.documentType,
-  status: metadata.status,
-  subtype: metadata.subtype ?? null,
   description: metadata.description?.trim() || ''
 })

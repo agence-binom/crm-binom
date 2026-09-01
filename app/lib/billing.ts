@@ -1,7 +1,11 @@
 import {
   annotateDocumentLifecycle,
+  computeProjectBillingSteps,
+  getBillingActionCta,
   getMostAdvancedDocumentStatus,
+  type BillingActionCta,
   type BillingDocumentType,
+  type BillingStep,
   type DocumentLifecycle,
   type DocumentStatus
 } from './documents'
@@ -19,7 +23,6 @@ export type BillingCoverage = {
 export type BillingProjectDocument = {
   id: number
   projectId: number
-  name: string
   type: BillingDocumentType
   status: DocumentStatus
   subtype?: string | null
@@ -40,6 +43,7 @@ type BillingProjectBase = {
   status?: string | null
   startDate?: string | Date | null
   endDate?: string | Date | null
+  requiresAcompte: boolean
   client: {
     id: number
     name: string
@@ -63,6 +67,8 @@ export type BillingProjectStatus = {
   totalDocuments: number
   missingLinkCount: number
   isComplete: boolean
+  billingSteps: BillingStep[]
+  actionCta: BillingActionCta
 }
 
 // `total` reflects every document of that type, superseded ones included (used for the "N documents" count
@@ -116,6 +122,8 @@ export const buildBillingProjectStatus = ({
   const proposalCoverage = getBillingCoverage(proposalTotal, proposalDocuments, { requireLink: false })
   const missingLinkCount = quoteCoverage.missingLinkCount + invoiceCoverage.missingLinkCount
 
+  const billingSteps = computeProjectBillingSteps(annotatedDocuments, project.requiresAcompte)
+
   return {
     project,
     quoteCoverage,
@@ -124,6 +132,8 @@ export const buildBillingProjectStatus = ({
     documents: annotatedDocuments,
     totalDocuments: quoteCoverage.total + invoiceCoverage.total + proposalCoverage.total,
     missingLinkCount,
-    isComplete: quoteCoverage.status === 'complete' && invoiceCoverage.status === 'complete' && proposalCoverage.status === 'complete'
+    isComplete: quoteCoverage.status === 'complete' && invoiceCoverage.status === 'complete' && proposalCoverage.status === 'complete',
+    billingSteps,
+    actionCta: getBillingActionCta(billingSteps)
   }
 }

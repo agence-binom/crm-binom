@@ -1,5 +1,6 @@
-import { and, asc, desc, eq, inArray } from 'drizzle-orm'
+import { asc, desc, eq } from 'drizzle-orm'
 import { db } from '~/db'
+import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { clientsTable } from '~/db/schema/clients'
 import { documentsTable } from '~/db/schema/documents'
 import { projectsTable } from '~/db/schema/projects'
@@ -22,6 +23,7 @@ export default defineEventHandler(async (event) => {
       status: projectsTable.status,
       startDate: projectsTable.startDate,
       endDate: projectsTable.endDate,
+      requiresAcompte: projectsTable.requiresAcompte,
       url: projectsTable.url,
       notes: projectsTable.notes,
       links: projectsTable.links,
@@ -66,13 +68,26 @@ export default defineEventHandler(async (event) => {
       .innerJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
       .orderBy(asc(projectsTable.name)),
     db
-      .select()
-      .from(documentsTable)
-      .where(and(
-        eq(documentsTable.entityType, 'project'),
-        eq(documentsTable.entityId, id),
-        inArray(documentsTable.documentType, ['quote', 'invoice', 'commercial_proposal'])
-      )),
+      .select({
+        id: billingDocumentsTable.id,
+        projectId: billingDocumentsTable.projectId,
+        documentType: billingDocumentsTable.documentType,
+        subtype: billingDocumentsTable.subtype,
+        status: billingDocumentsTable.status,
+        statusDate: billingDocumentsTable.statusDate,
+        externalUrl: billingDocumentsTable.externalUrl,
+        description: billingDocumentsTable.description,
+        documentId: billingDocumentsTable.documentId,
+        createdAt: billingDocumentsTable.createdAt,
+        updatedAt: billingDocumentsTable.updatedAt,
+        filename: documentsTable.filename,
+        filepath: documentsTable.filepath,
+        mimetype: documentsTable.mimetype,
+        size: documentsTable.size
+      })
+      .from(billingDocumentsTable)
+      .leftJoin(documentsTable, eq(billingDocumentsTable.documentId, documentsTable.id))
+      .where(eq(billingDocumentsTable.projectId, id)),
     db
       .select()
       .from(resourcesTable)
@@ -92,6 +107,7 @@ export default defineEventHandler(async (event) => {
       status: projectRow.status,
       startDate: projectRow.startDate,
       endDate: projectRow.endDate,
+      requiresAcompte: projectRow.requiresAcompte,
       url: projectRow.url,
       notes: projectRow.notes,
       links: projectRow.links,

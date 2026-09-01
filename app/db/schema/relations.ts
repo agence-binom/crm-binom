@@ -1,6 +1,8 @@
 import { relations } from 'drizzle-orm'
+import { billingDocumentsTable } from './billing-documents'
 import { clientsTable } from './clients'
 import { contactsTable } from './contacts'
+import { documentsTable } from './documents'
 import { projectsTable } from './projects'
 import { tasksTable } from './tasks'
 import { resourcesTable } from './resources'
@@ -25,7 +27,19 @@ export const projectsRelations = relations(projectsTable, ({ one, many }) => ({
     references: [clientsTable.id]
   }),
   tasks: many(tasksTable),
-  resources: many(resourcesTable)
+  resources: many(resourcesTable),
+  billingDocuments: many(billingDocumentsTable)
+}))
+
+export const billingDocumentsRelations = relations(billingDocumentsTable, ({ one }) => ({
+  project: one(projectsTable, {
+    fields: [billingDocumentsTable.projectId],
+    references: [projectsTable.id]
+  }),
+  document: one(documentsTable, {
+    fields: [billingDocumentsTable.documentId],
+    references: [documentsTable.id]
+  })
 }))
 
 export const tasksRelations = relations(tasksTable, ({ one, many }) => ({

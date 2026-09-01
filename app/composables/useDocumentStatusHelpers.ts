@@ -9,6 +9,8 @@ export function useDocumentStatusHelpers() {
         case 'sent': return 'bg-warning-100 text-warning-700'
         case 'completed': return 'bg-success-500 text-white'
         case 'cancelled': return 'bg-error-500 text-white'
+        case 'refused': return 'bg-error-100 text-error-700'
+        case 'non_applicable': return 'bg-slate-100 text-slate-400'
         default: return 'bg-slate-200 text-slate-600'
       }
     })()
@@ -22,6 +24,8 @@ export function useDocumentStatusHelpers() {
         case 'sent': return 'bg-warning-300'
         case 'completed': return 'bg-success-400'
         case 'cancelled': return 'bg-error-300'
+        case 'refused': return 'bg-error-200'
+        case 'non_applicable': return 'bg-slate-200'
         default: return 'bg-slate-300'
       }
     })()

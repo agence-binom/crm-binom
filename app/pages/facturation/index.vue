@@ -143,8 +143,19 @@ const columns: TableColumn<BillingProjectStatus>[] = [
   {
     id: 'progress',
     header: 'Avancement'
+  },
+  {
+    id: 'action',
+    header: 'Action'
   }
 ]
+
+const actionCtaColors: Record<string, 'neutral' | 'warning' | 'success' | 'error'> = {
+  neutral: 'neutral',
+  warning: 'warning',
+  success: 'success',
+  muted: 'neutral'
+}
 </script>
 
 <template>
@@ -266,6 +277,16 @@ const columns: TableColumn<BillingProjectStatus>[] = [
             <template #progress-cell="{ row }">
               <BillingRowTimeline :documents="row.original.documents" />
             </template>
+
+            <template #action-cell="{ row }">
+              <UBadge
+                variant="soft"
+                :color="actionCtaColors[row.original.actionCta.tone]"
+                class="rounded-full whitespace-nowrap"
+              >
+                {{ row.original.actionCta.label }}
+              </UBadge>
+            </template>
           </UTable>
         </div>
 
@@ -325,7 +346,7 @@ const columns: TableColumn<BillingProjectStatus>[] = [
       </AppEmptyState>
     </div>
 
-    <BillingProjectDetailPanel
+    <BillingProjectEditPanel
       v-model:open="isDetailPanelOpen"
       :project="selectedProject"
     />

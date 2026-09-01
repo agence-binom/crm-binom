@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { billingDocumentTypeIcons, billingDocumentTypeLabels, documentStatusLabels, getDocumentDownloadHref, getDocumentFactureNetHref, invoiceSubtypeLabels, type BillingDocumentType, type DocumentLifecycle, type DocumentStatus } from '~/lib/documents'
-import { documentStatuses } from '~/validation/documents'
+import { documentStatusesByType } from '~/validation/billing-documents'
 import { formatDate, getErrorMessage } from '~/lib/utils'
-import type { ProjectDocument } from '~/types'
+import type { BillingDocumentRecord } from '~/types'
 
-type TimelineDocument = ProjectDocument & {
+type TimelineDocument = BillingDocumentRecord & {
   type: BillingDocumentType
   lifecycle: DocumentLifecycle
   supersededByDocumentId: number | null
@@ -27,7 +27,9 @@ const statusBadgeColors: Record<DocumentStatus, 'neutral' | 'warning' | 'success
   draft: 'neutral',
   sent: 'warning',
   completed: 'success',
-  cancelled: 'error'
+  cancelled: 'error',
+  refused: 'error',
+  non_applicable: 'neutral'
 }
 
 const updatingStatusId = ref<number | null>(null)
@@ -37,7 +39,7 @@ const onStatusChange = async (document: TimelineDocument, status: DocumentStatus
 
   updatingStatusId.value = document.id
   try {
-    await $fetch(`/api/documents/${document.id}`, {
+    await $fetch(`/api/billing-documents/${document.id}`, {
       method: 'PUT',
       body: { status }
     })
@@ -55,7 +57,7 @@ const onStatusChange = async (document: TimelineDocument, status: DocumentStatus
 }
 
 const statusMenuItems = (document: TimelineDocument): DropdownMenuItem[][] => [
-  documentStatuses.map(status => ({
+  documentStatusesByType[document.type].map(status => ({
     label: documentStatusLabels[document.type][status],
     icon: status === document.status ? 'i-lucide-check' : undefined,
     onSelect: () => onStatusChange(document, status)
@@ -107,9 +109,9 @@ const timelineItems = computed(() => {
         <div class="flex max-w-40 flex-col gap-2">
           <p
             class="truncate text-sm text-slate-500"
-            :title="item.document.filename"
+            :title="item.document.filename ?? 'Aucun fichier'"
           >
-            {{ item.document.filename }}
+            {{ item.document.filename ?? 'Aucun fichier' }}
           </p>
 
           <div class="flex flex-wrap items-center gap-1.5">
