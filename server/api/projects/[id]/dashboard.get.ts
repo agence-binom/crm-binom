@@ -7,6 +7,7 @@ import { projectsTable } from '~/db/schema/projects'
 import { resourcesTable } from '~/db/schema/resources'
 import { tasksTable } from '~/db/schema/tasks'
 import { usersTable } from '~/db/schema/users'
+import { annotateDocumentLifecycle, type BillingDocumentType } from '~/lib/documents'
 import { projectIdSchema } from '~/validation/projects'
 import { withDocumentsDownloadUrls } from '~~/server/utils/documents'
 import { withResourcesDownloadUrls } from '~~/server/utils/resources'
@@ -95,7 +96,10 @@ export default defineEventHandler(async (event) => {
       .orderBy(desc(resourcesTable.createdAt))
   ])
 
-  const documentsWithUrls = await withDocumentsDownloadUrls(event, documents)
+  // Annotated here so the project detail page reads `lifecycle` straight off the response
+  // instead of recomputing it client-side.
+  const annotatedDocuments = annotateDocumentLifecycle(documents.map(document => ({ ...document, type: document.documentType as BillingDocumentType })))
+  const documentsWithUrls = await withDocumentsDownloadUrls(event, annotatedDocuments)
   const resourcesWithUrls = await withResourcesDownloadUrls(event, resources)
 
   return {

@@ -28,7 +28,7 @@ const stepLabel = (step: BillingStep) => {
   return billingDocumentTypeLabels[step.documentType]
 }
 
-const isMuted = computed(() => props.project.actionCta.tone === 'muted')
+const isMuted = computed(() => props.project.billingStatus.tone === 'muted')
 
 const activeIndex = computed(() => props.project.billingSteps.findIndex(step => step.status === 'draft' || step.status === 'sent'))
 

@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { annotateDocumentLifecycle } from '~/lib/documents'
+import type { BillingDocumentType, DocumentLifecycle } from '~/lib/documents'
 import type { BillingDocumentRecord, ProjectResource, Task, User } from '~/types'
+
+type AnnotatedBillingDocument = BillingDocumentRecord & {
+  type: BillingDocumentType
+  lifecycle: DocumentLifecycle
+  supersededByDocumentId: number | null
+}
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
@@ -9,9 +15,9 @@ const projectId = computed(() => Number(route.params.projectId))
 const { data, error, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
 const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
-const quoteDocuments = computed<BillingDocumentRecord[]>(() => (data.value?.documents?.quote as BillingDocumentRecord[] | undefined) || [])
-const invoiceDocuments = computed<BillingDocumentRecord[]>(() => (data.value?.documents?.invoice as BillingDocumentRecord[] | undefined) || [])
-const commercialProposalDocuments = computed<BillingDocumentRecord[]>(() => (data.value?.documents?.commercial_proposal as BillingDocumentRecord[] | undefined) || [])
+const quoteDocuments = computed<AnnotatedBillingDocument[]>(() => (data.value?.documents?.quote as AnnotatedBillingDocument[] | undefined) || [])
+const invoiceDocuments = computed<AnnotatedBillingDocument[]>(() => (data.value?.documents?.invoice as AnnotatedBillingDocument[] | undefined) || [])
+const commercialProposalDocuments = computed<AnnotatedBillingDocument[]>(() => (data.value?.documents?.commercial_proposal as AnnotatedBillingDocument[] | undefined) || [])
 const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
@@ -24,11 +30,11 @@ const isUploadModalOpen = ref(false)
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 const { setArchived } = useArchiveAction()
 
-const billingDocuments = computed(() => annotateDocumentLifecycle([
-  ...commercialProposalDocuments.value.map(document => ({ ...document, type: 'commercial_proposal' as const })),
-  ...quoteDocuments.value.map(document => ({ ...document, type: 'quote' as const })),
-  ...invoiceDocuments.value.map(document => ({ ...document, type: 'invoice' as const }))
-]))
+const billingDocuments = computed(() => [
+  ...commercialProposalDocuments.value,
+  ...quoteDocuments.value,
+  ...invoiceDocuments.value
+])
 
 const onDeleteProject = async (projectId: number) => {
   await deleteResource('projet', projectId, '/api/projects', async () => {

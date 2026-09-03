@@ -85,7 +85,7 @@ const hasActiveFilters = computed(() =>
 
 const isAllCaughtUp = computed(() =>
   !isLoading.value
-  && statusFilter.value === 'incomplete'
+  && (statusFilter.value === 'neutral' || statusFilter.value === 'warning')
   && !searchInput.value.trim()
   && projectFilterId.value === null
   && billingProjects.value.length === 0
@@ -102,12 +102,10 @@ const selectedProjectOption = computed({
 
 const statusFilterLabels: Record<BillingDashboardStatus, string> = {
   all: 'Tous les statuts',
-  incomplete: 'Incomplet',
-  missing_quote_pdf: 'Devis manquant',
-  missing_invoice_pdf: 'Facture manquante',
-  missing_proposal_pdf: 'Proposition manquante',
-  missing_facturenet_link: 'Lien Facture.net manquant',
-  complete: 'Complet'
+  neutral: 'À émettre',
+  warning: 'En attente',
+  success: 'Complet',
+  muted: 'Sans suite'
 }
 
 const statusFilterOptions = billingDashboardStatuses.map(status => ({
@@ -145,12 +143,12 @@ const columns: TableColumn<BillingProjectStatus>[] = [
     header: 'Avancement'
   },
   {
-    id: 'action',
-    header: 'Action'
+    id: 'status',
+    header: 'Statut'
   }
 ]
 
-const actionCtaColors: Record<string, 'info' | 'warning' | 'success' | 'neutral'> = {
+const billingStatusColors: Record<string, 'info' | 'warning' | 'success' | 'neutral'> = {
   neutral: 'info',
   warning: 'warning',
   success: 'success',
@@ -278,13 +276,13 @@ const actionCtaColors: Record<string, 'info' | 'warning' | 'success' | 'neutral'
               <BillingRowTimeline :project="row.original" />
             </template>
 
-            <template #action-cell="{ row }">
+            <template #status-cell="{ row }">
               <UBadge
                 variant="soft"
-                :color="actionCtaColors[row.original.actionCta.tone]"
+                :color="billingStatusColors[row.original.billingStatus.tone]"
                 class="rounded-full whitespace-nowrap"
               >
-                {{ row.original.actionCta.label }}
+                {{ row.original.billingStatus.label }}
               </UBadge>
             </template>
           </UTable>
@@ -326,9 +324,9 @@ const actionCtaColors: Record<string, 'info' | 'warning' | 'success' | 'neutral'
         :icon="isAllCaughtUp ? 'i-lucide-circle-check' : 'i-lucide-inbox'"
         :icon-class="isAllCaughtUp ? 'text-success-400' : 'text-slate-300'"
         size="lg"
-        :title="isLoading ? 'Chargement...' : (isAllCaughtUp ? 'Tous les documents sont à jour' : 'Aucun projet trouvé')"
+        :title="isLoading ? 'Chargement...' : (isAllCaughtUp ? 'Aucun projet en attente' : 'Aucun projet trouvé')"
         :description="isLoading || isAllCaughtUp
-          ? 'Aucun devis, proposition ou facture manquant pour le moment.'
+          ? 'Aucun projet n\'attend de document ou de suivi pour le moment.'
           : (hasActiveFilters ? 'Essayez de modifier vos filtres' : 'Créez votre premier projet depuis la page clients')"
       >
         <template
