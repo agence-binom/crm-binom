@@ -1,125 +1,33 @@
-import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import { db } from '~/db'
-import { buildBillingProjectStatus, type BillingProjectDocument } from '~/lib/billing'
+import { buildBillingProjectStatus, type BillingProjectDocument, type BillingProjectStatus } from '~/lib/billing'
 import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
 import { billingDashboardQuerySchema, type BillingDashboardQuery } from '~/validation/billing'
 
-const toNumber = (value: unknown) => Number(value ?? 0)
-
-// A billing document is "current" if it's the most recent one within its lifecycle group: quotes/
-// proposals form a single group per project (most recent wins), invoices are grouped by their
-// effective subtype (an "acompte" and a "solde" are both current at once), and each "avoir" is its
-// own group (it never supersedes/is superseded). This mirrors `annotateDocumentLifecycle` in
-// app/lib/documents.ts - kept in sync manually since this SQL version only needs to answer "is there
-// at least one current, linked document" across ALL projects for filtering/pagination, before any
-// per-project document list is fetched.
-const isCurrentDocumentSql = sql<boolean>`(
-  row_number() over (
-    partition by
-      ${billingDocumentsTable.projectId},
-      ${billingDocumentsTable.documentType},
-      case
-        when ${billingDocumentsTable.documentType} = 'invoice' and coalesce(${billingDocumentsTable.subtype}, 'unique') = 'avoir'
-          then 'avoir-' || ${billingDocumentsTable.id}::text
-        when ${billingDocumentsTable.documentType} = 'invoice'
-          then coalesce(${billingDocumentsTable.subtype}, 'unique')
-        else 'na'
-      end
-    order by ${billingDocumentsTable.createdAt} desc, ${billingDocumentsTable.id} desc
-  ) = 1
-)`
-
-const buildDocumentLifecycleQuery = () => db
-  .select({
-    projectId: billingDocumentsTable.projectId,
-    documentType: billingDocumentsTable.documentType,
-    subtype: billingDocumentsTable.subtype,
-    externalUrl: billingDocumentsTable.externalUrl,
-    isCurrent: isCurrentDocumentSql.as('is_current')
-  })
-  .from(billingDocumentsTable)
-  .as('document_lifecycle')
-
-const buildDocumentsByProjectQuery = () => {
-  const documentLifecycle = buildDocumentLifecycleQuery()
-  const hasLink = sql`coalesce(${documentLifecycle.externalUrl}, '') <> ''`
-  // A lone "avoir" doesn't count as a current invoice for completeness purposes.
-  const isCurrentInvoice = sql`${documentLifecycle.documentType} = 'invoice' and ${documentLifecycle.isCurrent} and coalesce(${documentLifecycle.subtype}, 'unique') <> 'avoir'`
-
-  return db
-    .select({
-      projectId: documentLifecycle.projectId,
-      quoteTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'quote' then 1 else 0 end)`.as('quote_total'),
-      invoiceTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'invoice' then 1 else 0 end)`.as('invoice_total'),
-      proposalTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'commercial_proposal' then 1 else 0 end)`.as('proposal_total'),
-      quoteCurrentTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'quote' and ${documentLifecycle.isCurrent} then 1 else 0 end)`.as('quote_current_total'),
-      quoteCurrentWithLinkCount: sql<number>`sum(case when ${documentLifecycle.documentType} = 'quote' and ${documentLifecycle.isCurrent} and ${hasLink} then 1 else 0 end)`.as('quote_current_with_link_count'),
-      invoiceCurrentTotal: sql<number>`sum(case when ${isCurrentInvoice} then 1 else 0 end)`.as('invoice_current_total'),
-      invoiceCurrentWithLinkCount: sql<number>`sum(case when ${isCurrentInvoice} and ${hasLink} then 1 else 0 end)`.as('invoice_current_with_link_count'),
-      proposalCurrentTotal: sql<number>`sum(case when ${documentLifecycle.documentType} = 'commercial_proposal' and ${documentLifecycle.isCurrent} then 1 else 0 end)`.as('proposal_current_total')
-    })
-    .from(documentLifecycle)
-    .groupBy(documentLifecycle.projectId)
-    .as('documents_by_project')
-}
-
-const buildWhereClause = (
-  query: BillingDashboardQuery,
-  documentsByProject: ReturnType<typeof buildDocumentsByProjectQuery>
-) => {
-  const quoteCurrentTotal = sql<number>`coalesce(${documentsByProject.quoteCurrentTotal}, 0)`
-  const quoteCurrentWithLinkCount = sql<number>`coalesce(${documentsByProject.quoteCurrentWithLinkCount}, 0)`
-  const invoiceCurrentTotal = sql<number>`coalesce(${documentsByProject.invoiceCurrentTotal}, 0)`
-  const invoiceCurrentWithLinkCount = sql<number>`coalesce(${documentsByProject.invoiceCurrentWithLinkCount}, 0)`
-  const proposalCurrentTotal = sql<number>`coalesce(${documentsByProject.proposalCurrentTotal}, 0)`
-  const missingLinkCount = sql<number>`(${quoteCurrentTotal} - ${quoteCurrentWithLinkCount}) + (${invoiceCurrentTotal} - ${invoiceCurrentWithLinkCount})`
-  const isCompleteCondition = sql`${quoteCurrentTotal} > 0 and ${quoteCurrentTotal} = ${quoteCurrentWithLinkCount} and ${invoiceCurrentTotal} > 0 and ${invoiceCurrentTotal} = ${invoiceCurrentWithLinkCount} and ${proposalCurrentTotal} > 0`
-
-  const filters = []
-  filters.push(eq(projectsTable.archived, false))
+const buildWhereClause = (query: BillingDashboardQuery) => {
+  const filters = [eq(projectsTable.archived, false)]
 
   if (query.search) {
     const searchPattern = `%${query.search}%`
-    filters.push(or(
+    const searchFilter = or(
       ilike(projectsTable.name, searchPattern),
       ilike(clientsTable.name, searchPattern)
-    ))
+    )
+    if (searchFilter) filters.push(searchFilter)
   }
 
   if (query.projectId) {
     filters.push(eq(projectsTable.id, query.projectId))
   }
 
-  switch (query.status) {
-    case 'incomplete':
-      filters.push(sql`not (${isCompleteCondition})`)
-      break
-    case 'missing_quote_pdf':
-      filters.push(sql`${quoteCurrentTotal} = 0`)
-      break
-    case 'missing_invoice_pdf':
-      filters.push(sql`${invoiceCurrentTotal} = 0`)
-      break
-    case 'missing_proposal_pdf':
-      filters.push(sql`${proposalCurrentTotal} = 0`)
-      break
-    case 'missing_facturenet_link':
-      filters.push(sql`${missingLinkCount} > 0`)
-      break
-    case 'complete':
-      filters.push(isCompleteCondition)
-      break
-  }
-
-  return filters.length > 0 ? and(...filters) : undefined
+  return and(...filters)
 }
 
 export default defineEventHandler(async (event) => {
   const query = await getValidatedQuery(event, billingDashboardQuerySchema.parse)
-  const documentsByProject = buildDocumentsByProjectQuery()
-  const whereClause = buildWhereClause(query, documentsByProject)
+  const whereClause = buildWhereClause(query)
 
   const projectOptions = await db
     .select({
@@ -130,21 +38,13 @@ export default defineEventHandler(async (event) => {
     .where(eq(projectsTable.archived, false))
     .orderBy(asc(projectsTable.name), asc(projectsTable.id))
 
-  const [countRow] = await db
-    .select({
-      total: sql<number>`count(*)`
-    })
-    .from(projectsTable)
-    .innerJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
-    .leftJoin(documentsByProject, eq(documentsByProject.projectId, projectsTable.id))
-    .where(whereClause)
-
-  const totalItems = toNumber(countRow?.total)
-  const totalPages = Math.max(1, Math.ceil(totalItems / query.pageSize))
-  const page = Math.min(query.page, totalPages)
-  const offset = (page - 1) * query.pageSize
-
-  const rows = await db
+  // `status` filters on `billingStatus.tone`, which only exists once the billing cascade has run in
+  // TS - there is no SQL equivalent to filter on before pagination. So every non-archived project
+  // matching search/projectId (narrowed in SQL) is loaded here, turned into a `BillingProjectStatus`
+  // each, then filtered and paginated in memory. A billing dashboard's project count is an agency's
+  // total project count, not a transactional table's row count, so this comfortably beats
+  // re-deriving the cascade's conditional rules a second time in SQL.
+  const projectRows = await db
     .select({
       id: projectsTable.id,
       clientId: projectsTable.clientId,
@@ -154,20 +54,14 @@ export default defineEventHandler(async (event) => {
       endDate: projectsTable.endDate,
       requiresAcompte: projectsTable.requiresAcompte,
       clientEntityId: clientsTable.id,
-      clientName: clientsTable.name,
-      quoteTotal: sql<number>`coalesce(${documentsByProject.quoteTotal}, 0)`,
-      invoiceTotal: sql<number>`coalesce(${documentsByProject.invoiceTotal}, 0)`,
-      proposalTotal: sql<number>`coalesce(${documentsByProject.proposalTotal}, 0)`
+      clientName: clientsTable.name
     })
     .from(projectsTable)
     .innerJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
-    .leftJoin(documentsByProject, eq(documentsByProject.projectId, projectsTable.id))
     .where(whereClause)
     .orderBy(asc(clientsTable.name), asc(projectsTable.name), asc(projectsTable.id))
-    .limit(query.pageSize)
-    .offset(offset)
 
-  const projectIds = rows.map(row => row.id)
+  const projectIds = projectRows.map(row => row.id)
   const documents = projectIds.length > 0
     ? await db
         .select({
@@ -209,49 +103,35 @@ export default defineEventHandler(async (event) => {
     documentsByProjectId.set(document.projectId, current)
   })
 
-  const [statsRow] = await db
-    .select({
-      totalProjects: sql<number>`count(*)`,
-      projectsWithQuotePdf: sql<number>`coalesce(sum(case when coalesce(${documentsByProject.quoteCurrentTotal}, 0) > 0 then 1 else 0 end), 0)`,
-      projectsWithInvoicePdf: sql<number>`coalesce(sum(case when coalesce(${documentsByProject.invoiceCurrentTotal}, 0) > 0 then 1 else 0 end), 0)`,
-      projectsWithProposalPdf: sql<number>`coalesce(sum(case when coalesce(${documentsByProject.proposalCurrentTotal}, 0) > 0 then 1 else 0 end), 0)`,
-      documentsMissingLink: sql<number>`coalesce(sum((coalesce(${documentsByProject.quoteCurrentTotal}, 0) - coalesce(${documentsByProject.quoteCurrentWithLinkCount}, 0)) + (coalesce(${documentsByProject.invoiceCurrentTotal}, 0) - coalesce(${documentsByProject.invoiceCurrentWithLinkCount}, 0))), 0)`,
-      completeProjects: sql<number>`coalesce(sum(case when coalesce(${documentsByProject.quoteCurrentTotal}, 0) > 0 and coalesce(${documentsByProject.quoteCurrentTotal}, 0) = coalesce(${documentsByProject.quoteCurrentWithLinkCount}, 0) and coalesce(${documentsByProject.invoiceCurrentTotal}, 0) > 0 and coalesce(${documentsByProject.invoiceCurrentTotal}, 0) = coalesce(${documentsByProject.invoiceCurrentWithLinkCount}, 0) and coalesce(${documentsByProject.proposalCurrentTotal}, 0) > 0 then 1 else 0 end), 0)`
-    })
-    .from(projectsTable)
-    .innerJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
-    .leftJoin(documentsByProject, eq(documentsByProject.projectId, projectsTable.id))
-    .where(whereClause)
+  const allItems: BillingProjectStatus[] = projectRows.map(row => buildBillingProjectStatus({
+    project: {
+      id: row.id,
+      clientId: row.clientId,
+      name: row.name,
+      status: row.status,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      requiresAcompte: row.requiresAcompte,
+      client: {
+        id: row.clientEntityId,
+        name: row.clientName
+      }
+    },
+    documents: documentsByProjectId.get(row.id) ?? []
+  }))
+
+  const filteredItems = query.status === 'all'
+    ? allItems
+    : allItems.filter(item => item.billingStatus.tone === query.status)
+
+  const totalItems = filteredItems.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / query.pageSize))
+  const page = Math.min(query.page, totalPages)
+  const offset = (page - 1) * query.pageSize
 
   return {
-    items: rows.map(row => buildBillingProjectStatus({
-      project: {
-        id: row.id,
-        clientId: row.clientId,
-        name: row.name,
-        status: row.status,
-        startDate: row.startDate,
-        endDate: row.endDate,
-        requiresAcompte: row.requiresAcompte,
-        client: {
-          id: row.clientEntityId,
-          name: row.clientName
-        }
-      },
-      quoteTotal: toNumber(row.quoteTotal),
-      invoiceTotal: toNumber(row.invoiceTotal),
-      proposalTotal: toNumber(row.proposalTotal),
-      documents: documentsByProjectId.get(row.id) ?? []
-    })),
+    items: filteredItems.slice(offset, offset + query.pageSize),
     projectOptions,
-    stats: {
-      totalProjects: toNumber(statsRow?.totalProjects),
-      projectsWithQuotePdf: toNumber(statsRow?.projectsWithQuotePdf),
-      projectsWithInvoicePdf: toNumber(statsRow?.projectsWithInvoicePdf),
-      projectsWithProposalPdf: toNumber(statsRow?.projectsWithProposalPdf),
-      documentsMissingLink: toNumber(statsRow?.documentsMissingLink),
-      completeProjects: toNumber(statsRow?.completeProjects)
-    },
     pagination: {
       page,
       pageSize: query.pageSize,

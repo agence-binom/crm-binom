@@ -32,28 +32,6 @@ export const documentStatusLabels: Record<BillingDocumentType, Partial<Record<Do
   }
 }
 
-// Cancelled/refused rank below draft so they never overshadow a genuinely advancing sibling document
-// (e.g. a rejected "acompte" shouldn't hide that the "solde" is progressing) when computing a group's stage.
-// This ranking only feeds the legacy coverage "stage" metric (`getBillingCoverage`) - the cascade logic
-// below (`computeProjectBillingSteps`) has its own, separate rules.
-const documentStatusRank: Record<DocumentStatus, number> = {
-  cancelled: -1,
-  refused: -1,
-  non_applicable: 0,
-  draft: 0,
-  sent: 1,
-  completed: 2
-}
-
-export const getMostAdvancedDocumentStatus = (statuses: DocumentStatus[]): DocumentStatus | null => {
-  const [firstStatus, ...restStatuses] = statuses
-
-  if (!firstStatus) return null
-
-  return restStatuses.reduce((best, status) =>
-    documentStatusRank[status] > documentStatusRank[best] ? status : best, firstStatus)
-}
-
 export const billingDocumentTypeIcons: Record<BillingDocumentType, string> = {
   commercial_proposal: 'i-lucide-file-text',
   quote: 'i-lucide-file-signature',
@@ -259,7 +237,7 @@ export const computeProjectBillingSteps = <T extends BillingDocumentLike>(
   ]
 }
 
-export type BillingActionCta = {
+export type BillingStatus = {
   label: string
   tone: 'neutral' | 'warning' | 'success' | 'muted'
 }
@@ -280,7 +258,7 @@ const billingStepToSentLabel: Record<BillingStepKey, string> = {
 
 // A "Sans suite" project is one where a step's *own* (not cascaded) status is refused/cancelled -
 // distinguishing that from a downstream step that merely inherited "non_applicable" by cascade.
-export const getBillingActionCta = (steps: BillingStep[]): BillingActionCta => {
+export const getBillingStatus = (steps: BillingStep[]): BillingStatus => {
   const hasRealTerminalFailure = steps.some(step =>
     step.documentId !== null && (step.status === 'refused' || step.status === 'cancelled'))
 

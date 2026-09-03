@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { annotateDocumentLifecycle, getEffectiveInvoiceSubtype, type BillingDocumentType } from '~/lib/documents'
+import { getEffectiveInvoiceSubtype, type BillingDocumentType, type DocumentLifecycle } from '~/lib/documents'
 import type { BillingProjectStatus } from '~/lib/billing'
 import { getProjectDisplayStatus } from '~/lib/projects'
 import { formatDateOnly } from '~/lib/utils'
 import type { BillingDocumentRecord } from '~/types'
+
+type AnnotatedBillingDocument = BillingDocumentRecord & {
+  type: BillingDocumentType
+  lifecycle: DocumentLifecycle
+  supersededByDocumentId: number | null
+}
 
 type StepEditorHandle = {
   isDirty: boolean
@@ -29,7 +35,7 @@ const isOpen = computed({
   set: value => emit('update:open', value)
 })
 
-const documents = ref<BillingDocumentRecord[]>([])
+const documents = ref<AnnotatedBillingDocument[]>([])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const requiresAcompte = ref(true)
@@ -40,7 +46,7 @@ const loadDocuments = async () => {
 
   isLoading.value = true
   try {
-    const response = await $fetch<{ documents: BillingDocumentRecord[] }>(`/api/billing-documents/project/${projectId}`)
+    const response = await $fetch<{ documents: AnnotatedBillingDocument[] }>(`/api/billing-documents/project/${projectId}`)
     documents.value = response.documents
   } finally {
     isLoading.value = false
@@ -63,12 +69,8 @@ watch(
   { immediate: true }
 )
 
-const annotatedDocuments = computed(() => annotateDocumentLifecycle(
-  documents.value.map(document => ({ ...document, type: document.documentType as BillingDocumentType }))
-))
-
-const findCurrentDocument = (predicate: (document: typeof annotatedDocuments.value[number]) => boolean) =>
-  annotatedDocuments.value.find(document => document.lifecycle === 'current' && predicate(document)) ?? null
+const findCurrentDocument = (predicate: (document: AnnotatedBillingDocument) => boolean) =>
+  documents.value.find(document => document.lifecycle === 'current' && predicate(document)) ?? null
 
 const proposalDocument = computed(() => findCurrentDocument(document => document.type === 'commercial_proposal'))
 const quoteDocument = computed(() => findCurrentDocument(document => document.type === 'quote'))
