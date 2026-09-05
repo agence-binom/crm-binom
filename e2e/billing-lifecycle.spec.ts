@@ -11,7 +11,9 @@ import { projectsTable } from '../app/db/schema/projects'
  * supersedes/is superseded) and checks two things end to end: the dashboard's status filter
  * (`/api/billing/projects?status=...`, driven by `billingStatus.tone` computed from the cascade)
  * correctly places this project under "success" and nowhere else, and the project detail
- * timeline (driven by `annotateDocumentLifecycle`) renders the same "current" documents.
+ * timeline (`computeProjectBillingSteps`, built on top of `annotateDocumentLifecycle`) picks the
+ * current document for each of its 4 fixed steps - the superseded quote and the avoir (neither
+ * "unique" nor "solde") aren't steps of their own, so they never appear in this timeline.
  */
 
 let clientId: number
@@ -62,17 +64,15 @@ test('le filtre de statut du dashboard et le lifecycle de la fiche projet sont c
     expect(body.items.map((item: { project: { id: number } }) => item.project.id)).not.toContain(projectId)
   }
 
-  // --- The project detail timeline is driven by `annotateDocumentLifecycle`.
+  // --- The project detail timeline has exactly 4 fixed steps, each showing its current document.
   await page.goto(`/clients/${clientId}/projects/${projectId}`)
 
   const timeline = page.locator('[data-slot="root"]')
   const titles = timeline.locator('[data-slot="title"]')
-  await expect(titles.filter({ hasText: 'Devis' })).toHaveCount(2)
+  // The superseded quote is excluded (only the newer one is "current"); the avoir has no step of
+  // its own (it's neither "unique" nor "solde"), so acompte + solde are the invoice steps shown.
+  await expect(titles.filter({ hasText: 'Devis' })).toHaveCount(1)
   await expect(titles.filter({ hasText: 'Facture d\'acompte' })).toHaveCount(1)
   await expect(titles.filter({ hasText: 'Facture de solde' })).toHaveCount(1)
-  await expect(titles.filter({ hasText: 'Avoir' })).toHaveCount(1)
-
-  // Exactly one item is greyed out (the superseded quote) - acompte, solde and the avoir all
-  // stay "current" simultaneously, matching `invoiceCurrentTotal = 2` on the SQL side.
-  await expect(timeline.locator('[data-slot="item"].opacity-60')).toHaveCount(1)
+  await expect(titles.filter({ hasText: 'Avoir' })).toHaveCount(0)
 })

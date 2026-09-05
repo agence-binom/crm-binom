@@ -76,7 +76,10 @@ defineExpose({ isDirty, isSaving, isEditingAnyStep, onSave, onCancel })
               >
                 {{ item.date }}
               </p>
-              <h3 :class="['truncate text-sm', item.ui.title]">
+              <h3
+                data-slot="title"
+                :class="['truncate text-sm', item.ui.title]"
+              >
                 {{ item.title }}
               </h3>
             </div>

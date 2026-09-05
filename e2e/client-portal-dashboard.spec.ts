@@ -14,7 +14,10 @@ test('un contact actif voit les sections de son projet avec leurs états vides',
   const context = await browser.newContext({ storageState })
   const page = await context.newPage()
 
+  // Un clic trop précoce est ignoré tant que Vue n'a pas attaché ses listeners (voir
+  // e2e/auth.spec.ts) : on attend la fin de l'hydratation avant d'interagir.
   await page.goto('/espace-client')
+  await page.waitForLoadState('networkidle')
 
   await expect(page.getByRole('heading', { name: 'Livrables' })).toBeVisible()
   await expect(page.getByText('Aucun livrable pour le moment')).toBeVisible()
@@ -24,7 +27,9 @@ test('un contact actif voit les sections de son projet avec leurs états vides',
 
   await expect(page.getByRole('heading', { name: 'Ressources' })).toBeVisible()
   await expect(page.getByText('Aucune ressource pour le moment')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Nouvelle ressource' })).toBeDisabled()
+
+  await page.getByRole('button', { name: 'Nouvelle ressource' }).click()
+  await expect(page.getByText('Type de ressource')).toBeVisible()
 
   await context.close()
 })
