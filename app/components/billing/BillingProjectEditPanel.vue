@@ -148,14 +148,14 @@ const onCancel = () => {
     <template #title>
       <AppLink
         :to="`/clients/${project?.project.clientId}/projects/${project?.project.id}`"
-        class="group min-w-48"
+        class="group min-w-48 max-w-96"
       >
-        <span>{{ project?.project.name }}</span>
+        <span class="truncate">{{ project?.project.name }}</span>
         <UBadge
           v-if="project"
           variant="soft"
           :color="getStatusColor(getProjectDisplayStatus(project.project))"
-          class="rounded-full align-middle"
+          class="rounded-full align-middle whitespace-nowrap"
         >
           {{ getStatusLabel(getProjectDisplayStatus(project.project)) }}
         </UBadge>
