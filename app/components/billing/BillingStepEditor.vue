@@ -12,13 +12,11 @@ const props = defineProps<{
   subtype?: InvoiceSubtype
   dateLabel: string
   document: BillingDocumentRecord | null
-  requiresAcompte?: boolean
   uploadDisabled?: boolean
 }>()
 
 const emit = defineEmits<{
-  'saved': []
-  'update:requires-acompte': [value: boolean]
+  saved: []
 }>()
 
 const { showError } = useFeedbackToast()
@@ -105,25 +103,10 @@ defineExpose({ isDirty, save, reset: resetDraft })
 </script>
 
 <template>
-  <div class="space-y-4 border-b border-slate-200 py-6 last:border-b-0">
-    <div class="flex items-center justify-between">
-      <h3 class="text-sm font-semibold text-slate-900">
-        {{ title }}
-      </h3>
-      <div
-        v-if="documentType === 'quote'"
-        class="flex items-center gap-2"
-      >
-        <span class="text-xs font-medium text-slate-500">Acompte</span>
-        <USwitch
-          :model-value="requiresAcompte"
-          @update:model-value="(value: boolean) => emit('update:requires-acompte', value)"
-        />
-      </div>
-    </div>
-
+  <div class="space-y-4">
     <div
       v-if="warning"
+      role="alert"
       class="flex items-center gap-2 rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-sm font-medium text-error-600"
     >
       <UIcon

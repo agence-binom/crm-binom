@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { billingDocumentTypeIcons, billingDocumentTypeLabels, billingDocumentTypesRequiringFactureNetLink, documentStatusLabels, getDocumentFactureNetHref, invoiceSubtypeLabels, type BillingDocumentType, type DocumentLifecycle, type DocumentStatus } from '~/lib/documents'
+import { billingDocumentTypeIcons, billingDocumentTypeLabels, billingDocumentTypesRequiringFactureNetLink, documentStatusBadgeColors, documentStatusLabels, getDocumentFactureNetHref, invoiceSubtypeLabels, type BillingDocumentType, type DocumentLifecycle, type DocumentStatus } from '~/lib/documents'
 import { documentStatusesByType } from '~/validation/billing-documents'
 import { formatDate, getErrorMessage } from '~/lib/utils'
 import type { BillingDocumentRecord } from '~/types'
@@ -22,15 +22,6 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const { getDocumentStatusIndicatorClass, getDocumentStatusSeparatorClass } = useDocumentStatusHelpers()
-
-const statusBadgeColors: Record<DocumentStatus, 'neutral' | 'warning' | 'success' | 'error'> = {
-  draft: 'neutral',
-  sent: 'warning',
-  completed: 'success',
-  cancelled: 'error',
-  refused: 'error',
-  non_applicable: 'neutral'
-}
 
 const updatingStatusId = ref<number | null>(null)
 
@@ -119,7 +110,7 @@ const timelineItems = computed(() => {
               <UButton
                 size="xs"
                 variant="soft"
-                :color="statusBadgeColors[item.document.status]"
+                :color="documentStatusBadgeColors[item.document.status]"
                 trailing-icon="i-lucide-chevron-down"
                 :loading="updatingStatusId === item.document.id"
               >
