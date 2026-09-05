@@ -13,13 +13,13 @@ import { translateSupabaseError } from '~/lib/utils'
 const DOCUMENT_SIGNED_URL_TTL_SECONDS = 60 * 60
 
 type DocumentWithPath = {
-  filepath: string
+  filepath: string | null
 }
 
-const isExternalUrl = (filepath: string) => /^https?:\/\//.test(filepath)
+const isExternalUrl = (filepath: string | null) => Boolean(filepath && /^https?:\/\//.test(filepath))
 
-const isManagedStoragePath = (filepath: string) => (
-  Boolean(filepath)
+const isManagedStoragePath = (filepath: string | null) => Boolean(
+  filepath
   && !filepath.startsWith('/')
   && !isExternalUrl(filepath)
 )
@@ -148,9 +148,9 @@ export const uploadDocumentFile = async (
 
 export const deleteStoredDocumentFile = async (
   event: H3Event,
-  filepath: string
+  filepath: string | null
 ) => {
-  if (!isManagedStoragePath(filepath)) {
+  if (!filepath || !isManagedStoragePath(filepath)) {
     return
   }
 
@@ -168,7 +168,7 @@ export const deleteStoredDocumentFile = async (
 
 export const deleteUploadedDocumentIfExists = async (
   event: H3Event,
-  filepath: string
+  filepath: string | null
 ) => {
   try {
     await deleteStoredDocumentFile(event, filepath)
@@ -179,13 +179,13 @@ export const deleteUploadedDocumentIfExists = async (
 
 const resolveDocumentDownloadUrl = async (
   event: H3Event,
-  filepath: string
+  filepath: string | null
 ) => {
   if (isExternalUrl(filepath)) {
     return filepath
   }
 
-  if (!isManagedStoragePath(filepath)) {
+  if (!filepath || !isManagedStoragePath(filepath)) {
     return null
   }
 

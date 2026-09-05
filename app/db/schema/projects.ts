@@ -8,6 +8,7 @@ export const projectsTable = pgTable('projects', {
   description: text(),
   status: varchar({ length: 50 }).notNull().default('en_cours'),
   archived: boolean().notNull().default(false),
+  requiresAcompte: boolean().notNull().default(true),
   startDate: timestamp(),
   endDate: timestamp(),
   url: varchar({ length: 255 }),

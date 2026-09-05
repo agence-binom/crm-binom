@@ -127,7 +127,7 @@ const columns: TableColumn<Contact>[] = [
               {{ getContactFullName(row.original) }}
             </p>
             <p class="mt-1 text-xs text-slate-500">
-              {{ row.original.position || '—' }}
+              {{ row.original.position || '-' }}
             </p>
           </div>
         </template>
@@ -174,7 +174,7 @@ const columns: TableColumn<Contact>[] = [
           >
             {{ row.original.email }}
           </AppLink>
-          <span v-else>—</span>
+          <span v-else>-</span>
         </template>
 
         <template #phone-cell="{ row }">
@@ -190,7 +190,7 @@ const columns: TableColumn<Contact>[] = [
               {{ row.original.mobile }}
             </p>
           </div>
-          <span v-else>—</span>
+          <span v-else>-</span>
         </template>
 
         <template #notes-cell="{ row }">
@@ -200,7 +200,7 @@ const columns: TableColumn<Contact>[] = [
           >
             {{ row.original.notes }}
           </p>
-          <span v-else>—</span>
+          <span v-else>-</span>
         </template>
 
         <template #actions-cell="{ row }">

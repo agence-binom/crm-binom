@@ -211,6 +211,20 @@
       "when": 1787149700760,
       "tag": "0029_rare_betty_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1787838759767,
+      "tag": "0030_fancy_xavin",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1787840518438,
+      "tag": "0031_careful_major_mapleleaf",
+      "breakpoints": true
     }
   ]
 }

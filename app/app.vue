@@ -32,7 +32,7 @@ useSeoMeta({
       v-if="isStaging"
       class="flex items-center justify-center bg-orange-500 px-4 py-1.5 text-center text-sm font-medium text-white"
     >
-      Environnement de STAGING — ceci n'est pas la production
+      Environnement de STAGING - ceci n'est pas la production
     </div>
     <NuxtLayout>
       <NuxtPage />

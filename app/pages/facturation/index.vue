@@ -3,6 +3,7 @@ import type { TableColumn, TableRow } from '@nuxt/ui'
 import { billingDashboardStatuses } from '~/constants/billing'
 import type { BillingDashboardStatus } from '~/constants/billing'
 import type { BillingProjectStatus } from '~/lib/billing'
+import type { BillingStatus, BillingStepKey } from '~/lib/documents'
 import { getProjectDisplayStatus } from '~/lib/projects'
 
 const PAGE_SIZE = 12
@@ -47,7 +48,7 @@ onBeforeUnmount(() => {
   }
 })
 
-const { data, status } = await useFetch('/api/billing/projects', {
+const { data, status, refresh } = await useFetch('/api/billing/projects', {
   query: computed(() => ({
     search: searchQuery.value || undefined,
     projectId: projectFilterId.value || undefined,
@@ -85,7 +86,7 @@ const hasActiveFilters = computed(() =>
 
 const isAllCaughtUp = computed(() =>
   !isLoading.value
-  && statusFilter.value === 'incomplete'
+  && (statusFilter.value === 'neutral' || statusFilter.value === 'warning')
   && !searchInput.value.trim()
   && projectFilterId.value === null
   && billingProjects.value.length === 0
@@ -102,12 +103,10 @@ const selectedProjectOption = computed({
 
 const statusFilterLabels: Record<BillingDashboardStatus, string> = {
   all: 'Tous les statuts',
-  incomplete: 'Incomplet',
-  missing_quote_pdf: 'Devis manquant',
-  missing_invoice_pdf: 'Facture manquante',
-  missing_proposal_pdf: 'Proposition manquante',
-  missing_facturenet_link: 'Lien Facture.net manquant',
-  complete: 'Complet'
+  neutral: 'À émettre',
+  warning: 'En attente',
+  success: 'Complet',
+  muted: 'Sans suite'
 }
 
 const statusFilterOptions = billingDashboardStatuses.map(status => ({
@@ -131,8 +130,8 @@ const columns: TableColumn<BillingProjectStatus>[] = [
     header: 'Projet',
     meta: {
       class: {
-        th: 'w-64 max-w-64',
-        td: 'w-64 max-w-64'
+        th: 'w-48 max-w-48',
+        td: 'w-48 max-w-48'
       }
     }
   },
@@ -143,8 +142,41 @@ const columns: TableColumn<BillingProjectStatus>[] = [
   {
     id: 'progress',
     header: 'Avancement'
+  },
+  {
+    id: 'status',
+    header: 'Statut'
   }
 ]
+
+const billingStatusColors: Record<string, 'info' | 'warning' | 'success' | 'neutral'> = {
+  neutral: 'info',
+  warning: 'warning',
+  success: 'success',
+  muted: 'neutral'
+}
+
+// Reuses the mini-cascade's own icons for "done"/"dead" (BillingRowTimeline's palettes), so the
+// badge reads as a summary of the row instead of a fifth, unrelated icon set.
+const billingStatusIcons: Record<Exclude<BillingStatus['tone'], 'warning'>, string> = {
+  neutral: 'i-lucide-file-plus',
+  success: 'i-lucide-check',
+  muted: 'i-lucide-x'
+}
+
+// "En attente" covers 3 very different things to wait on - a signature isn't a payment - so the
+// icon is picked from the step actually blocking progress, not a single generic hourglass.
+const waitingStepIcons: Record<BillingStepKey, string> = {
+  proposal: 'i-lucide-eye',
+  quote: 'i-lucide-signature',
+  acompte: 'i-lucide-euro',
+  invoice: 'i-lucide-euro'
+}
+
+const getBillingStatusIcon = (status: BillingStatus) => {
+  if (status.tone === 'warning') return status.step ? waitingStepIcons[status.step] : 'i-lucide-hourglass'
+  return billingStatusIcons[status.tone]
+}
 </script>
 
 <template>
@@ -226,7 +258,7 @@ const columns: TableColumn<BillingProjectStatus>[] = [
             :columns="columns"
             sticky="header"
             class="max-h-[calc(100vh-20rem)]"
-            :ui="{ tr: 'cursor-pointer', td: 'p-2' }"
+            :ui="{ tr: 'cursor-pointer', td: 'px-2 py-4' }"
             @select="onRowClick"
           >
             <template #project-cell="{ row }">
@@ -264,7 +296,18 @@ const columns: TableColumn<BillingProjectStatus>[] = [
             </template>
 
             <template #progress-cell="{ row }">
-              <BillingRowTimeline :documents="row.original.documents" />
+              <BillingRowTimeline :project="row.original" />
+            </template>
+
+            <template #status-cell="{ row }">
+              <UBadge
+                variant="soft"
+                :color="billingStatusColors[row.original.billingStatus.tone]"
+                :icon="getBillingStatusIcon(row.original.billingStatus)"
+                class="rounded-full whitespace-nowrap"
+              >
+                {{ row.original.billingStatus.label }}
+              </UBadge>
             </template>
           </UTable>
         </div>
@@ -305,9 +348,9 @@ const columns: TableColumn<BillingProjectStatus>[] = [
         :icon="isAllCaughtUp ? 'i-lucide-circle-check' : 'i-lucide-inbox'"
         :icon-class="isAllCaughtUp ? 'text-success-400' : 'text-slate-300'"
         size="lg"
-        :title="isLoading ? 'Chargement...' : (isAllCaughtUp ? 'Tous les documents sont à jour' : 'Aucun projet trouvé')"
+        :title="isLoading ? 'Chargement...' : (isAllCaughtUp ? 'Aucun projet en attente' : 'Aucun projet trouvé')"
         :description="isLoading || isAllCaughtUp
-          ? 'Aucun devis, proposition ou facture manquant pour le moment.'
+          ? 'Aucun projet n\'attend de document ou de suivi pour le moment.'
           : (hasActiveFilters ? 'Essayez de modifier vos filtres' : 'Créez votre premier projet depuis la page clients')"
       >
         <template
@@ -325,9 +368,10 @@ const columns: TableColumn<BillingProjectStatus>[] = [
       </AppEmptyState>
     </div>
 
-    <BillingProjectDetailPanel
+    <BillingProjectEditPanel
       v-model:open="isDetailPanelOpen"
       :project="selectedProject"
+      @saved="refresh"
     />
   </div>
 </template>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { annotateDocumentLifecycle } from '~/lib/documents'
-import type { ProjectDocument, ProjectResource, Task, User } from '~/types'
+import type { ProjectResource, Task, User } from '~/types'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
@@ -9,9 +8,6 @@ const projectId = computed(() => Number(route.params.projectId))
 const { data, error, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
 const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
-const quoteDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.quote as ProjectDocument[] | undefined) || [])
-const invoiceDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.invoice as ProjectDocument[] | undefined) || [])
-const commercialProposalDocuments = computed<ProjectDocument[]>(() => (data.value?.documents?.commercial_proposal as ProjectDocument[] | undefined) || [])
 const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
@@ -23,12 +19,6 @@ const isUploadModalOpen = ref(false)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 const { setArchived } = useArchiveAction()
-
-const billingDocuments = computed(() => annotateDocumentLifecycle([
-  ...commercialProposalDocuments.value.map(document => ({ ...document, type: 'commercial_proposal' as const })),
-  ...quoteDocuments.value.map(document => ({ ...document, type: 'quote' as const })),
-  ...invoiceDocuments.value.map(document => ({ ...document, type: 'invoice' as const }))
-]))
 
 const onDeleteProject = async (projectId: number) => {
   await deleteResource('projet', projectId, '/api/projects', async () => {
@@ -50,12 +40,6 @@ const handleProjectChange = async () => {
 
 const handleDocumentsChange = async () => {
   await refresh()
-}
-
-const onDeleteDocument = async (documentId: number) => {
-  await deleteResource('document', documentId, '/api/documents', async () => {
-    await refresh()
-  })
 }
 </script>
 
@@ -88,8 +72,7 @@ const onDeleteDocument = async (documentId: number) => {
 
     <UploadModal
       v-model:open="isUploadModalOpen"
-      :entity-id="project.id"
-      entity-type="project"
+      :project-id="project.id"
       title="Ajouter un document commercial"
       upload-label="Importer le PDF"
       @uploaded="handleDocumentsChange"
@@ -166,11 +149,14 @@ const onDeleteDocument = async (documentId: number) => {
         </div>
       </UCard>
 
-      <BillingHorizontalTimeline
-        :documents="billingDocuments"
-        @delete-document="onDeleteDocument"
-        @update-document="handleDocumentsChange"
-      />
+      <UCard>
+        <BillingStepsTimeline
+          :project-id="project.id"
+          :requires-acompte="project.requiresAcompte"
+          orientation="horizontal"
+          @saved="handleDocumentsChange"
+        />
+      </UCard>
     </div>
 
     <ConfirmModal
