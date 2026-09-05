@@ -24,19 +24,12 @@ const toggleArchived = () => {
 
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
-      <h2 class="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">
-        <UIcon name="i-lucide-users" />
-        Contacts
-        <UBadge
-          color="neutral"
-          variant="soft"
-          class="rounded-full"
-        >
-          {{ filteredContacts.length }}
-        </UBadge>
-      </h2>
-      <div class="flex items-center gap-2">
+    <AppListHeader
+      title="Contacts"
+      icon="i-lucide-users"
+      :count="filteredContacts.length"
+    >
+      <template #actions>
         <UButton
           :icon="showArchived ? 'i-lucide-users' : 'i-lucide-archive'"
           variant="ghost"
@@ -53,8 +46,8 @@ const toggleArchived = () => {
         >
           Nouveau contact
         </UButton>
-      </div>
-    </div>
+      </template>
+    </AppListHeader>
 
     <ul
       v-if="filteredContacts.length > 0"
@@ -74,26 +67,24 @@ const toggleArchived = () => {
       </li>
     </ul>
 
-    <div
+    <AppEmptyState
       v-else
-      class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white/80 px-6 py-10 text-center"
+      icon="i-lucide-user-x"
+      :title="showArchived ? 'Aucun contact archivé' : 'Aucun contact pour ce client'"
     >
-      <UIcon
-        name="i-lucide-user-x"
-        class="mb-3 text-4xl text-slate-300"
-      />
-      <p class="mb-4 text-slate-600">
-        {{ showArchived ? 'Aucun contact archivé' : 'Aucun contact pour ce client' }}
-      </p>
-      <UButton
+      <template
         v-if="!showArchived"
-        icon="i-lucide-circle-plus"
-        variant="soft"
-        color="neutral"
-        @click="emit('create')"
+        #actions
       >
-        Créer le premier contact
-      </UButton>
-    </div>
+        <UButton
+          icon="i-lucide-circle-plus"
+          variant="soft"
+          color="neutral"
+          @click="emit('create')"
+        >
+          Créer le premier contact
+        </UButton>
+      </template>
+    </AppEmptyState>
   </div>
 </template>

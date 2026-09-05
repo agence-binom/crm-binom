@@ -1,4 +1,5 @@
-import { boolean, integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import { boolean, integer, pgTable, varchar, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { clientsTable } from './clients'
 
 export const contactsTable = pgTable('contacts', {
@@ -12,6 +13,15 @@ export const contactsTable = pgTable('contacts', {
   mobile: varchar({ length: 50 }),
   notes: text(),
   archived: boolean().notNull().default(false),
+  portalStatus: varchar({ length: 20 }), // 'active' | 'revoked' | null (jamais invité)
+  portalLastLoginAt: timestamp(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
-}).enableRLS()
+}, table => [
+  // Un email avec un accès portail (actif ou révoqué) doit être unique globalement, pas seulement
+  // par client : sinon le même email pourrait être un contact portail actif pour deux clients à la
+  // fois, et la connexion résoudrait arbitrairement l'un des deux (accès ambigu, pas cloisonné).
+  uniqueIndex('contacts_portal_email_unique')
+    .on(sql`lower(${table.email})`)
+    .where(sql`${table.portalStatus} is not null`)
+]).enableRLS()

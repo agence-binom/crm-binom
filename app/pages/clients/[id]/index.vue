@@ -8,6 +8,7 @@ const contacts = computed(() => data.value?.contacts || [])
 const projects = computed(() => data.value?.projects || [])
 
 const isClientInfoModalOpen = ref(false)
+const isPortalAccessModalOpen = ref(false)
 const isContactModalOpen = ref(false)
 const isProjectModalOpen = ref(false)
 const selectedContactId = ref<number | null>(null)
@@ -102,20 +103,14 @@ const projectToEdit = computed(() => {
     v-if="client"
     class="container mx-auto p-6 overflow-scroll"
   >
-    <div class="mb-4">
-      <UButton
-        icon="i-lucide-arrow-left"
-        variant="ghost"
-        color="neutral"
-        size="sm"
-        @click="navigateTo(`/clients`)"
-      >
-        Retour aux clients
-      </UButton>
-    </div>
+    <AppBackButton
+      to="/clients"
+      label="Retour aux clients"
+    />
     <ClientsHeader
       :client="client"
       @open-info="isClientInfoModalOpen = true"
+      @manage-portal-access="isPortalAccessModalOpen = true"
       @delete="onDeleteClient"
       @archive="onArchiveClient"
       @restore="onRestoreClient"
@@ -126,6 +121,12 @@ const projectToEdit = computed(() => {
       :client-id="client.id"
       :client="client"
       @saved="handleClientChange"
+    />
+
+    <ClientsPortalAccessModal
+      v-model:open="isPortalAccessModalOpen"
+      :contacts="contacts"
+      @saved="handleContactChange"
     />
 
     <ContactsModal

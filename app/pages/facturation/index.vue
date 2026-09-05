@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
-import { FACTURE_NET_PORTAL_LINKS, billingDashboardStatuses } from '~/constants/billing'
+import type { TableColumn, TableRow } from '@nuxt/ui'
+import { billingDashboardStatuses } from '~/constants/billing'
 import type { BillingDashboardStatus } from '~/constants/billing'
 import type { BillingProjectStatus } from '~/lib/billing'
+import type { BillingStatus, BillingStepKey } from '~/lib/documents'
 import { getProjectDisplayStatus } from '~/lib/projects'
 
 const PAGE_SIZE = 12
@@ -47,7 +48,7 @@ onBeforeUnmount(() => {
   }
 })
 
-const { data, status } = await useFetch('/api/billing/projects', {
+const { data, status, refresh } = await useFetch('/api/billing/projects', {
   query: computed(() => ({
     search: searchQuery.value || undefined,
     projectId: projectFilterId.value || undefined,
@@ -79,39 +80,19 @@ const projectOptions = computed(() => [
 const pagination = computed(() => data.value?.pagination || emptyPagination)
 const isLoading = computed(() => status.value === 'pending')
 
-const getProjectStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    en_cours: 'En cours',
-    termine: 'Terminé',
-    en_attente: 'En attente',
-    annule: 'Annulé'
-  }
-  return labels[status] || status
-}
+const hasActiveFilters = computed(() =>
+  Boolean(searchInput.value.trim()) || statusFilter.value !== 'all' || projectFilterId.value !== null
+)
 
-const getBillingStatusLabel = (status: BillingDashboardStatus) => {
-  const labels: Record<BillingDashboardStatus, string> = {
-    all: 'Tous les documents',
-    missing_quote_pdf: 'Sans devis PDF',
-    missing_invoice_pdf: 'Sans facture PDF',
-    missing_facturenet_link: 'Lien Facture.net manquant',
-    complete: 'Complets'
-  }
+const isAllCaughtUp = computed(() =>
+  !isLoading.value
+  && (statusFilter.value === 'neutral' || statusFilter.value === 'warning')
+  && !searchInput.value.trim()
+  && projectFilterId.value === null
+  && billingProjects.value.length === 0
+)
 
-  return labels[status]
-}
-
-const statusOptions = billingDashboardStatuses.map(status => ({
-  label: getBillingStatusLabel(status),
-  value: status
-}))
-
-const selectedStatusOption = computed({
-  get: () => statusOptions.find(option => option.value === statusFilter.value),
-  set: (option) => {
-    statusFilter.value = option?.value ?? 'all'
-  }
-})
+const { getStatusColor, getStatusLabel } = useStatusHelpers()
 
 const selectedProjectOption = computed({
   get: () => projectOptions.value.find(option => option.value === projectFilterId.value),
@@ -120,97 +101,81 @@ const selectedProjectOption = computed({
   }
 })
 
-const getCoverageSummary = (item: BillingProjectStatus, type: 'quote' | 'invoice') => {
-  const coverage = type === 'quote' ? item.quoteCoverage : item.invoiceCoverage
-
-  if (coverage.total === 0) {
-    return {
-      color: 'neutral' as const,
-      label: type === 'quote' ? 'Manquant' : 'Manquante',
-      detail: 'Aucun PDF'
-    }
-  }
-
-  if (coverage.missingLinkCount > 0) {
-    return {
-      color: 'warning' as const,
-      label: 'PDF sans lien',
-      detail: `${coverage.total} PDF • ${coverage.missingLinkCount} lien${coverage.missingLinkCount > 1 ? 's' : ''} manquant${coverage.missingLinkCount > 1 ? 's' : ''}`
-    }
-  }
-
-  return {
-    color: 'success' as const,
-    label: 'Complet',
-    detail: `${coverage.total} PDF`
-  }
+const statusFilterLabels: Record<BillingDashboardStatus, string> = {
+  all: 'Tous les statuts',
+  neutral: 'À émettre',
+  warning: 'En attente',
+  success: 'Complet',
+  muted: 'Sans suite'
 }
 
-const getRowStatusSummary = (item: BillingProjectStatus) => {
-  if (item.isComplete) {
-    return {
-      color: 'success' as const,
-      label: 'Complet',
-      detail: 'PDF + liens présents'
-    }
-  }
+const statusFilterOptions = billingDashboardStatuses.map(status => ({
+  label: statusFilterLabels[status],
+  value: status
+}))
 
-  if (item.missingLinkCount > 0) {
-    return {
-      color: 'warning' as const,
-      label: 'Lien manquant',
-      detail: `${item.missingLinkCount} à compléter`
-    }
-  }
+const isDetailPanelOpen = ref(false)
+const selectedProject = ref<BillingProjectStatus | null>(null)
 
-  return {
-    color: 'neutral' as const,
-    label: 'À compléter',
-    detail: item.quoteCoverage.total === 0 && item.invoiceCoverage.total === 0
-      ? 'Aucun document'
-      : 'Document manquant'
-  }
+const onRowClick = (event: Event, row: TableRow<BillingProjectStatus>) => {
+  if ((event.target as HTMLElement).closest('a')) return
+
+  selectedProject.value = row.original
+  isDetailPanelOpen.value = true
 }
 
 const columns: TableColumn<BillingProjectStatus>[] = [
   {
     id: 'project',
-    header: 'Projet'
+    header: 'Projet',
+    meta: {
+      class: {
+        th: 'w-48 max-w-48',
+        td: 'w-48 max-w-48'
+      }
+    }
   },
   {
     id: 'client',
     header: 'Client'
   },
   {
-    id: 'quote',
-    header: 'Devis'
-  },
-  {
-    id: 'invoice',
-    header: 'Facture'
+    id: 'progress',
+    header: 'Avancement'
   },
   {
     id: 'status',
     header: 'Statut'
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    meta: {
-      class: {
-        th: 'text-right',
-        td: 'w-px'
-      }
-    }
   }
 ]
 
-const navigateToClient = (clientId: number) => {
-  navigateTo(`/clients/${clientId}`)
+const billingStatusColors: Record<string, 'info' | 'warning' | 'success' | 'neutral'> = {
+  neutral: 'info',
+  warning: 'warning',
+  success: 'success',
+  muted: 'neutral'
 }
 
-const navigateToProject = (clientId: number, projectId: number) => {
-  navigateTo(`/clients/${clientId}/projects/${projectId}`)
+// Reuses the mini-cascade's own icons for "done"/"dead" (BillingRowTimeline's palettes), so the
+// badge reads as a summary of the row instead of a fifth, unrelated icon set.
+const billingStatusIcons: Record<Exclude<BillingStatus['tone'], 'warning'>, string> = {
+  neutral: 'i-lucide-file-plus',
+  success: 'i-lucide-check',
+  muted: 'i-lucide-x'
+}
+
+// "En attente" covers 3 very different things to wait on - a signature isn't a payment - so the
+// icon is picked from the step actually blocking progress, not a single generic hourglass.
+const waitingStepIcons: Record<BillingStepKey, string> = {
+  proposal: 'i-lucide-eye',
+  quote: 'i-lucide-signature',
+  acompte: 'i-lucide-euro',
+  invoice: 'i-lucide-euro'
+}
+
+const getBillingStatusIcon = (status: BillingStatus) => {
+  if (status.tone === 'warning') return status.step ? waitingStepIcons[status.step] : 'i-lucide-hourglass'
+  return billingStatusIcons[status.tone]
 }
 </script>
 
@@ -229,44 +194,28 @@ const navigateToProject = (clientId: number, projectId: number) => {
           Une vue simple de l’état devis / facture pour chaque projet.
         </p>
       </div>
-      <div class="flex flex-wrap gap-2">
-        <UButton
-          variant="soft"
-          color="neutral"
-          icon="i-lucide-external-link"
-          :href="FACTURE_NET_PORTAL_LINKS.quotes"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Page devis
-        </UButton>
-        <UButton
-          variant="soft"
-          color="neutral"
-          icon="i-lucide-external-link"
-          :href="FACTURE_NET_PORTAL_LINKS.invoices"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Page factures
-        </UButton>
-      </div>
+      <BillingFactureNetPortalLinks />
     </div>
 
     <div class="space-y-2">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex items-center gap-4 text-sm text-slate-500">
-          <p v-if="isLoading">
-            Mise à jour en cours...
-          </p>
+        <div
+          v-if="isLoading"
+          class="flex items-center gap-2 text-sm text-slate-500"
+        >
+          <UIcon
+            name="i-lucide-loader-2"
+            class="animate-spin"
+          />
+          Mise à jour en cours...
         </div>
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
+        <div class="w-full flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
           <UInput
             v-model="searchInput"
             icon="i-lucide-search"
             placeholder="Rechercher un projet ou un client..."
             size="md"
-            class="w-full md:min-w-md"
+            class="flex-1"
           />
 
           <USelectMenu
@@ -282,18 +231,17 @@ const navigateToProject = (clientId: number, projectId: number) => {
             </template>
           </USelectMenu>
 
-          <USelectMenu
-            v-model="selectedStatusOption"
-            :items="statusOptions"
+          <USelect
+            v-model="statusFilter"
+            :items="statusFilterOptions"
             value-attribute="value"
             option-attribute="label"
-            placeholder="Filtrer par statut"
-            class="w-full md:w-64"
+            class="w-full md:w-56"
           >
             <template #leading>
               <UIcon name="i-lucide-filter" />
             </template>
-          </USelectMenu>
+          </USelect>
         </div>
       </div>
 
@@ -301,96 +249,65 @@ const navigateToProject = (clientId: number, projectId: number) => {
         v-if="billingProjects.length > 0"
         class="space-y-4"
       >
-        <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm ring-1 ring-slate-200/70">
+        <div
+          class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm ring-1 ring-slate-200/70 transition-opacity"
+          :class="{ 'pointer-events-none opacity-60': isLoading }"
+        >
           <UTable
             :data="billingProjects"
             :columns="columns"
             sticky="header"
             class="max-h-[calc(100vh-20rem)]"
+            :ui="{ tr: 'cursor-pointer', td: 'px-2 py-4' }"
+            @select="onRowClick"
           >
             <template #project-cell="{ row }">
-              <div class="min-w-48 space-y-1 py-2">
-                <p class="font-semibold text-slate-900">
-                  {{ row.original.project.name }}
-                </p>
-                <p class="text-sm text-slate-500">
-                  {{ getProjectStatusLabel(getProjectDisplayStatus(row.original.project)) }} • {{ row.original.totalDocuments }} document{{ row.original.totalDocuments > 1 ? 's' : '' }}
-                </p>
-              </div>
+              <AppLink
+                :to="`/clients/${row.original.project.clientId}/projects/${row.original.project.id}`"
+                class="group w-full"
+              >
+                <div class="space-y-1 w-full">
+                  <p class="truncate font-semibold text-slate-900">
+                    {{ row.original.project.name }}
+                  </p>
+                  <UBadge
+                    size="sm"
+                    variant="soft"
+                    :color="getStatusColor(getProjectDisplayStatus(row.original.project))"
+                    class="rounded-full px-2"
+                  >
+                    {{ getStatusLabel(getProjectDisplayStatus(row.original.project)) }}
+                  </UBadge>
+                </div>
+              </AppLink>
             </template>
 
             <template #client-cell="{ row }">
-              <button
-                class="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-sm text-slate-600 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                @click="navigateToClient(row.original.project.clientId)"
+              <NuxtLink
+                :to="`/clients/${row.original.project.client.id}`"
+                class="inline-flex max-w-full items-center gap-2 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition-colors hover:bg-sky-100"
               >
-                <UIcon name="i-lucide-building-2" />
-                {{ row.original.project.client.name }}
-              </button>
+                <UIcon
+                  name="i-lucide-building-2"
+                  class="shrink-0"
+                />
+                <span class="truncate">{{ row.original.project.client.name }}</span>
+              </NuxtLink>
             </template>
 
-            <template #quote-cell="{ row }">
-              <div class="min-w-44 space-y-1 py-2">
-                <UBadge
-                  variant="soft"
-                  :color="getCoverageSummary(row.original, 'quote').color"
-                  class="rounded-full px-3"
-                >
-                  {{ getCoverageSummary(row.original, 'quote').label }}
-                </UBadge>
-                <p class="text-sm text-slate-500">
-                  {{ getCoverageSummary(row.original, 'quote').detail }}
-                </p>
-              </div>
-            </template>
-
-            <template #invoice-cell="{ row }">
-              <div class="min-w-44 space-y-1 py-2">
-                <UBadge
-                  variant="soft"
-                  :color="getCoverageSummary(row.original, 'invoice').color"
-                  class="rounded-full px-3"
-                >
-                  {{ getCoverageSummary(row.original, 'invoice').label }}
-                </UBadge>
-                <p class="text-sm text-slate-500">
-                  {{ getCoverageSummary(row.original, 'invoice').detail }}
-                </p>
-              </div>
+            <template #progress-cell="{ row }">
+              <BillingRowTimeline :project="row.original" />
             </template>
 
             <template #status-cell="{ row }">
-              <div class="min-w-44 space-y-1 py-2">
-                <UBadge
-                  variant="soft"
-                  :color="getRowStatusSummary(row.original).color"
-                  class="rounded-full px-3"
-                >
-                  {{ getRowStatusSummary(row.original).label }}
-                </UBadge>
-                <p class="text-sm text-slate-500">
-                  {{ getRowStatusSummary(row.original).detail }}
-                </p>
-              </div>
-            </template>
-
-            <template #actions-cell="{ row }">
-              <div class="flex justify-end gap-2">
-                <UButton
-                  size="sm"
-                  variant="soft"
-                  color="neutral"
-                  icon="i-lucide-folder"
-                  @click="navigateToProject(row.original.project.clientId, row.original.project.id)"
-                />
-                <UButton
-                  size="sm"
-                  variant="soft"
-                  color="neutral"
-                  icon="i-lucide-building-2"
-                  @click="navigateToClient(row.original.project.clientId)"
-                />
-              </div>
+              <UBadge
+                variant="soft"
+                :color="billingStatusColors[row.original.billingStatus.tone]"
+                :icon="getBillingStatusIcon(row.original.billingStatus)"
+                class="rounded-full whitespace-nowrap"
+              >
+                {{ row.original.billingStatus.label }}
+              </UBadge>
             </template>
           </UTable>
         </div>
@@ -426,21 +343,35 @@ const navigateToProject = (clientId: number, projectId: number) => {
         </div>
       </div>
 
-      <div
+      <AppEmptyState
         v-else
-        class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center"
+        :icon="isAllCaughtUp ? 'i-lucide-circle-check' : 'i-lucide-inbox'"
+        :icon-class="isAllCaughtUp ? 'text-success-400' : 'text-slate-300'"
+        size="lg"
+        :title="isLoading ? 'Chargement...' : (isAllCaughtUp ? 'Aucun projet en attente' : 'Aucun projet trouvé')"
+        :description="isLoading || isAllCaughtUp
+          ? 'Aucun projet n\'attend de document ou de suivi pour le moment.'
+          : (hasActiveFilters ? 'Essayez de modifier vos filtres' : 'Créez votre premier projet depuis la page clients')"
       >
-        <UIcon
-          name="i-lucide-inbox"
-          class="mb-4 text-6xl text-slate-300"
-        />
-        <p class="mb-2 text-xl text-slate-600">
-          {{ isLoading ? 'Chargement...' : 'Aucun projet trouvé' }}
-        </p>
-        <p class="text-slate-500">
-          {{ searchInput || statusFilter !== 'all' ? 'Essayez de modifier vos filtres' : 'Créez votre premier projet depuis la page clients' }}
-        </p>
-      </div>
+        <template
+          v-if="!isLoading && statusFilter !== 'all'"
+          #actions
+        >
+          <UButton
+            variant="soft"
+            color="neutral"
+            @click="statusFilter = 'all'"
+          >
+            Voir tous les projets
+          </UButton>
+        </template>
+      </AppEmptyState>
     </div>
+
+    <BillingProjectEditPanel
+      v-model:open="isDetailPanelOpen"
+      :project="selectedProject"
+      @saved="refresh"
+    />
   </div>
 </template>

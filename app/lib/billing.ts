@@ -1,20 +1,31 @@
-export type BillingCoverageStatus = 'none' | 'partial' | 'complete'
-
-export type BillingCoverage = {
-  total: number
-  withLinkCount: number
-  missingLinkCount: number
-  status: BillingCoverageStatus
-}
+import {
+  annotateDocumentLifecycle,
+  computeProjectBillingSteps,
+  getBillingStatus,
+  type BillingStatus,
+  type BillingDocumentType,
+  type BillingStep,
+  type DocumentLifecycle,
+  type DocumentStatus
+} from './documents'
 
 export type BillingProjectDocument = {
   id: number
   projectId: number
-  name: string
-  type: 'quote' | 'invoice'
+  type: BillingDocumentType
+  status: DocumentStatus
+  subtype?: string | null
   hasLink: boolean
+  hasFile: boolean
   externalUrl?: string | null
   createdAt?: string | Date | null
+  statusDate?: string | Date | null
+  description?: string | null
+}
+
+export type BillingProjectDocumentWithLifecycle = BillingProjectDocument & {
+  lifecycle: DocumentLifecycle
+  supersededByDocumentId: number | null
 }
 
 type BillingProjectBase = {
@@ -24,6 +35,7 @@ type BillingProjectBase = {
   status?: string | null
   startDate?: string | Date | null
   endDate?: string | Date | null
+  requiresAcompte: boolean
   client: {
     id: number
     name: string
@@ -32,64 +44,27 @@ type BillingProjectBase = {
 
 type BillingProjectStatusInput = {
   project: BillingProjectBase
-  quoteTotal: number
-  quoteWithLinkCount: number
-  invoiceTotal: number
-  invoiceWithLinkCount: number
   documents?: BillingProjectDocument[]
 }
 
 export type BillingProjectStatus = {
   project: BillingProjectBase
-  quoteCoverage: BillingCoverage
-  invoiceCoverage: BillingCoverage
-  documents: BillingProjectDocument[]
-  totalDocuments: number
-  missingLinkCount: number
-  isComplete: boolean
-}
-
-export const getBillingCoverage = (
-  total: number,
-  withLinkCount: number
-): BillingCoverage => {
-  const safeTotal = Math.max(0, total)
-  const safeWithLinkCount = Math.max(0, Math.min(withLinkCount, safeTotal))
-  const missingLinkCount = safeTotal - safeWithLinkCount
-
-  let status: BillingCoverageStatus = 'none'
-
-  if (safeTotal > 0) {
-    status = missingLinkCount > 0 ? 'partial' : 'complete'
-  }
-
-  return {
-    total: safeTotal,
-    withLinkCount: safeWithLinkCount,
-    missingLinkCount,
-    status
-  }
+  documents: BillingProjectDocumentWithLifecycle[]
+  billingSteps: BillingStep[]
+  billingStatus: BillingStatus
 }
 
 export const buildBillingProjectStatus = ({
   project,
-  quoteTotal,
-  quoteWithLinkCount,
-  invoiceTotal,
-  invoiceWithLinkCount,
   documents
 }: BillingProjectStatusInput): BillingProjectStatus => {
-  const quoteCoverage = getBillingCoverage(quoteTotal, quoteWithLinkCount)
-  const invoiceCoverage = getBillingCoverage(invoiceTotal, invoiceWithLinkCount)
-  const missingLinkCount = quoteCoverage.missingLinkCount + invoiceCoverage.missingLinkCount
+  const annotatedDocuments = annotateDocumentLifecycle(documents ?? [])
+  const billingSteps = computeProjectBillingSteps(annotatedDocuments, project.requiresAcompte)
 
   return {
     project,
-    quoteCoverage,
-    invoiceCoverage,
-    documents: documents ?? [],
-    totalDocuments: quoteCoverage.total + invoiceCoverage.total,
-    missingLinkCount,
-    isComplete: quoteCoverage.status === 'complete' && invoiceCoverage.status === 'complete'
+    documents: annotatedDocuments,
+    billingSteps,
+    billingStatus: getBillingStatus(billingSteps)
   }
 }
