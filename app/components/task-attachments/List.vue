@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sortByCreatedAtDesc } from '~/lib/utils'
 import type { TaskAttachment } from '~/types'
 
 const props = defineProps<{
@@ -15,9 +16,7 @@ const selectedAttachmentId = ref<number | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
-const sortedAttachments = computed(() => (
-  [...props.attachments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-))
+const sortedAttachments = computed(() => sortByCreatedAtDesc(props.attachments))
 
 const onSaved = async () => {
   emit('refresh')
@@ -65,17 +64,13 @@ const attachmentToEdit = computed(() => {
       v-if="sortedAttachments.length"
       class="grid grid-cols-1 gap-4"
     >
-      <div
+      <ResourcesCard
         v-for="attachment in sortedAttachments"
         :key="attachment.id"
-        class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-      >
-        <ResourcesCard
-          :resource="attachment"
-          @delete="onDeleteAttachment"
-          @edit="openEditAttachment"
-        />
-      </div>
+        :resource="attachment"
+        @delete="onDeleteAttachment"
+        @edit="openEditAttachment"
+      />
     </div>
 
     <AppEmptyState

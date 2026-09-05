@@ -6,6 +6,7 @@ import type { BillingDocumentRecord } from '~/types'
 defineProps<{
   document: BillingDocumentRecord | null
   documentType: BillingDocumentType
+  warnOnMissingLink?: boolean
 }>()
 </script>
 
@@ -30,8 +31,9 @@ defineProps<{
       <BillingDocumentActionButtons
         :document="document"
         :document-type="documentType"
-        warn-on-missing-link
+        :warn-on-missing-link="warnOnMissingLink"
       />
+      <slot name="extra-actions" />
     </div>
   </div>
   <slot

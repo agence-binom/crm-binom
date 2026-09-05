@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getDocumentFactureNetHref, getDocumentWarning, requiresFactureNetLink as isFactureNetLinkRequired, type BillingDocumentType, type InvoiceSubtype } from '~/lib/documents'
+import { getBillingDocumentTitle, getDocumentFactureNetHref, getDocumentWarning, requiresFactureNetLink as isFactureNetLinkRequired, type BillingDocumentType, type InvoiceSubtype } from '~/lib/documents'
 import type { BillingDocumentRecord } from '~/types'
 
 const props = defineProps<{
@@ -11,6 +11,9 @@ const props = defineProps<{
 
 const requiresFactureNetLink = computed(() => isFactureNetLinkRequired(props.documentType))
 const factureNetHref = computed(() => getDocumentFactureNetHref(props.document ?? {}))
+
+const { isDetailsOpen, menuItems } = useDetailsMenuItem()
+const detailsTitle = computed(() => getBillingDocumentTitle(props))
 
 // Mirrors BillingStepEditor's own warning computation, but reads straight off the saved
 // document since there's no in-progress draft to fall back to in the read-only view.
@@ -42,7 +45,7 @@ const warning = computed(() => getDocumentWarning({
       :href="factureNetHref"
       target="_blank"
       rel="noopener noreferrer"
-      variant="outline"
+      variant="soft"
       color="neutral"
       size="sm"
       icon="i-lucide-external-link"
@@ -54,11 +57,31 @@ const warning = computed(() => getDocumentWarning({
       :document="document"
       :document-type="documentType"
     >
+      <template
+        v-if="document"
+        #extra-actions
+      >
+        <AppActionsMenu :items="menuItems" />
+      </template>
+
       <template #empty>
-        <p class="text-xs text-slate-500">
-          Aucun document
-        </p>
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-xs text-slate-500">
+            Aucun document
+          </p>
+          <AppActionsMenu
+            v-if="document"
+            :items="menuItems"
+          />
+        </div>
       </template>
     </BillingDocumentFileCard>
+
+    <BillingDocumentDetailsModal
+      v-model:open="isDetailsOpen"
+      :title="detailsTitle"
+      :document-type="documentType"
+      :document="document"
+    />
   </div>
 </template>
