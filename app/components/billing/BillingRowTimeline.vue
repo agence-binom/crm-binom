@@ -62,6 +62,10 @@ const timelineItems = computed(() => {
         })
       : null
 
+    const isSkipped = isMuted.value
+      ? step.status !== 'completed'
+      : step.status === 'non_applicable' || step.status === 'cancelled' || step.status === 'refused'
+
     return {
       value: step.documentId ?? step.key,
       icon: palette.icon,
@@ -70,12 +74,21 @@ const timelineItems = computed(() => {
       description: document?.description || undefined,
       warning,
       ui: { indicator: palette.indicator, title: palette.titleClass, separator: undefined as string | undefined },
-      line: palette.line
+      line: palette.line,
+      isSkipped
     }
   })
 
+  // A skipped step keeps its neutral color, but the line leading into it should
+  // continue the color of the next non-skipped step instead of resetting to grey.
+  const nextRealLine: string[] = new Array(nodes.length)
+  for (let index = nodes.length - 1; index >= 0; index -= 1) {
+    const node = nodes[index]!
+    nextRealLine[index] = node.isSkipped && index < nodes.length - 1 ? nextRealLine[index + 1]! : node.line
+  }
+
   for (let index = 0; index < nodes.length - 1; index += 1) {
-    nodes[index]!.ui.separator = nodes[index + 1]!.line
+    nodes[index]!.ui.separator = nextRealLine[index + 1]
   }
 
   return nodes
@@ -92,17 +105,31 @@ const timelineItems = computed(() => {
       item: 'gap-0.5 min-w-0',
       wrapper: 'max-w-40',
       date: 'text-xs',
-      title: 'text-xs truncate'
+      title: 'text-xs'
     }"
   >
+    <template #title="{ item }">
+      <span class="flex min-w-0 items-center gap-1">
+        <span class="truncate">{{ item.title }}</span>
+        <UTooltip
+          v-if="item.warning"
+          :text="item.warning"
+        >
+          <UIcon
+            name="i-lucide-triangle-alert"
+            class="size-3.5 shrink-0 text-warning-500"
+          />
+        </UTooltip>
+      </span>
+    </template>
+
     <template #description="{ item }">
       <p
-        v-if="item.warning || item.description"
-        class="truncate text-xs"
-        :class="item.warning ? 'font-medium text-error-500' : 'text-slate-400'"
-        :title="item.warning || item.description"
+        v-if="item.description"
+        class="truncate text-xs text-slate-400"
+        :title="item.description"
       >
-        {{ item.warning || item.description }}
+        {{ item.description }}
       </p>
     </template>
   </UTimeline>

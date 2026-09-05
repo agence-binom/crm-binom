@@ -61,7 +61,7 @@ export const billingDocumentTypesRequiringFactureNetLink: readonly BillingDocume
 // or refused, the PDF (and, for quote/invoice, the Facture.net link) should be attached; once it's
 // completed, cancelled or refused, the date that happened should be recorded. Surfaces what's still
 // missing so it can replace the description in red instead of failing silently.
-const statusesRequiringFile: DocumentStatus[] = ['sent', 'completed', 'refused']
+const statusesRequiringFile: DocumentStatus[] = ['completed']
 const statusesRequiringDate: DocumentStatus[] = ['completed', 'cancelled', 'refused']
 
 export const getDocumentWarning = (document: {
@@ -240,6 +240,10 @@ export const computeProjectBillingSteps = <T extends BillingDocumentLike>(
 export type BillingStatus = {
   label: string
   tone: 'neutral' | 'warning' | 'success' | 'muted'
+  // The step blocking progress - lets a consumer pick an icon specific to what's actually pending
+  // (a signature isn't a payment) instead of one icon per tone. Null when there's no single
+  // blocking step (fully complete, or derailed by a real refusal/cancellation).
+  step: BillingStepKey | null
 }
 
 const billingStepToIssueLabel: Record<BillingStepKey, string> = {
@@ -262,13 +266,13 @@ export const getBillingStatus = (steps: BillingStep[]): BillingStatus => {
   const hasRealTerminalFailure = steps.some(step =>
     step.documentId !== null && (step.status === 'refused' || step.status === 'cancelled'))
 
-  if (hasRealTerminalFailure) return { label: 'Sans suite', tone: 'muted' }
+  if (hasRealTerminalFailure) return { label: 'Sans suite', tone: 'muted', step: null }
 
   const blockingStep = steps.find(step => step.status === 'draft' || step.status === 'sent')
 
-  if (!blockingStep) return { label: 'Clôturer facturé et payé', tone: 'success' }
+  if (!blockingStep) return { label: 'Clôturer facturé et payé', tone: 'success', step: null }
 
   return blockingStep.status === 'draft'
-    ? { label: `${billingStepToIssueLabel[blockingStep.key]} à émettre`, tone: 'neutral' }
-    : { label: billingStepToSentLabel[blockingStep.key], tone: 'warning' }
+    ? { label: `${billingStepToIssueLabel[blockingStep.key]} à émettre`, tone: 'neutral', step: blockingStep.key }
+    : { label: billingStepToSentLabel[blockingStep.key], tone: 'warning', step: blockingStep.key }
 }

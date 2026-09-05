@@ -3,6 +3,7 @@ import type { TableColumn, TableRow } from '@nuxt/ui'
 import { billingDashboardStatuses } from '~/constants/billing'
 import type { BillingDashboardStatus } from '~/constants/billing'
 import type { BillingProjectStatus } from '~/lib/billing'
+import type { BillingStatus, BillingStepKey } from '~/lib/documents'
 import { getProjectDisplayStatus } from '~/lib/projects'
 
 const PAGE_SIZE = 12
@@ -154,6 +155,28 @@ const billingStatusColors: Record<string, 'info' | 'warning' | 'success' | 'neut
   success: 'success',
   muted: 'neutral'
 }
+
+// Reuses the mini-cascade's own icons for "done"/"dead" (BillingRowTimeline's palettes), so the
+// badge reads as a summary of the row instead of a fifth, unrelated icon set.
+const billingStatusIcons: Record<Exclude<BillingStatus['tone'], 'warning'>, string> = {
+  neutral: 'i-lucide-file-plus',
+  success: 'i-lucide-check',
+  muted: 'i-lucide-x'
+}
+
+// "En attente" covers 3 very different things to wait on - a signature isn't a payment - so the
+// icon is picked from the step actually blocking progress, not a single generic hourglass.
+const waitingStepIcons: Record<BillingStepKey, string> = {
+  proposal: 'i-lucide-eye',
+  quote: 'i-lucide-signature',
+  acompte: 'i-lucide-euro',
+  invoice: 'i-lucide-euro'
+}
+
+const getBillingStatusIcon = (status: BillingStatus) => {
+  if (status.tone === 'warning') return status.step ? waitingStepIcons[status.step] : 'i-lucide-hourglass'
+  return billingStatusIcons[status.tone]
+}
 </script>
 
 <template>
@@ -235,7 +258,7 @@ const billingStatusColors: Record<string, 'info' | 'warning' | 'success' | 'neut
             :columns="columns"
             sticky="header"
             class="max-h-[calc(100vh-20rem)]"
-            :ui="{ tr: 'cursor-pointer', td: 'p-2' }"
+            :ui="{ tr: 'cursor-pointer', td: 'px-2 py-4' }"
             @select="onRowClick"
           >
             <template #project-cell="{ row }">
@@ -280,6 +303,7 @@ const billingStatusColors: Record<string, 'info' | 'warning' | 'success' | 'neut
               <UBadge
                 variant="soft"
                 :color="billingStatusColors[row.original.billingStatus.tone]"
+                :icon="getBillingStatusIcon(row.original.billingStatus)"
                 class="rounded-full whitespace-nowrap"
               >
                 {{ row.original.billingStatus.label }}
