@@ -7,6 +7,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   openInfo: []
+  managePortalAccess: []
   delete: [clientId: number]
   archive: [clientId: number]
   restore: [clientId: number]
@@ -35,6 +36,15 @@ const infos = computed(() => [
           @click="emit('openInfo')"
         >
           Modifier les informations
+        </UButton>
+        <UButton
+          size="sm"
+          variant="soft"
+          color="neutral"
+          icon="i-lucide-shield-check"
+          @click="emit('managePortalAccess')"
+        >
+          Gérer l'accès portail
         </UButton>
         <UButton
           v-if="!client.archived"

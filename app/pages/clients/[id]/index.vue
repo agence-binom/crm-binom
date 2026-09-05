@@ -8,6 +8,7 @@ const contacts = computed(() => data.value?.contacts || [])
 const projects = computed(() => data.value?.projects || [])
 
 const isClientInfoModalOpen = ref(false)
+const isPortalAccessModalOpen = ref(false)
 const isContactModalOpen = ref(false)
 const isProjectModalOpen = ref(false)
 const selectedContactId = ref<number | null>(null)
@@ -109,6 +110,7 @@ const projectToEdit = computed(() => {
     <ClientsHeader
       :client="client"
       @open-info="isClientInfoModalOpen = true"
+      @manage-portal-access="isPortalAccessModalOpen = true"
       @delete="onDeleteClient"
       @archive="onArchiveClient"
       @restore="onRestoreClient"
@@ -119,6 +121,12 @@ const projectToEdit = computed(() => {
       :client-id="client.id"
       :client="client"
       @saved="handleClientChange"
+    />
+
+    <ClientsPortalAccessModal
+      v-model:open="isPortalAccessModalOpen"
+      :contacts="contacts"
+      @saved="handleContactChange"
     />
 
     <ContactsModal

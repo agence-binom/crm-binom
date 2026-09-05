@@ -225,6 +225,13 @@
       "when": 1787840518438,
       "tag": "0031_careful_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1788605068379,
+      "tag": "0032_kind_prism",
+      "breakpoints": true
     }
   ]
 }
