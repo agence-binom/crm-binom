@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { documentStatusesByType } from '~/validation/billing-documents'
-import { billingDocumentTypesRequiringFactureNetLink, documentStatusLabels, getDocumentWarning, type BillingDocumentType, type DocumentStatus, type InvoiceSubtype } from '~/lib/documents'
+import { documentStatusLabels, getDocumentWarning, requiresFactureNetLink as isFactureNetLinkRequired, type BillingDocumentType, type DocumentStatus, type InvoiceSubtype } from '~/lib/documents'
 import { toProjectInputDate } from '~/lib/projects'
-import { formatFileSize } from '~/lib/utils'
 import type { BillingDocumentRecord } from '~/types'
 
 const props = defineProps<{
@@ -86,7 +85,7 @@ const onUploaded = () => {
   emit('saved')
 }
 
-const requiresFactureNetLink = computed(() => billingDocumentTypesRequiringFactureNetLink.includes(props.documentType))
+const requiresFactureNetLink = computed(() => isFactureNetLinkRequired(props.documentType))
 
 // Reads the in-progress draft rather than the last-saved `document`, so a step being pushed
 // past "draft" for the very first time (no document exists yet) still warns before the user
@@ -156,31 +155,10 @@ defineExpose({ isDirty, save, reset: resetDraft })
       />
     </UFormField>
 
-    <div
-      v-if="document?.filename"
-      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5"
-    >
-      <div class="min-w-0">
-        <p
-          class="truncate text-sm font-medium text-slate-700"
-          :title="document.filename"
-        >
-          {{ document.filename }}
-        </p>
-        <p class="text-xs text-slate-500">
-          {{ formatFileSize(document.size || 0) }}
-        </p>
-      </div>
-
-      <div class="flex shrink-0 items-center gap-1.5">
-        <BillingDocumentActionButtons
-          v-if="document"
-          :document="document"
-          :document-type="documentType"
-          warn-on-missing-link
-        />
-      </div>
-    </div>
+    <BillingDocumentFileCard
+      :document="document"
+      :document-type="documentType"
+    />
 
     <UTooltip :text="uploadDisabled ? 'Enregistrez ou annulez vos modifications avant d\'ajouter un document.' : undefined">
       <UButton

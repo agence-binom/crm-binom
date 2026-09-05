@@ -57,6 +57,9 @@ export const getDocumentFactureNetHref = (document: { externalUrl?: string | nul
 // Only quote and invoice steps go through Facture.net — the commercial proposal doesn't.
 export const billingDocumentTypesRequiringFactureNetLink: readonly BillingDocumentType[] = ['quote', 'invoice']
 
+export const requiresFactureNetLink = (type: BillingDocumentType): boolean =>
+  billingDocumentTypesRequiringFactureNetLink.includes(type)
+
 // A step past "draft" is expected to have its paperwork in order: once it's been sent, validated
 // or refused, the PDF (and, for quote/invoice, the Facture.net link) should be attached; once it's
 // completed, cancelled or refused, the date that happened should be recorded. Surfaces what's still
@@ -280,6 +283,31 @@ export const getForwardLineColors = (nodes: { line: string, isSkipped: boolean }
     colors[index] = node.isSkipped && index < nodes.length - 1 ? colors[index + 1]! : node.line
   }
   return colors
+}
+
+// Mutates each node's `ui.separator` in place to the forward-looking line color computed above -
+// shared by every timeline that renders `getForwardLineColors` output as connecting segments.
+export const applyStepSeparators = <T extends { line: string, isSkipped: boolean, ui: { separator: string | undefined } }>(nodes: T[]): T[] => {
+  const nextRealLine = getForwardLineColors(nodes)
+  for (let index = 0; index < nodes.length - 1; index += 1) {
+    nodes[index]!.ui.separator = nextRealLine[index + 1]
+  }
+  return nodes
+}
+
+export type StepPalette = { icon?: string, indicator: string, line: string, titleClass: string }
+
+export const billingStepPalettes: Record<BillingStepCategory, StepPalette> = {
+  completed: { icon: 'i-lucide-check', indicator: 'bg-success-500 text-white', line: 'bg-success-500', titleClass: 'font-semibold' },
+  sent: { icon: 'i-lucide-hourglass', indicator: 'bg-warning-500 text-white', line: 'bg-warning-500', titleClass: 'font-semibold' },
+  negative: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' },
+  active: { icon: 'i-lucide-circle', indicator: 'bg-info-500 text-white', line: 'bg-info-500', titleClass: 'font-semibold' },
+  pending: { indicator: 'bg-slate-100 text-slate-300', line: 'bg-slate-200', titleClass: 'text-slate-400' }
+}
+
+export const mutedBillingStepPalette: Record<'completed' | 'other', StepPalette> = {
+  completed: { icon: 'i-lucide-check', indicator: 'bg-slate-200 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 font-semibold' },
+  other: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' }
 }
 
 export const documentStatusBadgeColors: Record<DocumentStatus, 'neutral' | 'warning' | 'success' | 'error'> = {

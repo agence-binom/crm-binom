@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import type { BillingDocumentType, DocumentLifecycle } from '~/lib/documents'
-import type { BillingDocumentRecord, ProjectResource, Task, User } from '~/types'
-
-type AnnotatedBillingDocument = BillingDocumentRecord & {
-  type: BillingDocumentType
-  lifecycle: DocumentLifecycle
-  supersededByDocumentId: number | null
-}
+import type { ProjectResource, Task, User } from '~/types'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
@@ -15,9 +8,6 @@ const projectId = computed(() => Number(route.params.projectId))
 const { data, error, refresh } = await useFetch(`/api/projects/${projectId.value}/dashboard`)
 const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
-const quoteDocuments = computed<AnnotatedBillingDocument[]>(() => (data.value?.documents?.quote as AnnotatedBillingDocument[] | undefined) || [])
-const invoiceDocuments = computed<AnnotatedBillingDocument[]>(() => (data.value?.documents?.invoice as AnnotatedBillingDocument[] | undefined) || [])
-const commercialProposalDocuments = computed<AnnotatedBillingDocument[]>(() => (data.value?.documents?.commercial_proposal as AnnotatedBillingDocument[] | undefined) || [])
 const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
@@ -29,12 +19,6 @@ const isUploadModalOpen = ref(false)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 const { setArchived } = useArchiveAction()
-
-const billingDocuments = computed(() => [
-  ...commercialProposalDocuments.value,
-  ...quoteDocuments.value,
-  ...invoiceDocuments.value
-])
 
 const onDeleteProject = async (projectId: number) => {
   await deleteResource('projet', projectId, '/api/projects', async () => {
@@ -56,12 +40,6 @@ const handleProjectChange = async () => {
 
 const handleDocumentsChange = async () => {
   await refresh()
-}
-
-const onDeleteDocument = async (documentId: number) => {
-  await deleteResource('document', documentId, '/api/billing-documents', async () => {
-    await refresh()
-  })
 }
 </script>
 
@@ -171,11 +149,14 @@ const onDeleteDocument = async (documentId: number) => {
         </div>
       </UCard>
 
-      <BillingHorizontalTimeline
-        :documents="billingDocuments"
-        @delete-document="onDeleteDocument"
-        @update-document="handleDocumentsChange"
-      />
+      <UCard>
+        <BillingStepsTimeline
+          :project-id="project.id"
+          :requires-acompte="project.requiresAcompte"
+          orientation="horizontal"
+          @saved="handleDocumentsChange"
+        />
+      </UCard>
     </div>
 
     <ConfirmModal
