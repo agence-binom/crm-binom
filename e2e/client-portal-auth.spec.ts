@@ -15,9 +15,11 @@ test('un contact avec un accès portail actif accède a son espace client', asyn
   const context = await browser.newContext({ storageState })
   const page = await context.newPage()
 
+  // /espace-client redirige vers le premier projet du client (voir app/pages/espace-client/index.vue).
   await page.goto('/espace-client')
-  await expect(page.getByText('Bienvenue Jean')).toBeVisible()
-  await expect(page.getByText('Atelier Dupont')).toBeVisible()
+  await expect(page).toHaveURL(/\/espace-client\/projets\/\d+/)
+  await expect(page.getByRole('heading', { name: 'Identité visuelle' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Refonte site vitrine' })).toBeVisible()
 
   await context.close()
 })
@@ -47,7 +49,7 @@ test('un contact actif ne peut pas accéder aux pages internes', async ({ browse
   const page = await context.newPage()
 
   await page.goto('/clients')
-  await expect(page).toHaveURL('/espace-client')
+  await expect(page).toHaveURL(/\/espace-client/)
 
   await context.close()
 })
