@@ -237,6 +237,60 @@ export const computeProjectBillingSteps = <T extends BillingDocumentLike>(
   ]
 }
 
+// A step's position relative to the pipeline's current blocking step, used to decide both how it
+// should be painted and (in the drawer) whether it's still editable: "previous" outcomes
+// (completed/sent/skipped) already happened and stay editable, "pending" steps haven't been
+// reached yet and are locked until the cascade gets there.
+export type BillingStepCategory = 'completed' | 'sent' | 'negative' | 'active' | 'pending'
+
+export const getBillingStepActiveIndex = (steps: BillingStep[]): number =>
+  steps.findIndex(step => step.status === 'draft' || step.status === 'sent')
+
+export const getBillingStepCategory = (
+  step: BillingStep,
+  index: number,
+  activeIndex: number,
+  isMuted: boolean
+): BillingStepCategory => {
+  if (isMuted) return step.status === 'completed' ? 'completed' : 'negative'
+
+  switch (step.status) {
+    case 'completed': return 'completed'
+    case 'sent': return 'sent'
+    case 'non_applicable':
+    case 'cancelled':
+    case 'refused': return 'negative'
+    default: return index === activeIndex ? 'active' : 'pending'
+  }
+}
+
+export const getBillingStepLabel = (step: Pick<BillingStep, 'key' | 'documentType' | 'subtype'>): string => {
+  if (step.key === 'acompte') return invoiceSubtypeLabels.acompte
+  if (step.key === 'invoice') return step.subtype ? invoiceSubtypeLabels[step.subtype] : billingDocumentTypeLabels.invoice
+  return billingDocumentTypeLabels[step.documentType]
+}
+
+// A skipped ("negative") node keeps its own neutral color, but the line leading into it should
+// continue the color of the next non-skipped node instead of resetting to grey - so a run of
+// skipped steps reads as a continuation of the pipeline rather than a dead zone.
+export const getForwardLineColors = (nodes: { line: string, isSkipped: boolean }[]): string[] => {
+  const colors: string[] = new Array(nodes.length)
+  for (let index = nodes.length - 1; index >= 0; index -= 1) {
+    const node = nodes[index]!
+    colors[index] = node.isSkipped && index < nodes.length - 1 ? colors[index + 1]! : node.line
+  }
+  return colors
+}
+
+export const documentStatusBadgeColors: Record<DocumentStatus, 'neutral' | 'warning' | 'success' | 'error'> = {
+  draft: 'neutral',
+  sent: 'warning',
+  completed: 'success',
+  cancelled: 'error',
+  refused: 'error',
+  non_applicable: 'neutral'
+}
+
 export type BillingStatus = {
   label: string
   tone: 'neutral' | 'warning' | 'success' | 'muted'

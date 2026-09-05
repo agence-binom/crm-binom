@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BillingProjectStatus } from '~/lib/billing'
-import { billingDocumentTypeLabels, getDocumentWarning, invoiceSubtypeLabels, type BillingStep } from '~/lib/documents'
+import { getBillingStepActiveIndex, getBillingStepCategory, getBillingStepLabel, getDocumentWarning, getForwardLineColors, type BillingStep } from '~/lib/documents'
 import { formatDateOnly } from '~/lib/utils'
 
 const props = defineProps<{
@@ -22,27 +22,14 @@ const mutedPalette: Record<'completed' | 'other', StepPalette> = {
   other: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' }
 }
 
-const stepLabel = (step: BillingStep) => {
-  if (step.key === 'acompte') return invoiceSubtypeLabels.acompte
-  if (step.key === 'invoice') return step.subtype ? invoiceSubtypeLabels[step.subtype] : billingDocumentTypeLabels.invoice
-  return billingDocumentTypeLabels[step.documentType]
-}
-
 const isMuted = computed(() => props.project.billingStatus.tone === 'muted')
 
-const activeIndex = computed(() => props.project.billingSteps.findIndex(step => step.status === 'draft' || step.status === 'sent'))
+const activeIndex = computed(() => getBillingStepActiveIndex(props.project.billingSteps))
 
 const paletteFor = (step: BillingStep, index: number): StepPalette => {
   if (isMuted.value) return step.status === 'completed' ? mutedPalette.completed : mutedPalette.other
 
-  switch (step.status) {
-    case 'completed': return palettes.completed
-    case 'sent': return palettes.sent
-    case 'non_applicable':
-    case 'cancelled':
-    case 'refused': return palettes.negative
-    default: return index === activeIndex.value ? palettes.active : palettes.pending
-  }
+  return palettes[getBillingStepCategory(step, index, activeIndex.value, false)]
 }
 
 const timelineItems = computed(() => {
@@ -70,7 +57,7 @@ const timelineItems = computed(() => {
       value: step.documentId ?? step.key,
       icon: palette.icon,
       date: step.status === 'completed' ? formatDateOnly(document?.statusDate ?? document?.createdAt) : undefined,
-      title: stepLabel(step),
+      title: getBillingStepLabel(step),
       description: document?.description || undefined,
       warning,
       ui: { indicator: palette.indicator, title: palette.titleClass, separator: undefined as string | undefined },
@@ -79,14 +66,7 @@ const timelineItems = computed(() => {
     }
   })
 
-  // A skipped step keeps its neutral color, but the line leading into it should
-  // continue the color of the next non-skipped step instead of resetting to grey.
-  const nextRealLine: string[] = new Array(nodes.length)
-  for (let index = nodes.length - 1; index >= 0; index -= 1) {
-    const node = nodes[index]!
-    nextRealLine[index] = node.isSkipped && index < nodes.length - 1 ? nextRealLine[index + 1]! : node.line
-  }
-
+  const nextRealLine = getForwardLineColors(nodes)
   for (let index = 0; index < nodes.length - 1; index += 1) {
     nodes[index]!.ui.separator = nextRealLine[index + 1]
   }
