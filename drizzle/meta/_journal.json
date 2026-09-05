@@ -232,6 +232,13 @@
       "when": 1788605068379,
       "tag": "0032_kind_prism",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1788615894605,
+      "tag": "0033_happy_magus",
+      "breakpoints": true
     }
   ]
 }

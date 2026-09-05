@@ -20,10 +20,12 @@ select gen_random_uuid(), id, json_build_object('sub', id::text, 'email', email)
 from auth.users
 where email in ('admin@crmbinom.test', 'employee@crmbinom.test', 'client@crmbinom.test');
 
+-- Le rôle 'client' n'existe plus pour les utilisateurs internes (voir issue #101) : ce compte
+-- reste utile en l'état pour tester le cas "employé sans droits admin" (invite/revoke portail).
 insert into public.users ("authUserId", name, email, role) values
   ('a0000000-0000-0000-0000-000000000001', 'Alice Admin', 'admin@crmbinom.test', 'admin'),
   ('a0000000-0000-0000-0000-000000000002', 'Eric Employé', 'employee@crmbinom.test', 'employee'),
-  ('a0000000-0000-0000-0000-000000000003', 'Camille Client', 'client@crmbinom.test', 'client');
+  ('a0000000-0000-0000-0000-000000000003', 'Camille Client', 'client@crmbinom.test', 'employee');
 
 -- Client-portal test accounts (issue #100).
 insert into auth.users (

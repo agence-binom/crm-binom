@@ -4,9 +4,16 @@ import { db } from '~/db/index'
 import { contactsTable } from '~/db/schema/contacts'
 import { contactIdSchema } from '~/validation/contacts'
 import { findConflictingPortalContact, getPortalServiceRoleClient, requireContactById } from '../../../../utils/client-portal'
-import { isAlreadyRegisteredAuthError } from '../../../../lib/client-portal'
+import { canManagePortalAccess, isAlreadyRegisteredAuthError } from '../../../../lib/client-portal'
 
 export default defineEventHandler(async (event) => {
+  if (!canManagePortalAccess(event.context.appUser?.role)) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Seuls les administrateurs peuvent gérer l’accès portail d’un contact'
+    })
+  }
+
   const { id } = await getValidatedRouterParams(event, contactIdSchema.parse)
 
   const contact = await requireContactById(id)
