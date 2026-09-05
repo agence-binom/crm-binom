@@ -1,35 +1,20 @@
 <script setup lang="ts">
 import type { BillingProjectStatus } from '~/lib/billing'
-import { getBillingStepActiveIndex, getBillingStepCategory, getBillingStepLabel, getDocumentWarning, getForwardLineColors, type BillingStep } from '~/lib/documents'
+import { applyStepSeparators, billingStepPalettes, getBillingStepActiveIndex, getBillingStepCategory, getBillingStepLabel, getDocumentWarning, mutedBillingStepPalette, type BillingStep, type StepPalette } from '~/lib/documents'
 import { formatDateOnly } from '~/lib/utils'
 
 const props = defineProps<{
   project: BillingProjectStatus
 }>()
 
-type StepPalette = { icon?: string, indicator: string, line: string, titleClass: string }
-
-const palettes: Record<'completed' | 'sent' | 'negative' | 'active' | 'pending', StepPalette> = {
-  completed: { icon: 'i-lucide-check', indicator: 'bg-success-500 text-white', line: 'bg-success-500', titleClass: 'font-semibold' },
-  sent: { icon: 'i-lucide-hourglass', indicator: 'bg-warning-500 text-white', line: 'bg-warning-500', titleClass: 'font-semibold' },
-  negative: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' },
-  active: { icon: 'i-lucide-circle', indicator: 'bg-info-500 text-white', line: 'bg-info-500', titleClass: 'font-semibold' },
-  pending: { indicator: 'bg-slate-100 text-slate-300', line: 'bg-slate-200', titleClass: 'text-slate-400' }
-}
-
-const mutedPalette: Record<'completed' | 'other', StepPalette> = {
-  completed: { icon: 'i-lucide-check', indicator: 'bg-slate-200 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 font-semibold' },
-  other: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' }
-}
-
 const isMuted = computed(() => props.project.billingStatus.tone === 'muted')
 
 const activeIndex = computed(() => getBillingStepActiveIndex(props.project.billingSteps))
 
 const paletteFor = (step: BillingStep, index: number): StepPalette => {
-  if (isMuted.value) return step.status === 'completed' ? mutedPalette.completed : mutedPalette.other
+  if (isMuted.value) return step.status === 'completed' ? mutedBillingStepPalette.completed : mutedBillingStepPalette.other
 
-  return palettes[getBillingStepCategory(step, index, activeIndex.value, false)]
+  return billingStepPalettes[getBillingStepCategory(step, index, activeIndex.value, false)]
 }
 
 const timelineItems = computed(() => {
@@ -66,12 +51,7 @@ const timelineItems = computed(() => {
     }
   })
 
-  const nextRealLine = getForwardLineColors(nodes)
-  for (let index = 0; index < nodes.length - 1; index += 1) {
-    nodes[index]!.ui.separator = nextRealLine[index + 1]
-  }
-
-  return nodes
+  return applyStepSeparators(nodes)
 })
 </script>
 

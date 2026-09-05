@@ -54,10 +54,10 @@ test('le filtre de statut du dashboard et le lifecycle de la fiche projet sont c
   const success = await successResponse.json()
   expect(success.items.map((item: { project: { id: number } }) => item.project.id)).toContain(projectId)
 
-  for (const tone of ['neutral', 'warning', 'muted']) {
-    const response = await page.request.get('/api/billing/projects', {
-      params: { status: tone, projectId }
-    })
+  const otherToneResponses = await Promise.all(['neutral', 'warning', 'muted'].map(tone =>
+    page.request.get('/api/billing/projects', { params: { status: tone, projectId } })
+  ))
+  for (const response of otherToneResponses) {
     const body = await response.json()
     expect(body.items.map((item: { project: { id: number } }) => item.project.id)).not.toContain(projectId)
   }
