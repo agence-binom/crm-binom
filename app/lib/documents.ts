@@ -106,6 +106,11 @@ export const getEffectiveInvoiceSubtype = (
   return subtype && (invoiceSubtypes as readonly string[]).includes(subtype) ? subtype : 'unique'
 }
 
+export const getBillingDocumentTitle = (document: { documentType: BillingDocumentType, subtype?: string | null }): string => {
+  if (document.documentType !== 'invoice') return billingDocumentTypeLabels[document.documentType]
+  return invoiceSubtypeLabels[getEffectiveInvoiceSubtype({ type: document.documentType, subtype: document.subtype }) ?? 'unique']
+}
+
 export type DocumentLifecycle = 'current' | 'superseded'
 
 export type LifecycleAnnotatedDocument<

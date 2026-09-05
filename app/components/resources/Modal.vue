@@ -267,6 +267,7 @@ const onSubmit = async () => {
         </UFormField>
 
         <UFormField
+          v-if="selectedType !== 'text' || description.trim()"
           label="Description"
           name="description"
         >

@@ -38,15 +38,12 @@ const onSaved = () => emit('refresh')
       v-if="sortedResources.length"
       class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
-      <div
+      <ResourcesCard
         v-for="resource in sortedResources"
         :key="resource.id"
-        class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-      >
-        <ResourcesCard :resource="resource">
-          <template #actions />
-        </ResourcesCard>
-      </div>
+        :resource="resource"
+        readonly
+      />
     </div>
 
     <AppEmptyState

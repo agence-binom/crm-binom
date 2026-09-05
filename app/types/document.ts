@@ -29,6 +29,8 @@ export type BillingDocumentRecord = {
   downloadUrl?: string | null
   mimetype?: string | null
   size?: number | null
+  documentDescription?: string | null
+  documentCreatedAt?: string | Date | null
   createdAt: string | Date
   updatedAt?: string | Date
 }
