@@ -23,25 +23,6 @@ export const findActivePortalContactByEmail = async (email: string) => {
   return contact ?? null
 }
 
-export const requireActivePortalContactByEmail = async (email?: string | null) => {
-  if (!email) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: UNAUTHORIZED_PORTAL_MESSAGE
-    })
-  }
-
-  const contact = await findActivePortalContactByEmail(email)
-  if (!contact) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: UNAUTHORIZED_PORTAL_MESSAGE
-    })
-  }
-
-  return contact
-}
-
 // Jointe en une seule requête (plutôt que contact puis client séparément) : les deux ne sont
 // jamais nécessaires l'un sans l'autre pour l'espace client.
 export const requireActivePortalContactWithClient = async (email?: string | null) => {

@@ -5,7 +5,7 @@ export const usersTable = pgTable('users', {
   authUserId: varchar({ length: 255 }).unique(),
   name: varchar({ length: 255 }).notNull(),
   email: varchar({ length: 255 }).notNull().unique(),
-  role: varchar({ length: 50 }).notNull().default('client'), // 'admin' | 'employee' | 'client'
+  role: varchar({ length: 50 }).notNull().default('employee'), // 'admin' | 'employee'
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }).enableRLS()
