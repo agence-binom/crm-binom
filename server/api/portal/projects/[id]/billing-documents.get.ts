@@ -30,7 +30,9 @@ export default defineEventHandler(async (event) => {
       filename: documentsTable.filename,
       filepath: documentsTable.filepath,
       mimetype: documentsTable.mimetype,
-      size: documentsTable.size
+      size: documentsTable.size,
+      documentDescription: documentsTable.description,
+      documentCreatedAt: documentsTable.createdAt
     })
     .from(billingDocumentsTable)
     .leftJoin(documentsTable, eq(billingDocumentsTable.documentId, documentsTable.id))

@@ -243,6 +243,7 @@ const onSubmit = async () => {
         </UFormField>
 
         <UFormField
+          v-if="formState.type !== 'text'"
           label="Description"
           name="description"
         >

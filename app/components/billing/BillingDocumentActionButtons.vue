@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { billingDocumentTypesRequiringFactureNetLink, getDocumentDownloadHref, getDocumentFactureNetHref, type BillingDocumentType } from '~/lib/documents'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   document: { downloadUrl?: string | null, filepath?: string | null, externalUrl?: string | null }
   documentType: BillingDocumentType
   warnOnMissingLink?: boolean
-}>()
+}>(), {
+  warnOnMissingLink: true
+})
 
 const downloadHref = computed(() => getDocumentDownloadHref(props.document))
 const factureNetHref = computed(() => getDocumentFactureNetHref(props.document))
-const requiresFactureNetLink = computed(() => billingDocumentTypesRequiringFactureNetLink.includes(props.documentType))
+const requiresFactureNetLink = computed(() => props.warnOnMissingLink && billingDocumentTypesRequiringFactureNetLink.includes(props.documentType))
 </script>
 
 <template>
@@ -46,7 +48,7 @@ const requiresFactureNetLink = computed(() => billingDocumentTypesRequiringFactu
     <UButton
       size="sm"
       variant="soft"
-      color="primary"
+      color="neutral"
       icon="i-lucide-download"
       :href="downloadHref"
       :disabled="!downloadHref"

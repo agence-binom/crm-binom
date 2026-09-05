@@ -38,13 +38,14 @@ const isOpen = computed({
     </template>
     <template #footer>
       <UButton
-        variant="outline"
+        color="neutral"
+        variant="soft"
         @click="$emit('cancel')"
       >
         Annuler
       </UButton>
       <UButton
-        color="primary"
+        color="error"
         @click="$emit('confirm')"
       >
         Confirmer

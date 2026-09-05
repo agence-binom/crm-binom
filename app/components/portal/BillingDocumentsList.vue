@@ -1,14 +1,6 @@
 <script setup lang="ts">
-import {
-  billingDocumentTypeIcons,
-  billingDocumentTypeLabels,
-  documentStatusBadgeColors,
-  documentStatusLabels,
-  getDocumentDownloadHref,
-  getEffectiveInvoiceSubtype,
-  invoiceSubtypeLabels,
-  type BillingDocumentType
-} from '~/lib/documents'
+import type { DropdownMenuItem } from '@nuxt/ui'
+import { billingDocumentTypeIcons, getBillingDocumentTitle, type BillingDocumentType } from '~/lib/documents'
 import { sortByCreatedAtDesc } from '~/lib/utils'
 import type { BillingDocumentRecord } from '~/types'
 
@@ -16,22 +8,19 @@ const props = defineProps<{
   documents: BillingDocumentRecord[]
 }>()
 
-const sortedDocuments = computed(() => (
-  sortByCreatedAtDesc(props.documents).map(document => ({
-    ...document,
-    downloadHref: getDocumentDownloadHref(document)
-  }))
-))
+const sortedDocuments = computed(() => sortByCreatedAtDesc(props.documents))
 
-const getTitle = (document: BillingDocumentRecord) => {
-  const type = document.documentType as BillingDocumentType
-  if (type !== 'invoice') return billingDocumentTypeLabels[type]
-  return invoiceSubtypeLabels[getEffectiveInvoiceSubtype({ type, subtype: document.subtype }) ?? 'unique']
-}
+const getTitle = getBillingDocumentTitle
 
-const getStatusLabel = (document: BillingDocumentRecord) => (
-  documentStatusLabels[document.documentType as BillingDocumentType][document.status] ?? document.status
-)
+const selectedDocument = ref<BillingDocumentRecord | null>(null)
+
+const getMenuItems = (document: BillingDocumentRecord): DropdownMenuItem[][] => [[
+  {
+    label: 'Voir les informations',
+    icon: 'i-lucide-info',
+    onSelect: () => { selectedDocument.value = document }
+  }
+]]
 </script>
 
 <template>
@@ -42,43 +31,34 @@ const getStatusLabel = (document: BillingDocumentRecord) => (
     <div
       v-for="document in sortedDocuments"
       :key="document.id"
-      class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
+      class="flex flex-col gap-2"
     >
-      <component
-        :is="document.downloadHref ? 'a' : 'div'"
-        :href="document.downloadHref"
-        :target="document.downloadHref ? '_blank' : undefined"
-        rel="noopener noreferrer"
-        class="flex min-w-0 flex-1"
-      >
-        <AppAttachmentMeta
-          :icon="billingDocumentTypeIcons[document.documentType as BillingDocumentType]"
-          :description="document.description"
-          :created-at="document.statusDate ?? document.createdAt"
-        >
-          <template #title>
-            <p class="truncate font-medium">
-              {{ getTitle(document) }}
-            </p>
-            <UBadge
-              :color="documentStatusBadgeColors[document.status]"
-              variant="soft"
-              size="sm"
-            >
-              {{ getStatusLabel(document) }}
-            </UBadge>
-          </template>
+      <div class="flex items-center gap-2 text-sm font-medium text-slate-900">
+        <UIcon
+          :name="billingDocumentTypeIcons[document.documentType as BillingDocumentType]"
+          class="size-4 shrink-0 text-slate-500"
+        />
+        {{ getTitle(document) }}
+      </div>
 
-          <template #meta>
-            <p
-              v-if="document.filename"
-              class="mt-1 truncate text-sm text-gray-600"
-            >
-              {{ document.filename }}
+      <BillingDocumentFileCard
+        :document="document"
+        :document-type="document.documentType as BillingDocumentType"
+        :warn-on-missing-link="false"
+      >
+        <template #extra-actions>
+          <AppActionsMenu :items="getMenuItems(document)" />
+        </template>
+
+        <template #empty>
+          <div class="flex items-center justify-between gap-3 rounded-lg border border-dashed border-slate-200 px-3 py-2.5">
+            <p class="text-xs text-slate-500">
+              Document à venir
             </p>
-          </template>
-        </AppAttachmentMeta>
-      </component>
+            <AppActionsMenu :items="getMenuItems(document)" />
+          </div>
+        </template>
+      </BillingDocumentFileCard>
     </div>
   </div>
 
@@ -87,5 +67,13 @@ const getStatusLabel = (document: BillingDocumentRecord) => (
     icon="i-lucide-file-text"
     title="Aucun document pour le moment"
     description="Votre proposition commerciale, votre devis et vos factures apparaîtront ici."
+  />
+
+  <BillingDocumentDetailsModal
+    :open="selectedDocument !== null"
+    :title="selectedDocument ? getTitle(selectedDocument) : ''"
+    :document-type="(selectedDocument?.documentType as BillingDocumentType) ?? 'invoice'"
+    :document="selectedDocument"
+    @update:open="(value) => { if (!value) selectedDocument = null }"
   />
 </template>

@@ -25,6 +25,7 @@ const statusDateInput = ref(toProjectInputDate(props.document?.statusDate))
 const description = ref(props.document?.description ?? '')
 const externalUrlInput = ref(props.document?.externalUrl ?? '')
 const isUploadModalOpen = ref(false)
+const { isDetailsOpen, menuItems } = useDetailsMenuItem()
 
 const resetDraft = () => {
   status.value = props.document?.status ?? 'draft'
@@ -158,6 +159,20 @@ defineExpose({ isDirty, save, reset: resetDraft })
     <BillingDocumentFileCard
       :document="document"
       :document-type="documentType"
+    >
+      <template
+        v-if="document"
+        #extra-actions
+      >
+        <AppActionsMenu :items="menuItems" />
+      </template>
+    </BillingDocumentFileCard>
+
+    <BillingDocumentDetailsModal
+      v-model:open="isDetailsOpen"
+      :title="title"
+      :document-type="documentType"
+      :document="document"
     />
 
     <UTooltip :text="uploadDisabled ? 'Enregistrez ou annulez vos modifications avant d\'ajouter un document.' : undefined">
