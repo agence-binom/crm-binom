@@ -1,3 +1,7 @@
+export const sortByCreatedAtDesc = <T extends { createdAt: string | Date }>(items: T[]) => (
+  [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+)
+
 export const formatFileSize = (bytes: number) => {
   if (bytes === 0) return '0 Bytes'
   const k = 1024

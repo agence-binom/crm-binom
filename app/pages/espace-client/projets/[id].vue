@@ -7,10 +7,27 @@ const route = useRoute()
 const projectId = computed(() => Number(route.params.id))
 
 const { data, status, error, refresh } = usePortalProjects()
-
 const isLoading = computed(() => status.value === 'pending' && !data.value)
 const project = computed(() => data.value?.projects.find(p => p.id === projectId.value) ?? null)
 const isNotFound = computed(() => !isLoading.value && !error.value && !!data.value && !project.value)
+
+const {
+  data: billingDocumentsData,
+  status: billingDocumentsStatus,
+  error: billingDocumentsError,
+  refresh: refreshBillingDocuments
+} = usePortalProjectBillingDocuments(projectId)
+const billingDocuments = computed(() => billingDocumentsData.value?.documents ?? [])
+const isBillingDocumentsLoading = computed(() => billingDocumentsStatus.value === 'pending' && !billingDocumentsData.value)
+
+const {
+  data: resourcesData,
+  status: resourcesStatus,
+  error: resourcesError,
+  refresh: refreshResources
+} = usePortalProjectResources(projectId)
+const resources = computed(() => resourcesData.value?.resources ?? [])
+const isResourcesLoading = computed(() => resourcesStatus.value === 'pending' && !resourcesData.value)
 </script>
 
 <template>
@@ -78,31 +95,62 @@ const isNotFound = computed(() => !isLoading.value && !error.value && !!data.val
         <h2 class="text-base font-semibold text-slate-900">
           Documents importants
         </h2>
-        <AppEmptyState
-          icon="i-lucide-file-text"
-          title="Aucun document pour le moment"
-          description="Votre proposition commerciale, votre devis et vos factures apparaîtront ici."
+        <USkeleton
+          v-if="isBillingDocumentsLoading"
+          class="h-24"
+        />
+        <UAlert
+          v-else-if="billingDocumentsError"
+          color="error"
+          variant="soft"
+          icon="i-lucide-circle-alert"
+          title="Impossible de charger les documents"
+          :description="getErrorMessage(billingDocumentsError, 'Merci de réessayer dans quelques instants.')"
+        >
+          <template #actions>
+            <UButton
+              color="error"
+              variant="soft"
+              @click="refreshBillingDocuments()"
+            >
+              Réessayer
+            </UButton>
+          </template>
+        </UAlert>
+        <PortalBillingDocumentsList
+          v-else
+          :documents="billingDocuments"
         />
       </div>
 
-      <div class="flex flex-col gap-4 py-8">
-        <div class="flex items-center justify-between">
-          <h2 class="text-base font-semibold text-slate-900">
-            Ressources
-          </h2>
-          <UButton
-            icon="i-lucide-circle-plus"
-            color="neutral"
-            variant="soft"
-            disabled
-          >
-            Nouvelle ressource
-          </UButton>
-        </div>
-        <AppEmptyState
-          icon="i-lucide-folder-open"
-          title="Aucune ressource pour le moment"
-          description="Les fichiers et ressources partagés par l'agence apparaîtront ici."
+      <div class="py-8">
+        <USkeleton
+          v-if="isResourcesLoading"
+          class="h-24"
+        />
+        <UAlert
+          v-else-if="resourcesError"
+          color="error"
+          variant="soft"
+          icon="i-lucide-circle-alert"
+          title="Impossible de charger les ressources"
+          :description="getErrorMessage(resourcesError, 'Merci de réessayer dans quelques instants.')"
+        >
+          <template #actions>
+            <UButton
+              color="error"
+              variant="soft"
+              @click="refreshResources()"
+            >
+              Réessayer
+            </UButton>
+          </template>
+        </UAlert>
+        <PortalResourcesList
+          v-else
+          :resources="resources"
+          :project-id="projectId"
+          @refresh="refreshResources"
         />
       </div>
     </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sortByCreatedAtDesc } from '~/lib/utils'
 import type { ProjectResource } from '~/types'
 
 const props = defineProps<{
@@ -15,9 +16,7 @@ const selectedResourceId = ref<number | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
-const sortedResources = computed(() => (
-  [...props.resources].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-))
+const sortedResources = computed(() => sortByCreatedAtDesc(props.resources))
 
 const onSaved = async () => {
   emit('refresh')
