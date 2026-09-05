@@ -14,13 +14,28 @@ export const resourceAcceptedMimeTypes = [
 export const resourceMaxSizeBytes = 10 * 1024 * 1024
 export const resourceFileInputAccept = resourceAcceptedMimeTypes.join(',')
 
+// A resource link is rendered as a clickable href straight from the database (ResourcesCard, both
+// in the admin app and the client portal) - restricting to http/https at the schema level is what
+// stops a `javascript:`/`data:` URL from ever being persisted and later executed on click.
+const isHttpUrl = (value: string) => {
+  try {
+    return ['http:', 'https:'].includes(new URL(value).protocol)
+  } catch {
+    return false
+  }
+}
+
+const resourceUrlSchema = z.url('Le lien doit être une URL valide')
+  .max(2048, 'Le lien est trop long')
+  .refine(isHttpUrl, 'Le lien doit utiliser le protocole http ou https')
+
 export const resourceCreateSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('link'),
     projectId: z.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif'),
     name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
     description: z.string().optional().or(z.literal('')),
-    url: z.url('Le lien doit être une URL valide').max(2048, 'Le lien est trop long')
+    url: resourceUrlSchema
   }),
   z.object({
     type: z.literal('text'),
@@ -40,7 +55,7 @@ export const resourceUploadMetadataSchema = z.object({
 export const resourceUpdateSchema = z.object({
   name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional(),
   description: z.string().optional().or(z.literal('')),
-  url: z.url('Le lien doit être une URL valide').max(2048, 'Le lien est trop long').optional(),
+  url: resourceUrlSchema.optional(),
   content: z.string().min(1, 'Le contenu ne peut pas être vide').optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Au moins un champ doit être fourni'

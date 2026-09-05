@@ -1,9 +1,11 @@
 import { createError, type H3Event } from 'h3'
 import { and, eq, ne, sql } from 'drizzle-orm'
+import type { InferSelectModel } from 'drizzle-orm'
 import { serverSupabaseServiceRole } from '#supabase/server'
 import { db } from '~/db'
 import { contactsTable } from '~/db/schema/contacts'
 import { clientsTable } from '~/db/schema/clients'
+import { projectsTable } from '~/db/schema/projects'
 import { normalizeEmailAddress } from '../lib/auth-users'
 
 const UNAUTHORIZED_PORTAL_MESSAGE = 'Cette adresse email n’est pas autorisée à accéder à l’espace client.'
@@ -95,6 +97,36 @@ export const findConflictingPortalContact = async (email: string, excludeContact
     .limit(1)
 
   return conflict ?? null
+}
+
+// `middleware/01-auth.ts` sets this on every /api/portal/* request - centralized here so the cast
+// isn't repeated at every endpoint.
+export const getPortalClient = (event: H3Event) => (
+  event.context.portalClient as InferSelectModel<typeof clientsTable>
+)
+
+// Every portal endpoint scoped to a single project (resources, billing documents...) must call
+// this before touching the projectId from the route/body - it's what stops a contact from reading
+// or writing another client's project by guessing its id.
+export const requirePortalProject = async (clientId: number, projectId: number) => {
+  const [project] = await db
+    .select({ id: projectsTable.id })
+    .from(projectsTable)
+    .where(and(
+      eq(projectsTable.id, projectId),
+      eq(projectsTable.clientId, clientId),
+      eq(projectsTable.archived, false)
+    ))
+    .limit(1)
+
+  if (!project) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: 'Projet non trouvé'
+    })
+  }
+
+  return project
 }
 
 export const getPortalServiceRoleClient = (event: H3Event) => {

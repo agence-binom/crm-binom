@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sortByCreatedAtDesc } from '~/lib/utils'
 import type { TaskAttachment } from '~/types'
 
 const props = defineProps<{
@@ -15,9 +16,7 @@ const selectedAttachmentId = ref<number | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
-const sortedAttachments = computed(() => (
-  [...props.attachments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-))
+const sortedAttachments = computed(() => sortByCreatedAtDesc(props.attachments))
 
 const onSaved = async () => {
   emit('refresh')

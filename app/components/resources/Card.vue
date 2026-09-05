@@ -71,22 +71,24 @@ const href = computed(() => getExternalHref(props.resource))
     </AppAttachmentMeta>
   </component>
 
-  <div class="flex shrink-0 items-center gap-2">
-    <UButton
-      size="sm"
-      variant="soft"
-      color="neutral"
-      icon="i-lucide-pencil"
-      aria-label="Modifier la ressource"
-      @click.prevent="$emit('edit', resource.id)"
-    />
-    <UButton
-      size="sm"
-      variant="soft"
-      color="error"
-      icon="i-lucide-trash-2"
-      aria-label="Supprimer la ressource"
-      @click.prevent="$emit('delete', resource.id)"
-    />
-  </div>
+  <slot name="actions">
+    <div class="flex shrink-0 items-center gap-2">
+      <UButton
+        size="sm"
+        variant="soft"
+        color="neutral"
+        icon="i-lucide-pencil"
+        aria-label="Modifier la ressource"
+        @click.prevent="$emit('edit', resource.id)"
+      />
+      <UButton
+        size="sm"
+        variant="soft"
+        color="error"
+        icon="i-lucide-trash-2"
+        aria-label="Supprimer la ressource"
+        @click.prevent="$emit('delete', resource.id)"
+      />
+    </div>
+  </slot>
 </template>
