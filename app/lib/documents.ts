@@ -83,7 +83,7 @@ export const getDocumentWarning = (document: {
     if (requiresFactureNetLink && !document.hasLink) missing.push('Lien Facture.net manquant')
   }
 
-  if (statusesRequiringDate.includes(document.status) && !document.statusDate) {
+  if (document.type !== 'commercial_proposal' && statusesRequiringDate.includes(document.status) && !document.statusDate) {
     missing.push('Date manquante')
   }
 

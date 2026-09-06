@@ -127,6 +127,10 @@ const onRowClick = (event: Event, row: TableRow<BillingProjectStatus>) => {
 
 const columns: TableColumn<BillingProjectStatus>[] = [
   {
+    id: 'client',
+    header: 'Client'
+  },
+  {
     id: 'project',
     header: 'Projet',
     meta: {
@@ -135,10 +139,6 @@ const columns: TableColumn<BillingProjectStatus>[] = [
         td: 'w-48 max-w-48'
       }
     }
-  },
-  {
-    id: 'client',
-    header: 'Client'
   },
   {
     id: 'progress',

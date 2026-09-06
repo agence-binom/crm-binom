@@ -116,7 +116,7 @@ defineExpose({ isDirty, save, reset: resetDraft })
       <span>{{ warning }}</span>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2">
+    <div :class="['grid gap-4', documentType === 'commercial_proposal' ? 'sm:grid-cols-1' : 'sm:grid-cols-2']">
       <UFormField label="État">
         <USelect
           v-model="status"
@@ -127,7 +127,10 @@ defineExpose({ isDirty, save, reset: resetDraft })
         />
       </UFormField>
 
-      <UFormField :label="dateLabel">
+      <UFormField
+        v-if="documentType !== 'commercial_proposal'"
+        :label="dateLabel"
+      >
         <UInput
           v-model="statusDateInput"
           type="date"
