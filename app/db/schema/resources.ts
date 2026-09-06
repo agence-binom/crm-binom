@@ -8,16 +8,16 @@ export const resourcesTable = pgTable('resources', {
   name: varchar({ length: 255 }).notNull(),
   description: text(),
 
-  // document only
+  // Document-only fields
   filename: varchar({ length: 255 }),
   filepath: varchar({ length: 500 }),
   mimetype: varchar({ length: 100 }),
   size: integer(),
 
-  // link only
+  // Link-only field
   url: varchar({ length: 2048 }),
 
-  // text only
+  // Text-only field
   content: text(),
 
   createdAt: timestamp().notNull().defaultNow(),

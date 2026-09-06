@@ -3,16 +3,16 @@ import { z } from 'zod'
 export const userCreateSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
   email: z.email('Email invalide').max(255, 'Email trop long'),
-  role: z.enum(['admin', 'employee', 'client'], {
-    message: 'Le rôle doit être "admin", "employee" ou "client"'
-  }).default('client')
+  role: z.enum(['admin', 'employee'], {
+    message: 'Le rôle doit être "admin" ou "employee"'
+  }).default('employee')
 })
 
 export const userUpdateSchema = z.object({
   name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional(),
   email: z.email('Email invalide').max(255, 'Email trop long').optional(),
-  role: z.enum(['admin', 'employee', 'client'], {
-    message: 'Le rôle doit être "admin", "employee" ou "client"'
+  role: z.enum(['admin', 'employee'], {
+    message: 'Le rôle doit être "admin" ou "employee"'
   }).optional()
 }).refine(
   data => Object.keys(data).length > 0,

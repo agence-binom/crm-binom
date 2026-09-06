@@ -8,13 +8,13 @@ export const taskAttachmentsTable = pgTable('task_attachments', {
   name: varchar({ length: 255 }).notNull(),
   description: text(),
 
-  // document only
+  // Document-only fields
   filename: varchar({ length: 255 }),
   filepath: varchar({ length: 500 }),
   mimetype: varchar({ length: 100 }),
   size: integer(),
 
-  // link only
+  // Link-only field
   url: varchar({ length: 2048 }),
 
   createdAt: timestamp().notNull().defaultNow(),

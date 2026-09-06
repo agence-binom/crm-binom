@@ -11,8 +11,7 @@ const optionalDateSchema = z.preprocess(
   value => (value === '' || value == null ? undefined : value),
   z.coerce.date().optional()
 )
-// null est préservé (contrairement à optionalDateSchema) pour distinguer
-// "champ non fourni" (undefined, ignoré par le update SQL) de "date à effacer" (null).
+// Preserve null so updates can distinguish an omitted field from a date being cleared.
 const nullableDateSchema = z.preprocess(
   value => (value === '' ? undefined : value),
   z.coerce.date().nullable().optional()

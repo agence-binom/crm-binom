@@ -20,8 +20,6 @@ export default defineEventHandler(async (event) => {
   const metadata = documentUploadMetadataSchema.parse({
     entityType: formData.get('entityType'),
     entityId: formData.get('entityId'),
-    documentType: formData.get('documentType'),
-    externalUrl: formData.get('externalUrl'),
     name: formData.get('name'),
     description: formData.get('description')
   })
@@ -29,8 +27,7 @@ export default defineEventHandler(async (event) => {
   const filepath = await buildDocumentStoragePath(
     metadata.entityType,
     metadata.entityId,
-    fileEntry.name,
-    metadata.documentType
+    fileEntry.name
   )
   await uploadDocumentFile(event, filepath, fileEntry)
 

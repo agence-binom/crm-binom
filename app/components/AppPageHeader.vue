@@ -14,6 +14,7 @@ defineProps<{
 <template>
   <div class="mb-6 flex items-start justify-between border-b border-slate-100 pb-4">
     <div class="flex flex-1 flex-col gap-2">
+      <slot name="eyebrow" />
       <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
         {{ title }}
       </h1>

@@ -14,5 +14,7 @@ export type Contact = {
   mobile?: string | null
   notes?: string | null
   archived?: boolean | null
+  portalStatus?: string | null
+  portalLastLoginAt?: string | null
   client?: ContactClientSummary | null
 }

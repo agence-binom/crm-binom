@@ -1,5 +1,6 @@
-import { createError } from 'h3'
+import { createError, type H3Event } from 'h3'
 import { eq, sql } from 'drizzle-orm'
+import { serverSupabaseUser } from '#supabase/server'
 import { db } from '~/db'
 import { usersTable } from '~/db/schema/users'
 import { normalizeEmailAddress } from '../lib/auth-users'
@@ -7,6 +8,19 @@ import { normalizeEmailAddress } from '../lib/auth-users'
 const UNAUTHORIZED_LOGIN_MESSAGE = 'Cette adresse email n’est pas autorisée à accéder à l’application.'
 
 export const PUBLIC_AUTH_API_PATHS = ['/api/auth/authorize-email']
+
+export const requireSupabaseUser = async (event: H3Event) => {
+  const userSession = await serverSupabaseUser(event)
+
+  if (!userSession) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: 'Unauthorized'
+    })
+  }
+
+  return userSession
+}
 
 export const findAuthorizedAppUserByAuthUserId = async (authUserId: string) => {
   const [user] = await db

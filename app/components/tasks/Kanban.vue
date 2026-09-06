@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDragAndDrop } from '@formkit/drag-and-drop/vue'
 import type { TaskStatus } from '~/constants/tasks'
+import { getTaskStatusClass, getTaskStatusIcon } from '~/lib/tasks'
 import type { Task, User } from '~/types'
 
 type KanbanProjectOption = {
@@ -37,65 +38,55 @@ const emit = defineEmits<{
 }>()
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
-const statuSettings: Record<TaskStatus, {
+// Column background wash, semantic Nuxt UI color and column title are Kanban-specific (per-column
+// theming); the badge icon/class come from lib/tasks.ts so a status looks identical here and in TasksModal.
+const columnSettings: Record<TaskStatus, {
   label: string
   bgClass: string
   badgeColor: 'neutral' | 'primary' | 'warning' | 'success'
-  badgeIcon: string
-  badgeClass: string
   emptyIconClass: string
 }> = {
   todo: {
     label: 'À faire',
     bgClass: 'bg-slate-50/90 ring-1 ring-slate-200/80',
     badgeColor: 'neutral',
-    badgeIcon: 'i-lucide-list-todo',
-    badgeClass: 'bg-white text-slate-700 ring-1 ring-inset ring-slate-200',
     emptyIconClass: 'text-slate-300'
   },
   in_progress: {
     label: 'En cours',
     bgClass: 'bg-blue-50/90 ring-1 ring-blue-200/80',
     badgeColor: 'primary',
-    badgeIcon: 'i-lucide-loader-circle',
-    badgeClass: 'bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200',
     emptyIconClass: 'text-blue-300'
   },
   waiting: {
     label: 'En attente',
-    bgClass: 'bg-orange-50/90 ring-1 ring-orange-200/80',
+    bgClass: 'bg-amber-50/90 ring-1 ring-amber-200/80',
     badgeColor: 'warning',
-    badgeIcon: 'i-lucide-hourglass',
-    badgeClass: 'bg-orange-100 text-orange-700 ring-1 ring-inset ring-orange-200',
-    emptyIconClass: 'text-orange-300'
+    emptyIconClass: 'text-amber-300'
   },
   validationBinom: {
     label: 'À valider par binōm',
     bgClass: 'bg-violet-50/90 ring-1 ring-violet-200/80',
     badgeColor: 'primary',
-    badgeIcon: 'i-lucide-user-check',
-    badgeClass: 'bg-violet-100 text-violet-700 ring-1 ring-inset ring-violet-200',
     emptyIconClass: 'text-violet-300'
   },
   validationClient: {
     label: 'À valider par le client',
-    bgClass: 'bg-cyan-50/90 ring-1 ring-cyan-200/80',
+    bgClass: 'bg-fuchsia-50/90 ring-1 ring-fuchsia-200/80',
     badgeColor: 'primary',
-    badgeIcon: 'i-lucide-badge-check',
-    badgeClass: 'bg-cyan-100 text-cyan-700 ring-1 ring-inset ring-cyan-200',
-    emptyIconClass: 'text-cyan-300'
+    emptyIconClass: 'text-fuchsia-300'
   },
   done: {
     label: 'Terminées',
     bgClass: 'bg-emerald-50/90 ring-1 ring-emerald-200/80',
     badgeColor: 'success',
-    badgeIcon: 'i-lucide-check-check',
-    badgeClass: 'bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200',
     emptyIconClass: 'text-emerald-300'
   }
 }
 
-const { bgClass, badgeColor, badgeIcon, badgeClass, emptyIconClass, label } = statuSettings[props.status]
+const { label, bgClass, badgeColor, emptyIconClass } = columnSettings[props.status]
+const badgeIcon = getTaskStatusIcon(props.status)
+const badgeClass = `${getTaskStatusClass(props.status)} ring-1 ring-inset`
 
 const [parent, taskList] = useDragAndDrop<Task>(props.tasks, {
   group: 'kanban-tasks',
@@ -104,13 +95,11 @@ const [parent, taskList] = useDragAndDrop<Task>(props.tasks, {
     return !el.hasAttribute('data-no-drag')
   },
   onDragstart: (_data) => {
-    // Ajouter classe sur toutes les zones de drop
     document.querySelectorAll('[data-status]').forEach((zone) => {
       zone.setAttribute('data-drop-zone-active', 'true')
     })
   },
   onDragend: (data) => {
-    // Retirer classe des zones de drop
     document.querySelectorAll('[data-status]').forEach((zone) => {
       zone.removeAttribute('data-drop-zone-active')
     })

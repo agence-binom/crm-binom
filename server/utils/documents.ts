@@ -5,9 +5,7 @@ import { useRuntimeConfig } from '#imports'
 import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
-import { invoicesTable } from '~/db/schema/invoices'
 import { projectsTable } from '~/db/schema/projects'
-import { quotesTable } from '~/db/schema/quotes'
 import { tasksTable } from '~/db/schema/tasks'
 import { getDocumentValidationError, sanitizeDocumentFilename, sanitizeDocumentPathSegment } from '~~/server/lib/documents-upload'
 import { translateSupabaseError } from '~/lib/utils'
@@ -15,13 +13,13 @@ import { translateSupabaseError } from '~/lib/utils'
 const DOCUMENT_SIGNED_URL_TTL_SECONDS = 60 * 60
 
 type DocumentWithPath = {
-  filepath: string
+  filepath: string | null
 }
 
-const isExternalUrl = (filepath: string) => /^https?:\/\//.test(filepath)
+const isExternalUrl = (filepath: string | null) => Boolean(filepath && /^https?:\/\//.test(filepath))
 
-const isManagedStoragePath = (filepath: string) => (
-  Boolean(filepath)
+const isManagedStoragePath = (filepath: string | null) => Boolean(
+  filepath
   && !filepath.startsWith('/')
   && !isExternalUrl(filepath)
 )
@@ -60,6 +58,7 @@ export const assertValidDocumentFile = (file: File) => {
 const DOCUMENT_TYPE_FOLDERS: Record<string, string> = {
   quote: 'devis',
   invoice: 'factures',
+  commercial_proposal: 'propositions-commerciales',
   client: 'clients',
   project: 'projets',
   task: 'taches',
@@ -74,26 +73,6 @@ const getClientStorageSegment = async (entityType: string, entityId: number) => 
       .where(eq(clientsTable.id, entityId))
 
     return client?.name
-  }
-
-  if (entityType === 'quote') {
-    const [quote] = await db
-      .select({ clientName: clientsTable.name })
-      .from(quotesTable)
-      .innerJoin(clientsTable, eq(quotesTable.clientId, clientsTable.id))
-      .where(eq(quotesTable.id, entityId))
-
-    return quote?.clientName
-  }
-
-  if (entityType === 'invoice') {
-    const [invoice] = await db
-      .select({ clientName: clientsTable.name })
-      .from(invoicesTable)
-      .innerJoin(clientsTable, eq(invoicesTable.clientId, clientsTable.id))
-      .where(eq(invoicesTable.id, entityId))
-
-    return invoice?.clientName
   }
 
   if (entityType === 'project') {
@@ -169,9 +148,9 @@ export const uploadDocumentFile = async (
 
 export const deleteStoredDocumentFile = async (
   event: H3Event,
-  filepath: string
+  filepath: string | null
 ) => {
-  if (!isManagedStoragePath(filepath)) {
+  if (!filepath || !isManagedStoragePath(filepath)) {
     return
   }
 
@@ -189,7 +168,7 @@ export const deleteStoredDocumentFile = async (
 
 export const deleteUploadedDocumentIfExists = async (
   event: H3Event,
-  filepath: string
+  filepath: string | null
 ) => {
   try {
     await deleteStoredDocumentFile(event, filepath)
@@ -200,13 +179,13 @@ export const deleteUploadedDocumentIfExists = async (
 
 const resolveDocumentDownloadUrl = async (
   event: H3Event,
-  filepath: string
+  filepath: string | null
 ) => {
   if (isExternalUrl(filepath)) {
     return filepath
   }
 
-  if (!isManagedStoragePath(filepath)) {
+  if (!filepath || !isManagedStoragePath(filepath)) {
     return null
   }
 

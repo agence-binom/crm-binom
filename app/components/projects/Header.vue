@@ -2,6 +2,8 @@
 import type { Project } from '~/types'
 
 type ProjectHeaderClient = {
+  id?: number | null
+  name?: string | null
   email?: string | null
   phone?: string | null
   website?: string | null
@@ -32,6 +34,19 @@ const infos = computed(() => [
     :subtitle="project.description"
     :infos="infos"
   >
+    <template
+      v-if="client?.id && client?.name"
+      #eyebrow
+    >
+      <NuxtLink
+        :to="`/clients/${client.id}`"
+        class="inline-flex w-fit items-center gap-1 text-sm font-medium text-slate-500 transition-colors hover:text-primary-600"
+      >
+        <UIcon name="i-lucide-building-2" />
+        {{ client.name }}
+      </NuxtLink>
+    </template>
+
     <template #actions>
       <div class="flex items-center gap-2">
         <UButton

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sortByCreatedAtDesc } from '~/lib/utils'
 import type { TaskAttachment } from '~/types'
 
 const props = defineProps<{
@@ -15,9 +16,7 @@ const selectedAttachmentId = ref<number | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 
-const sortedAttachments = computed(() => (
-  [...props.attachments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-))
+const sortedAttachments = computed(() => sortByCreatedAtDesc(props.attachments))
 
 const onSaved = async () => {
   emit('refresh')
@@ -65,34 +64,22 @@ const attachmentToEdit = computed(() => {
       v-if="sortedAttachments.length"
       class="grid grid-cols-1 gap-4"
     >
-      <div
+      <ResourcesCard
         v-for="attachment in sortedAttachments"
         :key="attachment.id"
-        class="flex items-start justify-between gap-4 rounded-xl border border-default p-4"
-      >
-        <ResourcesCard
-          :resource="attachment"
-          @delete="onDeleteAttachment"
-          @edit="openEditAttachment"
-        />
-      </div>
+        :resource="attachment"
+        @delete="onDeleteAttachment"
+        @edit="openEditAttachment"
+      />
     </div>
 
-    <div
+    <AppEmptyState
       v-else
-      class="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-500"
-    >
-      <UIcon
-        name="i-lucide-folder-open"
-        class="mb-2 text-4xl"
-      />
-      <p class="font-medium text-gray-700 dark:text-gray-200">
-        Aucun document pour cette tâche
-      </p>
-      <p class="mt-1 text-sm">
-        Ajoutez un fichier ou un lien utile pour cette tâche.
-      </p>
-    </div>
+      variant="compact"
+      icon="i-lucide-folder-open"
+      title="Aucun document pour cette tâche"
+      description="Ajoutez un fichier ou un lien utile pour cette tâche."
+    />
 
     <TaskAttachmentsModal
       v-model:open="isModalOpen"

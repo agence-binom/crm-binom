@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { type billingDocumentTypes, documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes, isFactureNetUrl } from '~/validation/documents'
+import { invoiceSubtypes, type billingDocumentTypes, isFactureNetUrl } from '~/validation/billing-documents'
+import { documentAcceptedMimeTypes, documentFileInputAccept, documentMaxSizeBytes } from '~/validation/documents'
+import { invoiceSubtypeLabels, type InvoiceSubtype } from '~/lib/documents'
 import { formatFileSize } from '~/lib/utils'
 
 type BillingDocumentType = typeof billingDocumentTypes[number]
 
 const props = defineProps<{
   open: boolean
-  entityType: 'quote' | 'invoice' | 'project' | 'client'
-  entityId: number
+  projectId: number
   documentType?: BillingDocumentType
+  subtype?: InvoiceSubtype
   title?: string
   uploadLabel?: string
 }>()
@@ -29,7 +31,8 @@ const isUploading = ref(false)
 const selectedFile = ref<File | null>(null)
 const description = ref('')
 const externalUrl = ref('')
-const selectedDocumentType = ref<BillingDocumentType>(props.documentType ?? 'quote')
+const selectedDocumentType = ref<BillingDocumentType>(props.documentType ?? 'commercial_proposal')
+const selectedInvoiceSubtype = ref<InvoiceSubtype>(props.subtype ?? 'unique')
 const fileInput = ref<HTMLInputElement>()
 
 const modalTitle = computed(() => props.title || 'Ajouter un document')
@@ -40,8 +43,11 @@ const requiresFactureNetLink = computed(() => currentDocumentType.value === 'quo
 
 const documentTypeOptions = [
   { label: 'Devis', value: 'quote' },
-  { label: 'Facture', value: 'invoice' }
+  { label: 'Facture', value: 'invoice' },
+  { label: 'Proposition commerciale', value: 'commercial_proposal' }
 ] satisfies { label: string, value: BillingDocumentType }[]
+
+const invoiceSubtypeOptions = invoiceSubtypes.map(subtype => ({ label: invoiceSubtypeLabels[subtype], value: subtype }))
 
 const clearSelectedFile = () => {
   selectedFile.value = null
@@ -56,6 +62,7 @@ const resetForm = () => {
   description.value = ''
   externalUrl.value = ''
   selectedDocumentType.value = props.documentType ?? 'quote'
+  selectedInvoiceSubtype.value = props.subtype ?? 'unique'
 }
 
 watch(
@@ -71,6 +78,13 @@ watch(
   () => props.documentType,
   (documentType) => {
     selectedDocumentType.value = documentType ?? 'quote'
+  }
+)
+
+watch(
+  () => props.subtype,
+  (subtype) => {
+    selectedInvoiceSubtype.value = subtype ?? 'unique'
   }
 )
 
@@ -162,14 +176,16 @@ const onUpload = async () => {
   try {
     const formData = new FormData()
     formData.set('file', selectedFile.value)
-    formData.set('entityType', props.entityType)
-    formData.set('entityId', String(props.entityId))
+    formData.set('projectId', String(props.projectId))
     formData.set('documentType', props.documentType ?? selectedDocumentType.value)
     formData.set('externalUrl', externalUrl.value.trim())
     formData.set('name', selectedFile.value.name)
     formData.set('description', description.value.trim())
+    if (currentDocumentType.value === 'invoice') {
+      formData.set('subtype', props.subtype ?? selectedInvoiceSubtype.value)
+    }
 
-    await $fetch('/api/documents', { method: 'POST', body: formData })
+    await $fetch('/api/billing-documents/upload', { method: 'POST', body: formData })
 
     emit('uploaded')
     isOpen.value = false
@@ -203,14 +219,6 @@ const onUpload = async () => {
   >
     <template #body>
       <div class="space-y-6">
-        <UBadge
-          variant="soft"
-          color="neutral"
-          class="rounded-full bg-slate-50 px-3 py-1 text-slate-700 ring-1 ring-inset ring-slate-200"
-        >
-          {{ allowedDocumentTypesLabel }} · {{ maxFileSizeLabel }}
-        </UBadge>
-
         <UFormField
           v-if="!props.documentType"
           label="Type de document"
@@ -227,7 +235,7 @@ const onUpload = async () => {
         </UFormField>
 
         <UFormField
-          v-if="currentDocumentType"
+          v-if="currentDocumentType === 'quote' || currentDocumentType === 'invoice'"
           label="Lien Facture.net"
           name="externalUrl"
           :required="requiresFactureNetLink"
@@ -241,6 +249,21 @@ const onUpload = async () => {
           <p class="mt-2 text-xs text-slate-500">
             Collez l’URL de la page dédiée au devis ou à la facture dans Facture.net.
           </p>
+        </UFormField>
+
+        <UFormField
+          v-if="currentDocumentType === 'invoice' && !props.subtype"
+          label="Type de facture"
+          name="subtype"
+          required
+        >
+          <USelect
+            v-model="selectedInvoiceSubtype"
+            :items="invoiceSubtypeOptions"
+            value-attribute="value"
+            option-attribute="label"
+            class="w-full"
+          />
         </UFormField>
 
         <div class="space-y-3">

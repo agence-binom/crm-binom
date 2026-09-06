@@ -52,20 +52,12 @@ const handleClientChange = async () => {
 
 <template>
   <div class="container mx-auto space-y-6 p-6">
-    <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
-      <div class="flex items-center gap-3">
-        <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
-          Clients
-        </h1>
-        <UBadge
-          color="neutral"
-          variant="soft"
-          class="rounded-full"
-        >
-          {{ clients.length }}
-        </UBadge>
-      </div>
-      <div class="flex items-center gap-2">
+    <AppListHeader
+      title="Clients"
+      level="h1"
+      :count="clients.length"
+    >
+      <template #actions>
         <UButton
           :icon="showArchived ? 'i-lucide-users' : 'i-lucide-archive'"
           variant="ghost"
@@ -82,8 +74,8 @@ const handleClientChange = async () => {
         >
           Nouveau client
         </UButton>
-      </div>
-    </div>
+      </template>
+    </AppListHeader>
 
     <ClientsModal
       v-model:open="isClientModalOpen"
@@ -99,27 +91,25 @@ const handleClientChange = async () => {
       Chargement...
     </div>
 
-    <div
+    <AppEmptyState
       v-else-if="clients.length === 0"
-      class="rounded-[1.5rem] border border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center"
+      icon="i-lucide-building-2"
+      :title="showArchived ? 'Aucun client archivé' : 'Aucun client actif'"
     >
-      <UIcon
-        name="i-lucide-building-2"
-        class="mb-3 text-4xl text-slate-300"
-      />
-      <p class="mb-4 text-slate-500">
-        {{ showArchived ? 'Aucun client archivé' : 'Aucun client actif' }}
-      </p>
-      <UButton
+      <template
         v-if="!showArchived"
-        icon="i-lucide-circle-plus"
-        variant="soft"
-        color="neutral"
-        @click="openCreateClient"
+        #actions
       >
-        Créer un client
-      </UButton>
-    </div>
+        <UButton
+          icon="i-lucide-circle-plus"
+          variant="soft"
+          color="neutral"
+          @click="openCreateClient"
+        >
+          Créer un client
+        </UButton>
+      </template>
+    </AppEmptyState>
 
     <ul
       v-else

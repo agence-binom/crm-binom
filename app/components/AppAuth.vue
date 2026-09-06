@@ -43,6 +43,7 @@ const onSubmit = (event: FormSubmitEvent<AuthSignIn>) => {
         v-model="formState.email"
         type="email"
         placeholder="email@example.com"
+        autocomplete="email"
         size="lg"
         icon="i-lucide-mail"
       />

@@ -3,9 +3,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const session = useSupabaseSession()
   const supabase = useSupabaseClient()
   const authorizedSessionEmail = useState<string | null>('authorized-session-email', () => null)
+  const portalSessionEmail = useState<string | null>('portal-session-email', () => null)
 
   const publicPages = ['/login', '/confirm']
   const requestFetch = import.meta.server ? useRequestFetch() : $fetch
+
+  const isPortalPage = (path: string) => path === '/espace-client' || path.startsWith('/espace-client/')
 
   const getNormalizedUserEmail = () => {
     if (!user.value || typeof user.value !== 'object') {
@@ -41,13 +44,27 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return true
     } catch {
       authorizedSessionEmail.value = null
-
-      if (import.meta.client) {
-        await supabase.auth.signOut()
-      }
-
       return false
     }
+  }
+
+  const verifyPortalSession = async () => {
+    try {
+      await requestFetch('/api/portal/session')
+      portalSessionEmail.value = getNormalizedUserEmail()
+      return true
+    } catch {
+      portalSessionEmail.value = null
+      return false
+    }
+  }
+
+  const signOutAndRedirectToLogin = async () => {
+    if (import.meta.client) {
+      await supabase.auth.signOut()
+    }
+
+    return navigateTo('/login')
   }
 
   await restoreClientSession()
@@ -58,9 +75,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
     normalizedEmail
     && authorizedSessionEmail.value === normalizedEmail
   )
+  const hasValidatedPortalSession = Boolean(
+    normalizedEmail
+    && portalSessionEmail.value === normalizedEmail
+  )
+  const isPortalSessionValid = async () => hasValidatedPortalSession || await verifyPortalSession()
 
   if (publicPages.includes(to.path)) {
-    if (!hasHydratedAuthState && !hasValidatedAuthorizedSession) {
+    if (!hasHydratedAuthState && !hasValidatedAuthorizedSession && !hasValidatedPortalSession) {
       return
     }
 
@@ -68,7 +90,23 @@ export default defineNuxtRouteMiddleware(async (to) => {
       return navigateTo('/')
     }
 
+    if (await isPortalSessionValid()) {
+      return navigateTo('/espace-client')
+    }
+
     return
+  }
+
+  if (isPortalPage(to.path)) {
+    if (hasValidatedPortalSession) {
+      return
+    }
+
+    if (await verifyPortalSession()) {
+      return
+    }
+
+    return signOutAndRedirectToLogin()
   }
 
   if (hasValidatedAuthorizedSession) {
@@ -79,5 +117,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return
   }
 
-  return navigateTo('/login')
+  // Un contact portail qui navigue par erreur vers une page interne est redirigé
+  // vers son espace plutôt que déconnecté.
+  if (await isPortalSessionValid()) {
+    return navigateTo('/espace-client')
+  }
+
+  return signOutAndRedirectToLogin()
 })

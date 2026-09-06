@@ -1,3 +1,7 @@
+export const sortByCreatedAtDesc = <T extends { createdAt: string | Date }>(items: T[]) => (
+  [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+)
+
 export const formatFileSize = (bytes: number) => {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
@@ -35,9 +39,7 @@ export const formatDateOnly = (date: string | Date | null | undefined) => {
   })
 }
 
-// Messages renvoyés en anglais par supabase-js (Auth et Storage) que l'on sait
-// reconnaître et traduire. Tout message non reconnu reste inchangé (ex: les
-// Error levées volontairement ailleurs dans le code, déjà en français).
+// Known Supabase Auth and Storage messages are translated; unknown messages are preserved.
 const SUPABASE_ERROR_TRANSLATIONS: Array<[RegExp, string]> = [
   [/^signups not allowed for otp$/i, 'Cette adresse email n\'est pas autorisée à se connecter.'],
   [/^email rate limit exceeded$/i, 'Trop de tentatives. Merci de réessayer dans quelques minutes.'],
@@ -60,16 +62,48 @@ export const translateSupabaseError = (message: string): string | undefined => {
   return SUPABASE_ERROR_TRANSLATIONS.find(([pattern]) => pattern.test(trimmed))?.[1]
 }
 
+// h3's readValidatedBody/getValidatedQuery wrap every failed Zod parse behind the generic
+// "Validation Error" statusMessage — the actual field-level message is the ZodError's own
+// `.message`, a JSON-stringified array of issues, nested a level or two down depending on how
+// the client wraps the response. This pulls it back out so the toast says something useful.
+const extractZodIssueMessage = (raw: unknown): string | null => {
+  if (typeof raw !== 'string') return null
+
+  try {
+    const issues = JSON.parse(raw)
+    if (!Array.isArray(issues) || issues.length === 0) return null
+
+    const messages = issues
+      .map(issue => (issue && typeof issue === 'object' ? Reflect.get(issue, 'message') : null))
+      .filter((message): message is string => typeof message === 'string' && message.length > 0)
+
+    return messages.length > 0 ? messages.join(' ') : null
+  } catch {
+    return null
+  }
+}
+
 export const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === 'object') {
+    const maybeData = Reflect.get(error, 'data')
+    const dataObject = maybeData && typeof maybeData === 'object' ? maybeData : null
+    const nestedData = dataObject ? Reflect.get(dataObject, 'data') : null
+    const nestedDataObject = nestedData && typeof nestedData === 'object' ? nestedData : null
+
+    const zodMessage = [
+      dataObject ? Reflect.get(dataObject, 'message') : null,
+      nestedDataObject ? Reflect.get(nestedDataObject, 'message') : null,
+      Reflect.get(error, 'message')
+    ].map(extractZodIssueMessage).find((message): message is string => message !== null)
+    if (zodMessage) return zodMessage
+
     const maybeStatusMessage = Reflect.get(error, 'statusMessage')
     if (typeof maybeStatusMessage === 'string' && maybeStatusMessage) {
       return maybeStatusMessage
     }
 
-    const maybeData = Reflect.get(error, 'data')
-    if (maybeData && typeof maybeData === 'object') {
-      const dataStatusMessage = Reflect.get(maybeData, 'statusMessage')
+    if (dataObject) {
+      const dataStatusMessage = Reflect.get(dataObject, 'statusMessage')
       if (typeof dataStatusMessage === 'string' && dataStatusMessage) {
         return dataStatusMessage
       }

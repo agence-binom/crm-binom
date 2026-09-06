@@ -1,4 +1,6 @@
 <script setup>
+import { fr } from '@nuxt/ui/locale'
+
 const { public: { appEnv } } = useRuntimeConfig()
 const isStaging = appEnv === 'staging'
 
@@ -22,12 +24,15 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp :toaster="{ position: 'bottom-right' }">
+  <UApp
+    :toaster="{ position: 'bottom-right' }"
+    :locale="fr"
+  >
     <div
       v-if="isStaging"
       class="flex items-center justify-center bg-orange-500 px-4 py-1.5 text-center text-sm font-medium text-white"
     >
-      Environnement de STAGING — ceci n'est pas la production
+      Environnement de STAGING - ceci n'est pas la production
     </div>
     <NuxtLayout>
       <NuxtPage />

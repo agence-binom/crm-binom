@@ -29,11 +29,23 @@ const validateAuthorizedSession = async () => {
   try {
     await $fetch('/api/auth/session')
     await navigateTo('/')
-  } catch (error) {
-    await redirectToLogin(
-      error,
-      'Cette adresse email n’est pas autorisée à accéder à l’application.'
-    )
+    return
+  } catch (internalError) {
+    try {
+      // Les deux appels sont indépendants : touch-login ne dépend pas du résultat de session.
+      // Best-effort sur touch-login : l'enregistrement de la dernière connexion ne doit pas
+      // bloquer l'accès au portail si cet appel échoue pour une raison quelconque.
+      await Promise.all([
+        $fetch('/api/portal/session'),
+        $fetch('/api/portal/touch-login', { method: 'POST' }).catch(() => {})
+      ])
+      await navigateTo('/espace-client')
+    } catch {
+      await redirectToLogin(
+        internalError,
+        'Cette adresse email n’est pas autorisée à accéder à l’application.'
+      )
+    }
   }
 }
 

@@ -1,6 +1,6 @@
 # CRM Binom
 
-CRM interne de binōm — gestion des clients, projets, tâches (kanban), contacts, devis, factures, paiements et documents.
+CRM interne de binōm - gestion des clients, projets, tâches (kanban), contacts, devis, factures, paiements et documents.
 
 Stack : Nuxt 4, Nuxt UI v3, Drizzle ORM, Supabase (Auth + Postgres + Storage).
 
@@ -33,10 +33,10 @@ npm run dev
 
 | Variable | Obligatoire | Description |
 |---|---|---|
-| `DATABASE_URL` | Oui | Connection string Postgres (Supabase **Session pooler** — voir note ci-dessous) |
+| `DATABASE_URL` | Oui | Connection string Postgres (Supabase **Session pooler** - voir note ci-dessous) |
 | `SUPABASE_URL` | Oui | URL du projet Supabase (`https://<ref>.supabase.co`) |
 | `SUPABASE_KEY` | Oui | Clé publique Supabase (anon/publishable) |
-| `SUPABASE_SECRET_KEY` | Oui | Clé secrète Supabase (service role) — utilisée côté serveur uniquement |
+| `SUPABASE_SECRET_KEY` | Oui | Clé secrète Supabase (service role) - utilisée côté serveur uniquement |
 | `DOCUMENTS_BUCKET` | Oui | Nom du bucket Supabase Storage pour les documents (ex : `documents`) |
 | `NUXT_PUBLIC_SITE_URL` | Oui | URL publique du site (ex : `http://localhost:3000`) |
 | `REDIS_URL` | Non | URL Redis pour le rate limiting multi-instance en production (ex : `redis://localhost:6379`) |
@@ -84,7 +84,7 @@ La CI tourne sur chaque push via `.github/workflows/quality.yml` et exécute dan
 
 ## Authentification
 
-Connexion par **magic-link uniquement** (Supabase Auth). L'envoi du lien est restreint aux adresses e-mail déjà présentes dans `public.users` — toute adresse inconnue reçoit une erreur côté serveur.
+Connexion par **magic-link uniquement** (Supabase Auth). L'envoi du lien est restreint aux adresses e-mail déjà présentes dans `public.users` - toute adresse inconnue reçoit une erreur côté serveur.
 
 Le middleware `server/middleware/01-auth.ts` vérifie le token Supabase sur toutes les routes `/api/*` sauf `/api/auth/*`.
 
@@ -161,7 +161,7 @@ npm run typecheck     # Vérifie que le module @nuxtjs/supabase résout correcte
 
 1. Créer une branche depuis `main` au format `<pseudo>/bin-<N>-<slug>`.
 2. Passer les checks locaux (`npm test && npm run lint && npm run typecheck`).
-3. Ouvrir une PR vers `main` — la CI vérifie les mêmes checks.
+3. Ouvrir une PR vers `main` - la CI vérifie les mêmes checks.
 
 ---
 
