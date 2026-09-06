@@ -25,7 +25,14 @@ export const createSessionStorageState = async (
   }
 
   const cookiePrefix = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`
-  const cookieOptions: CookieOptionsWithName = { name: cookiePrefix, sameSite: 'lax', secure: true }
+  // Doit matcher le `cookieOptions.secure` de nuxt.config.ts (module @nuxtjs/supabase), sinon le
+  // cookie injecté ici (Secure) et ceux écrits ensuite par l'appli en HTTP dev coexistent mal
+  // sous WebKit.
+  const cookieOptions: CookieOptionsWithName = {
+    name: cookiePrefix,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  }
 
   const collectedCookies: { name: string, value: string, options: Record<string, unknown> }[] = []
 
