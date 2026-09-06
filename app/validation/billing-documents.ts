@@ -8,7 +8,7 @@ export const invoiceSubtypes = ['acompte', 'solde', 'unique', 'avoir'] as const
 // Valid states per document type, per the Figma state-machine spec. `invoice` covers both the
 // 'acompte' and 'unique'/'solde' subtypes - they share the exact same set of valid states.
 export const documentStatusesByType: Record<typeof billingDocumentTypes[number], readonly typeof documentStatuses[number][]> = {
-  commercial_proposal: ['draft', 'sent', 'refused', 'completed', 'cancelled'],
+  commercial_proposal: ['draft', 'sent', 'refused', 'completed', 'cancelled', 'non_applicable'],
   quote: ['draft', 'sent', 'refused', 'completed', 'cancelled', 'non_applicable'],
   invoice: ['draft', 'sent', 'completed', 'cancelled', 'non_applicable']
 }
@@ -51,6 +51,13 @@ const refineBillingDocument = (
     return
   }
 
+  // A step that's still "à émettre" or has been marked "Non applicable" has no Facture.net
+  // document to link to yet (or ever, in the "Non applicable" case) - only require the link once
+  // the step actually represents a real quote/invoice being worked (sent, completed, cancelled...).
+  if (data.status === 'draft' || data.status === 'non_applicable') {
+    return
+  }
+
   const externalUrl = data.externalUrl?.trim() || ''
 
   if (!externalUrl) {
@@ -72,9 +79,10 @@ const refineBillingDocument = (
 }
 
 // Creates a billing step record with no attached file yet (status/date/description only) - e.g.
-// marking "Devis: Validée" ahead of attaching the PDF, or a step "Non applicable". A quote/invoice
-// still needs its Facture.net link even at this stage — the drawer's own "Lien Facture.net" field
-// is meant to be filled in alongside the status, not deferred until a file is uploaded.
+// marking "Devis: Validée" ahead of attaching the PDF. A quote/invoice needs its Facture.net link
+// filled in alongside the status (not deferred until a file is uploaded) as soon as the status
+// represents real work in progress - but not while it's still "à émettre" or "Non applicable",
+// since neither has a Facture.net document to point to (see `refineBillingDocument`).
 export const billingDocumentCreateSchema = z.object({
   projectId: z.coerce.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif'),
   documentType: z.enum(billingDocumentTypes),
