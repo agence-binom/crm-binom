@@ -20,8 +20,8 @@ test('billingDocumentCreateSchema accepte un statut valide pour le type', () => 
 test('billingDocumentCreateSchema refuse un statut invalide pour le type', () => {
   const result = billingDocumentCreateSchema.safeParse({
     projectId: 7,
-    documentType: 'commercial_proposal',
-    status: 'non_applicable'
+    documentType: 'invoice',
+    status: 'refused'
   })
 
   assert.equal(result.success, false)
@@ -42,10 +42,21 @@ test('billingDocumentCreateSchema refuse un devis sans lien Facture.net', () => 
   const result = billingDocumentCreateSchema.safeParse({
     projectId: 7,
     documentType: 'quote',
+    status: 'sent',
     externalUrl: ''
   })
 
   assert.equal(result.success, false)
+})
+
+test('billingDocumentCreateSchema accepte un devis "à émettre" sans lien Facture.net', () => {
+  const result = billingDocumentCreateSchema.safeParse({
+    projectId: 7,
+    documentType: 'quote',
+    externalUrl: ''
+  })
+
+  assert.equal(result.success, true)
 })
 
 test('billingDocumentUploadMetadataSchema parse et normalise les métadonnées', () => {
