@@ -7,6 +7,7 @@ import {
 
 const taskStatusSchema = z.enum(taskStatuses)
 const taskWorkspaceSchema = z.enum(taskWorkspaces)
+const userIdSchema = z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif')
 const optionalDateSchema = z.preprocess(
   value => (value === '' || value == null ? undefined : value),
   z.coerce.date().optional()
@@ -19,7 +20,7 @@ const nullableDateSchema = z.preprocess(
 
 export const taskCreateSchema = z.object({
   projectId: z.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif').optional(),
-  assignedTo: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional(),
+  assigneeIds: z.array(userIdSchema).optional().default([]),
   title: z.string().min(1, 'Le titre est requis').max(255, 'Le titre est trop long'),
   notes: z.string().optional().or(z.literal('')),
   dueDate: optionalDateSchema,
@@ -27,13 +28,14 @@ export const taskCreateSchema = z.object({
   workspace: taskWorkspaceSchema.default('externe')
 })
 
+// `assigneeIds` omitted means "leave assignees untouched" - an explicit `[]` clears them.
 export const taskUpdateSchema = z.object({
   projectId: z.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif').optional(),
-  assignedTo: z.number().int('L\'ID utilisateur doit être un entier').positive('L\'ID utilisateur doit être positif').optional(),
+  assigneeIds: z.array(userIdSchema).optional(),
   title: z.string().min(1, 'Le titre ne peut pas être vide').max(255, 'Le titre est trop long').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   dueDate: nullableDateSchema,
-  status: taskStatusSchema.default('todo').optional(),
+  status: taskStatusSchema.optional(),
   priority: z.enum(taskPriorities).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Au moins un champ doit être fourni'

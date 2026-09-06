@@ -19,7 +19,7 @@ type TaskModalProjectOption = {
   clientName?: string | null
 }
 
-type EditableTaskField = 'title' | 'projectId' | 'dueDate' | 'priority' | 'status' | 'assignedTo' | 'notes'
+type EditableTaskField = 'title' | 'projectId' | 'dueDate' | 'priority' | 'status' | 'assigneeIds' | 'notes'
 
 const splitDueDate = (dueDate: string | null | undefined) => {
   if (!dueDate) return { date: '', time: '' }
@@ -73,7 +73,7 @@ const formState = reactive({
   priority: 'low' as TaskPriority,
   status: 'todo' as TaskStatus,
   projectId: props.projectId ?? undefined as number | undefined,
-  assignedTo: undefined as number | undefined
+  assigneeIds: [] as number[]
 })
 
 const selectedCalendarDate = computed({
@@ -126,18 +126,15 @@ const userOptions = computed(() =>
     value: user.id
   }))
 )
-const assigneeOptions = computed(() => [
-  { label: 'Non assigné', value: undefined as number | undefined, icon: 'i-lucide-user-round-x' },
-  ...userOptions.value.map(user => ({
-    label: user.label,
-    value: user.value,
-    icon: 'i-lucide-user-round'
-  }))
-])
+const assigneeOptions = computed(() => userOptions.value.map(user => ({
+  label: user.label,
+  value: user.value,
+  icon: 'i-lucide-user-round'
+})))
 
-const selectedAssignee = computed({
-  get: () => assigneeOptions.value.find(option => option.value === formState.assignedTo),
-  set: val => selectAssignee(val?.value)
+const selectedAssignees = computed({
+  get: () => assigneeOptions.value.filter(option => formState.assigneeIds.includes(option.value)),
+  set: options => selectAssignees((options ?? []).map(option => option.value))
 })
 
 const taskAttachments = ref<TaskAttachment[]>([])
@@ -160,7 +157,7 @@ const resetForm = () => {
     priority: 'low',
     status: 'todo',
     projectId: props.projectId ?? undefined,
-    assignedTo: undefined
+    assigneeIds: []
   })
 }
 
@@ -176,7 +173,7 @@ const fillFromTask = (task: Task) => {
     status: task.status ?? 'todo',
     priority: task.priority ?? 'low',
     projectId: task.projectId ?? undefined,
-    assignedTo: task.assignedTo ?? undefined,
+    assigneeIds: task.assigneeIds ?? [],
     dueDate,
     dueTime
   })
@@ -307,9 +304,9 @@ const selectStatus = (value: TaskStatus | undefined) => {
   saveField('status', value)
 }
 
-const selectAssignee = (value: number | undefined) => {
-  formState.assignedTo = value
-  saveField('assignedTo', value)
+const selectAssignees = (values: number[]) => {
+  formState.assigneeIds = values
+  saveField('assigneeIds', values)
 }
 
 const onDeleteTask = async () => {
@@ -410,11 +407,13 @@ const statusChipUi = computed(() => ({
         <div class="space-y-2">
           <div class="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3">
             <USelectMenu
-              v-model="selectedAssignee"
+              v-model="selectedAssignees"
               :items="assigneeOptions"
-              :icon="selectedAssignee?.icon"
+              multiple
+              icon="i-lucide-user-round"
               variant="none"
               size="sm"
+              placeholder="Non assigné"
               aria-label="Attribution"
               :ui="{
                 base: 'rounded-full px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-transparent transition-colors hover:bg-slate-100 aria-expanded:bg-slate-100',
