@@ -4,10 +4,12 @@ import { resourceCreateSchema, resourceFileInputAccept, resourceMaxSizeBytes } f
 import { resourceTypes, type ResourceType } from '~/constants/resources'
 import { getResourceTypeIcon, getResourceTypeLabel } from '~/lib/resources'
 import { formatFileSize } from '~/lib/utils'
+import type { ProjectResource } from '~/types'
 
 const props = defineProps<{
   open: boolean
   projectId: number
+  resource?: ProjectResource | null
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +25,9 @@ const isOpen = computed({
 })
 
 const isSaving = ref(false)
+const isEditing = computed(() => Boolean(props.resource))
+const modalTitle = computed(() => (isEditing.value ? 'Modifier la ressource' : 'Nouvelle ressource'))
+const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Ajouter la ressource'))
 
 // Bound directly by the inputs below (unlike the admin ResourcesModal's formState, which only
 // mirrors separate refs) so UForm validates what's actually submitted and Enter-to-submit works.
@@ -31,15 +36,33 @@ const isSaving = ref(false)
 // lenient 'document' branch to match the full ResourceType. That branch stays lenient on purpose:
 // `name` can be blank when multiple files are selected (each resource is then named after its
 // file), and file presence is a File[] concern `isValid` handles separately.
-const resourceFormSchema = z.discriminatedUnion('type', [
-  z.object({
-    type: z.literal('document'),
-    projectId: z.number().int().positive(),
-    name: z.string().max(255, 'Le nom est trop long').optional().or(z.literal('')),
-    description: z.string().optional().or(z.literal(''))
-  }),
-  ...resourceCreateSchema.options
-])
+//
+// Editing needs its own discriminated union rather than `resourceUpdateSchema` applied to the
+// whole formState: formState always carries both `url` and `content` regardless of the resource's
+// type, and resourceUpdateSchema validates whichever of those is present - so the field hidden by
+// the current type (e.g. `url: ''` while editing a note) fails validation even though it's never
+// submitted. Keying on `type` like the create branches means only the relevant field is checked.
+const [linkCreateSchema, textCreateSchema] = resourceCreateSchema.options
+
+const resourceFormSchema = computed(() => (isEditing.value
+  ? z.discriminatedUnion('type', [
+      z.object({
+        type: z.literal('document'),
+        name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long'),
+        description: z.string().optional().or(z.literal(''))
+      }),
+      linkCreateSchema.omit({ projectId: true }),
+      textCreateSchema.omit({ projectId: true })
+    ])
+  : z.discriminatedUnion('type', [
+      z.object({
+        type: z.literal('document'),
+        projectId: z.number().int().positive(),
+        name: z.string().max(255, 'Le nom est trop long').optional().or(z.literal('')),
+        description: z.string().optional().or(z.literal(''))
+      }),
+      ...resourceCreateSchema.options
+    ])))
 
 const createInitialFormState = () => ({
   type: 'document' as ResourceType,
@@ -66,13 +89,28 @@ const resetForm = () => {
   selectedFiles.value = []
 }
 
-watch(() => props.open, (open) => {
-  if (open) resetForm()
-})
+const fillFromResource = (resource: ProjectResource) => {
+  formState.type = resource.type
+  formState.name = resource.name ?? ''
+  formState.description = resource.description ?? ''
+  formState.url = resource.type === 'link' ? (resource.url ?? '') : ''
+  formState.content = resource.type === 'text' ? (resource.content ?? '') : ''
+  selectedFiles.value = []
+}
+
+watch(
+  () => [props.open, props.resource] as const,
+  ([open, resource]) => {
+    if (!open) return
+    if (resource) fillFromResource(resource)
+    else resetForm()
+  }
+)
 
 const isMultipleFiles = computed(() => selectedFiles.value.length > 1)
 
 const isValid = computed(() => {
+  if (isEditing.value) return Boolean(formState.name.trim())
   if (formState.type === 'document') {
     return selectedFiles.value.length > 0 && (isMultipleFiles.value || Boolean(formState.name.trim()))
   }
@@ -122,7 +160,19 @@ const onSubmit = async () => {
   isSaving.value = true
 
   try {
-    if (formState.type === 'document') {
+    if (isEditing.value) {
+      if (!props.resource) throw new Error('resource manquante pour la mise à jour')
+
+      await $fetch(`/api/portal/resources/${props.resource.id}`, {
+        method: 'PUT',
+        body: {
+          name: formState.name.trim(),
+          description: formState.description.trim(),
+          ...(formState.type === 'link' ? { url: formState.url.trim() } : {}),
+          ...(formState.type === 'text' ? { content: formState.content } : {})
+        }
+      })
+    } else if (formState.type === 'document') {
       const uploadedAll = await uploadDocuments()
       if (!uploadedAll) return
     } else {
@@ -142,7 +192,11 @@ const onSubmit = async () => {
     isOpen.value = false
   } catch (error) {
     console.error('Erreur lors de la sauvegarde de la ressource:', error)
-    showError('Enregistrement impossible', error, 'Impossible d\'ajouter la ressource.')
+    showError(
+      'Enregistrement impossible',
+      error,
+      isEditing.value ? 'Impossible de mettre à jour la ressource.' : 'Impossible d\'ajouter la ressource.'
+    )
   } finally {
     isSaving.value = false
   }
@@ -152,8 +206,8 @@ const onSubmit = async () => {
 <template>
   <UModal
     v-model:open="isOpen"
-    title="Nouvelle ressource"
-    aria-describedby="Ajouter un document, un lien ou une note au projet"
+    :title="modalTitle"
+    :aria-describedby="isEditing ? 'Modifier les informations de la ressource' : 'Ajouter un document, un lien ou une note au projet'"
     :close="{
       color: 'error',
       variant: 'solid',
@@ -177,6 +231,7 @@ const onSubmit = async () => {
           <AttachmentTypeSelector
             v-model="formState.type"
             :options="typeOptions"
+            :locked="isEditing"
           />
         </div>
 
@@ -184,7 +239,7 @@ const onSubmit = async () => {
           v-if="!isMultipleFiles"
           label="Nom"
           name="name"
-          :required="formState.type !== 'document'"
+          :required="isEditing || formState.type !== 'document'"
         >
           <UInput
             v-model="formState.name"
@@ -211,6 +266,9 @@ const onSubmit = async () => {
             :accept="resourceFileInputAccept"
             :max-size-bytes="resourceMaxSizeBytes"
             :max-size-label="maxFileSizeLabel"
+            :locked="isEditing"
+            :locked-filename="resource?.filename"
+            :locked-file-size="resource?.size"
           />
         </div>
 
@@ -266,10 +324,10 @@ const onSubmit = async () => {
           <UButton
             :disabled="!isValid || isSaving"
             :loading="isSaving"
-            icon="i-lucide-plus"
+            :icon="isEditing ? 'i-lucide-check' : 'i-lucide-plus'"
             @click="onSubmit"
           >
-            Ajouter la ressource
+            {{ submitLabel }}
           </UButton>
         </div>
       </UForm>

@@ -67,6 +67,8 @@ export function useBillingStepsEditor(options: {
     try {
       const response = await $fetch<{ documents: AnnotatedBillingDocument[] }>(`/api/billing-documents/project/${projectId}`)
       documents.value = response.documents
+    } catch (error) {
+      showError('Échec du chargement', error, 'Impossible de charger les documents de facturation.')
     } finally {
       isLoading.value = false
     }

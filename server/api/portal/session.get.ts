@@ -12,6 +12,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     contact: {
+      id: contact.id,
       firstName: contact.firstName,
       lastName: contact.lastName,
       portalLastLoginAt: contact.portalLastLoginAt

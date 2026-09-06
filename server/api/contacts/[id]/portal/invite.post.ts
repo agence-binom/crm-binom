@@ -5,6 +5,8 @@ import { contactsTable } from '~/db/schema/contacts'
 import { contactIdSchema } from '~/validation/contacts'
 import { findConflictingPortalContact, getPortalServiceRoleClient, requireContactById } from '../../../../utils/client-portal'
 import { canManagePortalAccess, isAlreadyRegisteredAuthError } from '../../../../lib/client-portal'
+import { logActivity } from '../../../../utils/activity-log'
+import { getAppUser } from '../../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   if (!canManagePortalAccess(event.context.appUser?.role)) {
@@ -79,9 +81,16 @@ export default defineEventHandler(async (event) => {
 
   const [updatedContact] = await db
     .update(contactsTable)
-    .set({ portalStatus: 'active', updatedAt: new Date() })
+    .set({ portalStatus: 'active', updatedBy: getAppUser(event).id, updatedAt: new Date() })
     .where(eq(contactsTable.id, id))
     .returning()
+
+  void logActivity(event, {
+    entityType: 'contact',
+    entityId: id,
+    action: 'update',
+    metadata: { name: `${updatedContact!.firstName} ${updatedContact!.lastName}`, portalStatus: 'active' }
+  })
 
   return {
     message: 'Accès portail activé',

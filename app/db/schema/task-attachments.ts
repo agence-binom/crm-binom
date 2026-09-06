@@ -1,5 +1,6 @@
 import { integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
 import { tasksTable } from './tasks'
+import { usersTable } from './users'
 
 export const taskAttachmentsTable = pgTable('task_attachments', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -17,6 +18,8 @@ export const taskAttachmentsTable = pgTable('task_attachments', {
   // Link-only field
   url: varchar({ length: 2048 }),
 
+  createdBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }).enableRLS()

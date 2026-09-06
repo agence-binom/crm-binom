@@ -3,7 +3,9 @@ import { db } from '~/db'
 import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { documentsTable } from '~/db/schema/documents'
 import { billingDocumentIdSchema } from '~/validation/billing-documents'
+import { getBillingDocumentLabel } from '~/lib/documents'
 import { deleteStoredDocumentFile } from '~~/server/utils/documents'
+import { logActivity } from '~~/server/utils/activity-log'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, billingDocumentIdSchema.parse)
@@ -26,6 +28,8 @@ export default defineEventHandler(async (event) => {
   }
 
   await db.delete(billingDocumentsTable).where(eq(billingDocumentsTable.id, id))
+
+  void logActivity(event, { entityType: 'billing_document', entityId: id, action: 'delete', metadata: { name: getBillingDocumentLabel(existing) } })
 
   setResponseStatus(event, 204)
   return null

@@ -4,6 +4,8 @@ import { taskAttachmentUploadMetadataSchema } from '~/validation/task-attachment
 import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
 import { assertValidTaskAttachmentFile } from '~~/server/utils/task-attachments'
 import { createTaskAttachmentInsertValues } from '~~/server/lib/task-attachments-upload'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const formData = await readFormData(event)
@@ -29,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [attachment] = await db.insert(taskAttachmentsTable)
-      .values(createTaskAttachmentInsertValues(fileEntry, filepath, metadata))
+      .values({ ...createTaskAttachmentInsertValues(fileEntry, filepath, metadata), createdBy: getAppUser(event).id })
       .returning()
 
     if (!attachment) {
@@ -38,6 +40,8 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Impossible d\'enregistrer la pièce jointe en base'
       })
     }
+
+    void logActivity(event, { entityType: 'task_attachment', entityId: attachment.id, action: 'create', metadata: { name: attachment.name } })
 
     return await withDocumentDownloadUrl(event, { ...attachment, filepath })
   } catch (error) {

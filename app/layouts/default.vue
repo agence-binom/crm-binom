@@ -4,6 +4,9 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 const user = useSupabaseUser()
 const supabase = useSupabaseClient()
 
+const { data: session } = await useAppSession()
+const isAdmin = computed(() => session.value?.user?.role === 'admin')
+
 const collapsed = ref(false)
 
 const handleLogout = async () => {
@@ -32,6 +35,12 @@ const items = ref<DropdownMenuItem[][]>([
       onSelect: handleLogout
     }
   ]
+])
+
+const agencyMenuItems = computed(() => [
+  { label: 'Tâches', icon: 'i-lucide-list-checks', to: '/agence/taches' },
+  ...(isAdmin.value ? [{ label: 'Journal d\'activité', icon: 'i-lucide-history', to: '/agence/journal' }] : []),
+  { label: 'Administratif', icon: 'i-lucide-pen', to: '/clients', disabled: true }
 ])
 </script>
 
@@ -63,10 +72,7 @@ const items = ref<DropdownMenuItem[][]>([
             {
               label: 'Agence',
               icon: 'i-lucide-building',
-              children: [
-                { label: 'Tâches', icon: 'i-lucide-list-checks', to: '/agence/taches' },
-                { label: 'Administratif', icon: 'i-lucide-pen', to: '/clients', disabled: true }
-              ]
+              children: agencyMenuItems
             }
           ]"
           orientation="vertical"

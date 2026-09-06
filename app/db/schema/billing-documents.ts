@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm'
 import { check, index, integer, pgTable, timestamp, uniqueIndex, varchar, text } from 'drizzle-orm/pg-core'
 import { documentsTable } from './documents'
 import { projectsTable } from './projects'
+import { usersTable } from './users'
 
 // The business record for one billing step (Proposition commerciale / Devis / Facture d'acompte /
 // Facture): its workflow status, business date, and Facture.net link - independent of whether a
@@ -17,6 +18,8 @@ export const billingDocumentsTable = pgTable('billing_documents', {
   externalUrl: varchar({ length: 2048 }), // Source page URL on Facture.net
   description: text(),
   documentId: integer().references(() => documentsTable.id, { onDelete: 'set null' }), // The attached file, if any - losing the file must not erase the billing history
+  createdBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }, table => [

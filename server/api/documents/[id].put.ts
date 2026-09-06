@@ -3,6 +3,8 @@ import { db } from '~/db'
 import { documentsTable } from '~/db/schema/documents'
 import { documentIdSchema, documentUpdateSchema } from '~/validation/documents'
 import { withDocumentDownloadUrl } from '~~/server/utils/documents'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, documentIdSchema.parse)
@@ -10,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const [document] = await db
     .update(documentsTable)
-    .set({ ...body, updatedAt: new Date() })
+    .set({ ...body, updatedBy: getAppUser(event).id, updatedAt: new Date() })
     .where(eq(documentsTable.id, id))
     .returning()
 
@@ -20,6 +22,8 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Document non trouvé'
     })
   }
+
+  void logActivity(event, { entityType: 'document', entityId: id, action: 'update', metadata: { name: document.name } })
 
   return await withDocumentDownloadUrl(event, document)
 })

@@ -12,6 +12,7 @@ import { projectIdSchema } from '~/validation/projects'
 import { withDocumentsDownloadUrls } from '~~/server/utils/documents'
 import { getProjectDeliverables } from '~~/server/utils/deliverables'
 import { withResourcesDownloadUrls } from '~~/server/utils/resources'
+import { withTaskAssigneeIds } from '~~/server/utils/tasks'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, projectIdSchema.parse)
@@ -100,10 +101,11 @@ export default defineEventHandler(async (event) => {
   // Annotated here so the project detail page reads `lifecycle` straight off the response
   // instead of recomputing it client-side.
   const annotatedDocuments = annotateDocumentLifecycle(documents.map(document => ({ ...document, type: document.documentType as BillingDocumentType })))
-  const [documentsWithUrls, resourcesWithUrls, deliverablesWithUrls] = await Promise.all([
+  const [documentsWithUrls, resourcesWithUrls, deliverablesWithUrls, tasksWithAssigneeIds] = await Promise.all([
     withDocumentsDownloadUrls(event, annotatedDocuments),
     withResourcesDownloadUrls(event, resources),
-    getProjectDeliverables(event, id)
+    getProjectDeliverables(event, id),
+    withTaskAssigneeIds(tasks)
   ])
 
   return {
@@ -127,7 +129,7 @@ export default defineEventHandler(async (event) => {
         website: projectRow.clientWebsite
       }
     },
-    tasks,
+    tasks: tasksWithAssigneeIds,
     users,
     projectOptions,
     documents: {

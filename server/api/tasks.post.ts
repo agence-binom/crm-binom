@@ -2,6 +2,8 @@ import { db } from '~/db'
 import { taskAssigneesTable } from '~/db/schema/task-assignees'
 import { tasksTable } from '~/db/schema/tasks'
 import { taskCreateSchema } from '~/validation/tasks'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const { assigneeIds, ...body } = await readValidatedBody(event, taskCreateSchema.parse)
@@ -11,7 +13,8 @@ export default defineEventHandler(async (event) => {
       ...body,
       status: 'todo',
       startedAt: null,
-      completedAt: null
+      completedAt: null,
+      createdBy: getAppUser(event).id
     }).returning()
 
     if (!created) {
@@ -24,6 +27,8 @@ export default defineEventHandler(async (event) => {
 
     return created
   })
+
+  void logActivity(event, { entityType: 'task', entityId: task.id, action: 'create', metadata: { name: task.title } })
 
   return { ...task, assigneeIds }
 })

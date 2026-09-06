@@ -2,6 +2,9 @@ import { eq } from 'drizzle-orm'
 import { db } from '~/db'
 import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { billingDocumentIdSchema, billingDocumentUpdateSchema, documentStatusesByType } from '~/validation/billing-documents'
+import { getBillingDocumentLabel } from '~/lib/documents'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, billingDocumentIdSchema.parse)
@@ -28,10 +31,13 @@ export default defineEventHandler(async (event) => {
     .set({
       ...body,
       externalUrl: body.externalUrl !== undefined ? (body.externalUrl.trim() || null) : undefined,
+      updatedBy: getAppUser(event).id,
       updatedAt: new Date()
     })
     .where(eq(billingDocumentsTable.id, id))
     .returning()
+
+  void logActivity(event, { entityType: 'billing_document', entityId: id, action: 'update', metadata: { name: getBillingDocumentLabel(billingDocument!) } })
 
   return billingDocument
 })

@@ -5,6 +5,8 @@ import { taskAssigneesTable } from '~/db/schema/task-assignees'
 import { tasksTable } from '~/db/schema/tasks'
 import { resolveTaskLifecycleDates } from '~/lib/tasks'
 import { taskIdSchema, taskUpdateSchema } from '~/validation/tasks'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, taskIdSchema.parse)
@@ -37,6 +39,7 @@ export default defineEventHandler(async (event) => {
       .update(tasksTable)
       .set({
         ...body,
+        updatedBy: getAppUser(event).id,
         updatedAt: new Date(),
         ...(body.status
           ? {
@@ -66,6 +69,8 @@ export default defineEventHandler(async (event) => {
 
     return { task: updated, finalAssigneeIds: currentAssigneeIds }
   })
+
+  void logActivity(event, { entityType: 'task', entityId: id, action: 'update', metadata: { name: task!.title } })
 
   return { ...task, assigneeIds: finalAssigneeIds }
 })

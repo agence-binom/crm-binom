@@ -14,6 +14,8 @@ export const tasksTable = pgTable('tasks', {
   dueDate: timestamp(),
   startedAt: timestamp(),
   completedAt: timestamp(),
+  createdBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }).enableRLS()

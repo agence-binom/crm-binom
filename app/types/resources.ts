@@ -14,6 +14,7 @@ export type ProjectResource = {
   size?: number | null
   url?: string | null
   content?: string | null
+  createdByContactId?: number | null
   createdAt: string | Date
   updatedAt: string | Date
 }

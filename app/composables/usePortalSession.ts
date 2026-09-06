@@ -1,5 +1,6 @@
 type PortalSession = {
   contact: {
+    id: number
     firstName: string
     lastName: string
     portalLastLoginAt: string | null

@@ -4,10 +4,12 @@ import { resourceUploadMetadataSchema } from '~/validation/resources'
 import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
 import { assertValidResourceFile } from '~~/server/utils/resources'
 import { createResourceInsertValues } from '~~/server/lib/resources-upload'
-import { getPortalClient, requirePortalProject } from '~~/server/utils/client-portal'
+import { getPortalClient, getPortalContact, requirePortalProject } from '~~/server/utils/client-portal'
+import { logActivity } from '~~/server/utils/activity-log'
 
 export default defineEventHandler(async (event) => {
   const client = getPortalClient(event)
+  const contact = getPortalContact(event)
   const formData = await readFormData(event)
   const fileEntry = formData.get('file')
 
@@ -33,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [resource] = await db.insert(resourcesTable)
-      .values(createResourceInsertValues(fileEntry, filepath, metadata))
+      .values({ ...createResourceInsertValues(fileEntry, filepath, metadata), createdByContactId: contact.id })
       .returning()
 
     if (!resource) {
@@ -42,6 +44,8 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Impossible d\'enregistrer la ressource en base'
       })
     }
+
+    void logActivity(event, { entityType: 'resource', entityId: resource.id, action: 'create', metadata: { name: resource.name } })
 
     return await withDocumentDownloadUrl(event, { ...resource, filepath })
   } catch (error) {
