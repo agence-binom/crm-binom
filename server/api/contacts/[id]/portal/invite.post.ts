@@ -1,12 +1,7 @@
 import { createError } from 'h3'
-import { eq } from 'drizzle-orm'
-import { db } from '~/db/index'
-import { contactsTable } from '~/db/schema/contacts'
 import { contactIdSchema } from '~/validation/contacts'
-import { findConflictingPortalContact, getPortalServiceRoleClient, requireContactById } from '../../../../utils/client-portal'
+import { getPortalServiceRoleClient, requireContactById } from '../../../../utils/client-portal'
 import { canManagePortalAccess, isAlreadyRegisteredAuthError } from '../../../../lib/client-portal'
-import { logActivity } from '../../../../utils/activity-log'
-import { getAppUser } from '../../../../utils/auth'
 
 export default defineEventHandler(async (event) => {
   if (!canManagePortalAccess(event.context.appUser?.role)) {
@@ -20,32 +15,20 @@ export default defineEventHandler(async (event) => {
 
   const contact = await requireContactById(id)
 
-  if (contact.archived) {
+  // L'activation (statut + vérifications d'éligibilité) se fait via l'endpoint "activate", séparé
+  // pour ne jamais envoyer de mail à l'activation. Ici on ne fait qu'envoyer le lien de connexion,
+  // donc le contact doit déjà avoir un accès actif.
+  if (contact.portalStatus !== 'active') {
     throw createError({
       statusCode: 409,
-      statusMessage: 'Impossible de donner un accès portail à un contact archivé'
+      statusMessage: 'Le contact doit d’abord avoir un accès portail actif pour recevoir un mail'
     })
   }
 
   if (!contact.email) {
     throw createError({
       statusCode: 422,
-      statusMessage: 'Un email est requis pour donner accès au portail'
-    })
-  }
-
-  if (!contact.clientId) {
-    throw createError({
-      statusCode: 422,
-      statusMessage: 'Le contact doit être rattaché à un client pour accéder au portail'
-    })
-  }
-
-  const conflict = await findConflictingPortalContact(contact.email, contact.id)
-  if (conflict) {
-    throw createError({
-      statusCode: 409,
-      statusMessage: 'Un autre contact utilise déjà cet email pour l’accès portail'
+      statusMessage: 'Un email est requis pour envoyer le lien de connexion'
     })
   }
 
@@ -65,7 +48,7 @@ export default defineEventHandler(async (event) => {
 
     // Le compte Supabase Auth existe déjà : inviteUserByEmail n'envoie rien dans ce cas
     // (c'est l'email d'invitation initiale, pas un renvoi). On envoie donc un lien de
-    // connexion classique à la place, sinon "Renvoyer le lien" n'enverrait jamais rien.
+    // connexion classique à la place, sinon "Envoyer le mail" n'enverrait jamais rien.
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: contact.email,
       options: { shouldCreateUser: false, emailRedirectTo: redirectTo }
@@ -79,21 +62,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const [updatedContact] = await db
-    .update(contactsTable)
-    .set({ portalStatus: 'active', updatedBy: getAppUser(event).id, updatedAt: new Date() })
-    .where(eq(contactsTable.id, id))
-    .returning()
-
-  void logActivity(event, {
-    entityType: 'contact',
-    entityId: id,
-    action: 'update',
-    metadata: { name: `${updatedContact!.firstName} ${updatedContact!.lastName}`, portalStatus: 'active' }
-  })
-
   return {
-    message: 'Accès portail activé',
-    contact: updatedContact
+    message: 'Mail envoyé'
   }
 })

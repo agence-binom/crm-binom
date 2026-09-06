@@ -24,7 +24,7 @@ const activeContacts = computed(() => props.contacts.filter(contact => !contact.
 
 const isActive = (contact: Contact) => contact.portalStatus === 'active'
 
-const runPortalAction = async (contact: Contact, action: 'invite' | 'revoke', feedback: {
+const runPortalAction = async (contact: Contact, action: 'activate' | 'invite' | 'revoke', feedback: {
   successTitle: string
   successBody: string
   errorTitle: string
@@ -42,13 +42,16 @@ const runPortalAction = async (contact: Contact, action: 'invite' | 'revoke', fe
   }
 }
 
+// L'activation ne doit jamais envoyer de mail : elle passe par un endpoint dédié ("activate") qui
+// ne fait que changer le statut. L'envoi du mail de connexion est une action séparée et explicite
+// (bouton "Envoyer le mail"), déclenchée par l'admin.
 const onToggle = (contact: Contact, nextActive: boolean) => runPortalAction(
   contact,
-  nextActive ? 'invite' : 'revoke',
+  nextActive ? 'activate' : 'revoke',
   nextActive
     ? {
         successTitle: 'Accès activé',
-        successBody: `${contact.firstName} ${contact.lastName} peut désormais se connecter à son espace client.`,
+        successBody: `${contact.firstName} ${contact.lastName} peut désormais se connecter à son espace client. Pensez à lui envoyer le mail avec son lien de connexion.`,
         errorTitle: 'Activation impossible',
         errorFallback: 'Impossible de donner accès au portail à ce contact.'
       }
@@ -60,11 +63,11 @@ const onToggle = (contact: Contact, nextActive: boolean) => runPortalAction(
       }
 )
 
-const onResend = (contact: Contact) => runPortalAction(contact, 'invite', {
-  successTitle: 'Lien envoyé',
-  successBody: `Un lien de connexion a été renvoyé à ${contact.firstName} ${contact.lastName}.`,
+const onSendMail = (contact: Contact) => runPortalAction(contact, 'invite', {
+  successTitle: 'Mail envoyé',
+  successBody: `Un mail avec le lien de connexion a été envoyé à ${contact.firstName} ${contact.lastName}.`,
   errorTitle: 'Envoi impossible',
-  errorFallback: 'Impossible de renvoyer le lien de connexion.'
+  errorFallback: 'Impossible d’envoyer le mail de connexion.'
 })
 </script>
 
@@ -116,9 +119,9 @@ const onResend = (contact: Contact) => runPortalAction(contact, 'invite', {
               color="neutral"
               icon="i-lucide-send"
               :loading="pendingContactId === contact.id"
-              @click="onResend(contact)"
+              @click="onSendMail(contact)"
             >
-              Envoyer le lien
+              Envoyer le mail
             </UButton>
             <USwitch
               :model-value="isActive(contact)"
