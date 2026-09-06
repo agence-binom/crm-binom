@@ -11,7 +11,6 @@ const props = defineProps<{
   subtype?: InvoiceSubtype
   dateLabel: string
   document: BillingDocumentRecord | null
-  uploadDisabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -34,8 +33,6 @@ const resetDraft = () => {
   externalUrlInput.value = props.document?.externalUrl ?? ''
 }
 
-watch(() => props.document, resetDraft)
-
 const statusOptions = computed(() => documentStatusesByType[props.documentType].map(value => ({
   label: documentStatusLabels[props.documentType][value],
   value
@@ -49,6 +46,15 @@ const isDirty = computed(() =>
   || description.value !== (props.document?.description ?? '')
   || externalUrlInput.value !== (props.document?.externalUrl ?? '')
 )
+
+// Uploading a document mid-edit (e.g. right after switching the status to "Validée", before
+// hitting "Enregistrer") reloads `document` from the server to pick up the newly attached file -
+// but that reload must not clobber the in-progress draft, or the pending status change would be
+// silently lost. Only resync when there's nothing unsaved to protect.
+watch(() => props.document, () => {
+  if (isDirty.value) return
+  resetDraft()
+})
 
 // Called by the parent's "Enregistrer" — not wired to any local event, since fields no longer
 // save themselves on change/blur.
@@ -178,18 +184,15 @@ defineExpose({ isDirty, save, reset: resetDraft })
       :document="document"
     />
 
-    <UTooltip :text="uploadDisabled ? 'Enregistrez ou annulez vos modifications avant d\'ajouter un document.' : undefined">
-      <UButton
-        size="sm"
-        variant="soft"
-        color="neutral"
-        :icon="document?.filename ? 'i-lucide-refresh-cw' : 'i-lucide-plus'"
-        :disabled="uploadDisabled"
-        @click="isUploadModalOpen = true"
-      >
-        {{ document?.filename ? 'Remplacer le document' : 'Ajouter un document' }}
-      </UButton>
-    </UTooltip>
+    <UButton
+      size="sm"
+      variant="soft"
+      color="neutral"
+      :icon="document?.filename ? 'i-lucide-refresh-cw' : 'i-lucide-plus'"
+      @click="isUploadModalOpen = true"
+    >
+      {{ document?.filename ? 'Remplacer le document' : 'Ajouter un document' }}
+    </UButton>
 
     <UploadModal
       v-model:open="isUploadModalOpen"

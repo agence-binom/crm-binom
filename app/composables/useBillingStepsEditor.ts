@@ -116,7 +116,7 @@ export function useBillingStepsEditor(options: {
         category,
         icon: palette.icon ?? billingDocumentTypeIcons[step.documentType],
         title: getBillingStepLabel(step),
-        date: step.status === 'completed' ? formatDateOnly(document?.statusDate ?? document?.createdAt) : undefined,
+        date: step.status === 'completed' && step.documentType !== 'commercial_proposal' ? formatDateOnly(document?.statusDate ?? document?.createdAt) : undefined,
         description: document?.description || undefined,
         dateLabel: dateLabelByKey[step.key],
         document,

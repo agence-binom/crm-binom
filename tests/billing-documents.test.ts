@@ -64,7 +64,6 @@ test('billingDocumentUploadMetadataSchema parse et normalise les métadonnées',
     projectId: '42',
     documentType: 'invoice',
     subtype: 'acompte',
-    externalUrl: ' https://www.facture.net/376761/invoices/abc123 ',
     name: '  Acompte Avril 2026  ',
     description: '  30% à la commande  '
   })
@@ -73,7 +72,6 @@ test('billingDocumentUploadMetadataSchema parse et normalise les métadonnées',
     projectId: 42,
     documentType: 'invoice',
     subtype: 'acompte',
-    externalUrl: 'https://www.facture.net/376761/invoices/abc123',
     name: 'Acompte Avril 2026',
     description: '30% à la commande'
   })

@@ -129,7 +129,6 @@ defineExpose({ isDirty, isSaving, isEditingAnyStep, onSave, onCancel })
             :subtype="item.step.subtype ?? undefined"
             :date-label="item.dateLabel"
             :document="item.document"
-            :upload-disabled="isDirty"
             @saved="handleStepSaved"
           />
           <BillingStepSummary

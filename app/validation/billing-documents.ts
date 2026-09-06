@@ -27,8 +27,8 @@ export const isFactureNetUrl = (value: string) => {
   }
 }
 
-const refineBillingDocument = (
-  data: { documentType?: typeof billingDocumentTypes[number], externalUrl?: string, subtype?: string, status?: typeof documentStatuses[number] },
+const refineSubtypeAndStatus = (
+  data: { documentType?: typeof billingDocumentTypes[number], subtype?: string, status?: typeof documentStatuses[number] },
   ctx: z.RefinementCtx
 ) => {
   if (data.subtype && data.documentType && data.documentType !== 'invoice') {
@@ -46,6 +46,13 @@ const refineBillingDocument = (
       message: 'Ce statut n\'est pas valide pour ce type de document'
     })
   }
+}
+
+const refineBillingDocument = (
+  data: { documentType?: typeof billingDocumentTypes[number], externalUrl?: string, subtype?: string, status?: typeof documentStatuses[number] },
+  ctx: z.RefinementCtx
+) => {
+  refineSubtypeAndStatus(data, ctx)
 
   if (!data.documentType || !billingDocumentTypesRequiringFactureNetLink.includes(data.documentType)) {
     return
@@ -94,15 +101,16 @@ export const billingDocumentCreateSchema = z.object({
 }).superRefine(refineBillingDocument)
 
 // Metadata for the "upload a file for this billing step" multipart route. Deliberately excludes
-// `status` - the workflow status of a step is never implied by uploading its file.
+// `status` - the workflow status of a step is never implied by uploading its file - and
+// `externalUrl`, which belongs to the billing-document step (set from the drawer) rather than
+// to the file being attached to it.
 export const billingDocumentUploadMetadataSchema = z.object({
   projectId: z.coerce.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif'),
   documentType: z.enum(billingDocumentTypes),
   subtype: z.enum(invoiceSubtypes).optional(),
-  externalUrl: documentExternalUrlSchema.optional(),
   name: z.string().trim().max(255, 'Le nom est trop long').optional().or(z.literal('')),
   description: z.string().trim().max(1000, 'La description est trop longue').optional().or(z.literal(''))
-}).superRefine(refineBillingDocument)
+}).superRefine(refineSubtypeAndStatus)
 
 // `documentType`/`subtype`/`projectId` are the step's identity and never change after creation.
 export const billingDocumentUpdateSchema = z.object({

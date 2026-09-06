@@ -41,7 +41,7 @@ const timelineItems = computed(() => {
     return {
       value: step.documentId ?? step.key,
       icon: palette.icon,
-      date: step.status === 'completed' ? formatDateOnly(document?.statusDate ?? document?.createdAt) : undefined,
+      date: step.status === 'completed' && step.documentType !== 'commercial_proposal' ? formatDateOnly(document?.statusDate ?? document?.createdAt) : undefined,
       title: getBillingStepLabel(step),
       description: document?.description || undefined,
       warning,

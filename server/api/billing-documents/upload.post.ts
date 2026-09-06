@@ -26,7 +26,6 @@ export default defineEventHandler(async (event) => {
     projectId: formData.get('projectId'),
     documentType: formData.get('documentType'),
     subtype: formData.get('subtype') || undefined,
-    externalUrl: formData.get('externalUrl'),
     name: formData.get('name'),
     description: formData.get('description')
   })
@@ -73,7 +72,6 @@ export default defineEventHandler(async (event) => {
         const [updated] = await tx.update(billingDocumentsTable)
           .set({
             documentId: document.id,
-            externalUrl: metadata.externalUrl?.trim() || existingStep.externalUrl,
             description: metadata.description?.trim() || existingStep.description,
             updatedAt: new Date()
           })
@@ -89,7 +87,6 @@ export default defineEventHandler(async (event) => {
           documentType: metadata.documentType,
           subtype: metadata.subtype ?? null,
           status: 'draft',
-          externalUrl: metadata.externalUrl?.trim() || null,
           description: metadata.description?.trim() || '',
           documentId: document.id
         })
