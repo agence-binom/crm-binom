@@ -1,11 +1,18 @@
 import { createError, type H3Event } from 'h3'
 import { eq, sql } from 'drizzle-orm'
+import type { InferSelectModel } from 'drizzle-orm'
 import { serverSupabaseUser } from '#supabase/server'
 import { db } from '~/db'
 import { usersTable } from '~/db/schema/users'
 import { normalizeEmailAddress } from '../lib/auth-users'
 
 const UNAUTHORIZED_LOGIN_MESSAGE = 'Cette adresse email n’est pas autorisée à accéder à l’application.'
+
+// `middleware/01-auth.ts` sets this on every /api/* request outside /api/portal/* - centralized
+// here so the non-null cast isn't repeated at every endpoint (même principe que getPortalClient).
+export const getAppUser = (event: H3Event) => (
+  event.context.appUser as InferSelectModel<typeof usersTable>
+)
 
 export const PUBLIC_AUTH_API_PATHS = ['/api/auth/authorize-email']
 

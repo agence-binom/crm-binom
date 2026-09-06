@@ -3,7 +3,10 @@ import { db } from '~/db'
 import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { documentsTable } from '~/db/schema/documents'
 import { billingDocumentUploadMetadataSchema } from '~/validation/billing-documents'
+import { getBillingDocumentLabel } from '~/lib/documents'
 import { buildDocumentStoragePath, uploadDocumentFile, deleteUploadedDocumentIfExists, assertValidDocumentFile } from '~~/server/utils/documents'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 // Uploads the PDF for a billing step. If a file-less record already exists for this exact step
 // (created via POST /api/billing-documents to set a status ahead of the upload), the file attaches
@@ -38,8 +41,10 @@ export default defineEventHandler(async (event) => {
   )
   await uploadDocumentFile(event, filepath, fileEntry)
 
+  const appUser = getAppUser(event)
+
   try {
-    const billingDocument = await db.transaction(async (tx) => {
+    const { billingDocument, wasCreated } = await db.transaction(async (tx) => {
       const [document] = await tx.insert(documentsTable)
         .values({
           name: metadata.name?.trim() || fileEntry.name,
@@ -49,7 +54,8 @@ export default defineEventHandler(async (event) => {
           size: fileEntry.size,
           entityType: 'project',
           entityId: metadata.projectId,
-          description: metadata.description?.trim() || ''
+          description: metadata.description?.trim() || '',
+          createdBy: appUser.id
         })
         .returning()
 
@@ -73,12 +79,13 @@ export default defineEventHandler(async (event) => {
           .set({
             documentId: document.id,
             description: metadata.description?.trim() || existingStep.description,
+            updatedBy: appUser.id,
             updatedAt: new Date()
           })
           .where(eq(billingDocumentsTable.id, existingStep.id))
           .returning()
 
-        return { ...updated!, ...document, id: updated!.id }
+        return { billingDocument: { ...updated!, ...document, id: updated!.id }, wasCreated: false }
       }
 
       const [created] = await tx.insert(billingDocumentsTable)
@@ -88,12 +95,16 @@ export default defineEventHandler(async (event) => {
           subtype: metadata.subtype ?? null,
           status: 'draft',
           description: metadata.description?.trim() || '',
-          documentId: document.id
+          documentId: document.id,
+          createdBy: appUser.id
         })
         .returning()
 
-      return { ...created!, ...document, id: created!.id }
+      return { billingDocument: { ...created!, ...document, id: created!.id }, wasCreated: true }
     })
+
+    void logActivity(event, { entityType: 'document', entityId: billingDocument.documentId!, action: 'create', metadata: { name: billingDocument.name } })
+    void logActivity(event, { entityType: 'billing_document', entityId: billingDocument.id, action: wasCreated ? 'create' : 'update', metadata: { name: getBillingDocumentLabel(billingDocument) } })
 
     return billingDocument
   } catch (error) {

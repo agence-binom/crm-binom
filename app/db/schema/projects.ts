@@ -1,5 +1,6 @@
 import { boolean, integer, pgTable, varchar, text, timestamp, json } from 'drizzle-orm/pg-core'
 import { clientsTable } from './clients'
+import { usersTable } from './users'
 
 export const projectsTable = pgTable('projects', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -14,6 +15,8 @@ export const projectsTable = pgTable('projects', {
   url: varchar({ length: 255 }),
   notes: text(),
   links: json(),
+  createdBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }).enableRLS()

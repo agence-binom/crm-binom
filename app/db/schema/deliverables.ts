@@ -1,5 +1,6 @@
 import { integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
 import { projectsTable } from './projects'
+import { usersTable } from './users'
 
 export const deliverablesTable = pgTable('deliverables', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -20,6 +21,8 @@ export const deliverablesTable = pgTable('deliverables', {
   // Text-only field
   content: text(),
 
+  createdBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }).enableRLS()

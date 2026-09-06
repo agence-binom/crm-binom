@@ -3,6 +3,8 @@ import { documentsTable } from '~/db/schema/documents'
 import { documentUploadMetadataSchema } from '~/validation/documents'
 import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists, assertValidDocumentFile } from '~~/server/utils/documents'
 import { createDocumentInsertValues } from '~~/server/lib/documents-upload'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const formData = await readFormData(event)
@@ -33,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [document] = await db.insert(documentsTable)
-      .values(createDocumentInsertValues(fileEntry, filepath, metadata))
+      .values({ ...createDocumentInsertValues(fileEntry, filepath, metadata), createdBy: getAppUser(event).id })
       .returning()
 
     if (!document) {
@@ -42,6 +44,8 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Impossible d\'enregistrer le document en base'
       })
     }
+
+    void logActivity(event, { entityType: 'document', entityId: document.id, action: 'create', metadata: { name: document.name } })
 
     return await withDocumentDownloadUrl(event, document)
   } catch (error) {

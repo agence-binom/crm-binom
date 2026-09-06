@@ -4,6 +4,8 @@ import { deliverableUploadMetadataSchema } from '~/validation/deliverables'
 import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
 import { assertValidDeliverableFile } from '~~/server/utils/deliverables'
 import { createDeliverableInsertValues } from '~~/server/lib/deliverables-upload'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const formData = await readFormData(event)
@@ -29,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [deliverable] = await db.insert(deliverablesTable)
-      .values(createDeliverableInsertValues(fileEntry, filepath, metadata))
+      .values({ ...createDeliverableInsertValues(fileEntry, filepath, metadata), createdBy: getAppUser(event).id })
       .returning()
 
     if (!deliverable) {
@@ -38,6 +40,8 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Impossible d\'enregistrer le livrable en base'
       })
     }
+
+    void logActivity(event, { entityType: 'deliverable', entityId: deliverable.id, action: 'create', metadata: { name: deliverable.name } })
 
     return await withDocumentDownloadUrl(event, { ...deliverable, filepath })
   } catch (error) {

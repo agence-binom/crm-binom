@@ -2,6 +2,7 @@ import { db } from '~/db/index'
 import { usersTable } from '~/db/schema/users'
 import { eq } from 'drizzle-orm'
 import { userIdSchema } from '~/validation/users'
+import { logActivity } from '~~/server/utils/activity-log'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, userIdSchema.parse)
@@ -17,6 +18,11 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Utilisateur non trouvé'
     })
   }
+
+  // Journalisé avant la suppression, et attendu (contrairement aux autres appels à logActivity) :
+  // un admin peut supprimer son propre compte, auquel cas l'acteur (appUser) n'existerait plus pour
+  // la contrainte de clé étrangère si l'écriture n'était pas garantie avant le DELETE ci-dessous.
+  await logActivity(event, { entityType: 'user', entityId: id, action: 'delete', metadata: { name: existingUser[0]!.name } })
 
   await db
     .delete(usersTable)

@@ -112,6 +112,14 @@ export const getBillingDocumentTitle = (document: { documentType: BillingDocumen
   return invoiceSubtypeLabels[getEffectiveInvoiceSubtype({ type: document.documentType, subtype: document.subtype }) ?? 'unique']
 }
 
+// Same label, for callers (e.g. the activity log) holding a raw drizzle row whose documentType is
+// typed as plain `string` (varchar column, no DB enum) rather than the narrower BillingDocumentType.
+export const getBillingDocumentLabel = (document: { documentType: string, subtype?: string | null }) => (
+  document.documentType in billingDocumentTypeLabels
+    ? getBillingDocumentTitle(document as { documentType: BillingDocumentType, subtype?: string | null })
+    : document.documentType
+)
+
 export type DocumentLifecycle = 'current' | 'superseded'
 
 export type LifecycleAnnotatedDocument<

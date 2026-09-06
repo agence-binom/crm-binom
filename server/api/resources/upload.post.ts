@@ -4,6 +4,8 @@ import { resourceUploadMetadataSchema } from '~/validation/resources'
 import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
 import { assertValidResourceFile } from '~~/server/utils/resources'
 import { createResourceInsertValues } from '~~/server/lib/resources-upload'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const formData = await readFormData(event)
@@ -29,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [resource] = await db.insert(resourcesTable)
-      .values(createResourceInsertValues(fileEntry, filepath, metadata))
+      .values({ ...createResourceInsertValues(fileEntry, filepath, metadata), createdByUserId: getAppUser(event).id })
       .returning()
 
     if (!resource) {
@@ -38,6 +40,8 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Impossible d\'enregistrer la ressource en base'
       })
     }
+
+    void logActivity(event, { entityType: 'resource', entityId: resource.id, action: 'create', metadata: { name: resource.name } })
 
     return await withDocumentDownloadUrl(event, { ...resource, filepath })
   } catch (error) {

@@ -3,6 +3,8 @@ import { db } from '~/db'
 import { resourcesTable } from '~/db/schema/resources'
 import { resourceIdSchema, resourceUpdateSchema } from '~/validation/resources'
 import { withResourcesDownloadUrls } from '~~/server/utils/resources'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, resourceIdSchema.parse)
@@ -10,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const [resource] = await db
     .update(resourcesTable)
-    .set({ ...body, updatedAt: new Date() })
+    .set({ ...body, updatedByUserId: getAppUser(event).id, updatedByContactId: null, updatedAt: new Date() })
     .where(eq(resourcesTable.id, id))
     .returning()
 
@@ -20,6 +22,8 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Ressource non trouvée'
     })
   }
+
+  void logActivity(event, { entityType: 'resource', entityId: id, action: 'update', metadata: { name: resource.name } })
 
   const [resourceWithUrl] = await withResourcesDownloadUrls(event, [resource])
   return resourceWithUrl

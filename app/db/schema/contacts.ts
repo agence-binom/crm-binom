@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { boolean, integer, pgTable, varchar, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { clientsTable } from './clients'
+import { usersTable } from './users'
 
 export const contactsTable = pgTable('contacts', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -15,6 +16,8 @@ export const contactsTable = pgTable('contacts', {
   archived: boolean().notNull().default(false),
   portalStatus: varchar({ length: 20 }), // 'active' | 'revoked' | null (jamais invité)
   portalLastLoginAt: timestamp(),
+  createdBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }, table => [

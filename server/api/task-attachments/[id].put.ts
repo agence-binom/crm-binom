@@ -3,6 +3,8 @@ import { db } from '~/db'
 import { taskAttachmentsTable } from '~/db/schema/task-attachments'
 import { taskAttachmentIdSchema, taskAttachmentUpdateSchema } from '~/validation/task-attachments'
 import { withTaskAttachmentsDownloadUrls } from '~~/server/utils/task-attachments'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, taskAttachmentIdSchema.parse)
@@ -10,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const [attachment] = await db
     .update(taskAttachmentsTable)
-    .set({ ...body, updatedAt: new Date() })
+    .set({ ...body, updatedBy: getAppUser(event).id, updatedAt: new Date() })
     .where(eq(taskAttachmentsTable.id, id))
     .returning()
 
@@ -20,6 +22,8 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Pièce jointe non trouvée'
     })
   }
+
+  void logActivity(event, { entityType: 'task_attachment', entityId: id, action: 'update', metadata: { name: attachment.name } })
 
   const [attachmentWithUrl] = await withTaskAttachmentsDownloadUrls(event, [attachment])
   return attachmentWithUrl
