@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProjectResource, Task, User } from '~/types'
+import type { ProjectDeliverable, ProjectResource, Task, User } from '~/types'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
@@ -9,6 +9,7 @@ const { data, error, refresh } = await useFetch(`/api/projects/${projectId.value
 const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
+const projectDeliverables = computed<ProjectDeliverable[]>(() => (data.value?.deliverables as ProjectDeliverable[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
 
@@ -103,6 +104,14 @@ const handleDocumentsChange = async () => {
           </USelectMenu>
         </template>
       </TasksToDoList>
+    </div>
+
+    <div class="mt-8">
+      <DeliverablesList
+        :deliverables="projectDeliverables"
+        :project-id="projectId"
+        @refresh="refresh"
+      />
     </div>
 
     <div class="mt-8">

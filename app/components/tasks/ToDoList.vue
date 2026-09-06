@@ -27,7 +27,15 @@ const emit = defineEmits<{
   refresh: []
 }>()
 const { showError } = useFeedbackToast()
-const activeTaskStatuses: TaskStatus[] = ['todo', 'in_progress', 'waiting', 'validationBinom', 'validationClient']
+const activeTaskStatuses = computed<TaskStatus[]>(() => {
+  const statuses: TaskStatus[] = ['todo', 'in_progress', 'waiting', 'validationBinom']
+
+  if (props.workspace !== 'interne') {
+    statuses.push('validationClient')
+  }
+
+  return statuses
+})
 const completedTaskStatus: TaskStatus = 'done'
 
 const isTaskModalOpen = ref(false)
@@ -55,7 +63,7 @@ const visibleTasks = computed(() => {
   return sortTasksByDueDate(tasks)
 })
 
-const tasksByStatus = computed(() => {
+const tasksByStatus = computed<Record<TaskStatus, Task[]>>(() => {
   return {
     todo: visibleTasks.value.filter(t => t.status === 'todo'),
     in_progress: visibleTasks.value.filter(t => t.status === 'in_progress'),
@@ -66,13 +74,13 @@ const tasksByStatus = computed(() => {
   }
 })
 
-const displayedStatuses = computed(() => {
+const displayedStatuses = computed<TaskStatus[]>(() => {
   return showCompletedTasks.value
     ? [
-        ...activeTaskStatuses,
+        ...activeTaskStatuses.value,
         completedTaskStatus
       ]
-    : activeTaskStatuses
+    : activeTaskStatuses.value
 })
 
 const openCreateTask = () => {

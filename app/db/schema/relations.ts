@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm'
 import { billingDocumentsTable } from './billing-documents'
 import { clientsTable } from './clients'
 import { contactsTable } from './contacts'
+import { deliverablesTable } from './deliverables'
 import { documentsTable } from './documents'
 import { projectsTable } from './projects'
 import { tasksTable } from './tasks'
@@ -28,6 +29,7 @@ export const projectsRelations = relations(projectsTable, ({ one, many }) => ({
   }),
   tasks: many(tasksTable),
   resources: many(resourcesTable),
+  deliverables: many(deliverablesTable),
   billingDocuments: many(billingDocumentsTable)
 }))
 
@@ -57,6 +59,13 @@ export const tasksRelations = relations(tasksTable, ({ one, many }) => ({
 export const resourcesRelations = relations(resourcesTable, ({ one }) => ({
   project: one(projectsTable, {
     fields: [resourcesTable.projectId],
+    references: [projectsTable.id]
+  })
+}))
+
+export const deliverablesRelations = relations(deliverablesTable, ({ one }) => ({
+  project: one(projectsTable, {
+    fields: [deliverablesTable.projectId],
     references: [projectsTable.id]
   })
 }))

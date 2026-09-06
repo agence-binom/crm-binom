@@ -28,6 +28,15 @@ const {
 } = usePortalProjectResources(projectId)
 const resources = computed(() => resourcesData.value?.resources ?? [])
 const isResourcesLoading = computed(() => resourcesStatus.value === 'pending' && !resourcesData.value)
+
+const {
+  data: deliverablesData,
+  status: deliverablesStatus,
+  error: deliverablesError,
+  refresh: refreshDeliverables
+} = usePortalProjectDeliverables(projectId)
+const deliverables = computed(() => deliverablesData.value?.deliverables ?? [])
+const isDeliverablesLoading = computed(() => deliverablesStatus.value === 'pending' && !deliverablesData.value)
 </script>
 
 <template>
@@ -84,10 +93,31 @@ const isResourcesLoading = computed(() => resourcesStatus.value === 'pending' &&
         <h2 class="text-base font-semibold text-slate-900">
           Livrables
         </h2>
-        <AppEmptyState
-          icon="i-lucide-package"
-          title="Aucun livrable pour le moment"
-          description="Les maquettes et prototypes partagés par l'agence apparaîtront ici."
+        <USkeleton
+          v-if="isDeliverablesLoading"
+          class="h-24"
+        />
+        <UAlert
+          v-else-if="deliverablesError"
+          color="error"
+          variant="soft"
+          icon="i-lucide-circle-alert"
+          title="Impossible de charger les livrables"
+          :description="getErrorMessage(deliverablesError, 'Merci de réessayer dans quelques instants.')"
+        >
+          <template #actions>
+            <UButton
+              color="error"
+              variant="soft"
+              @click="refreshDeliverables()"
+            >
+              Réessayer
+            </UButton>
+          </template>
+        </UAlert>
+        <PortalDeliverablesList
+          v-else
+          :deliverables="deliverables"
         />
       </div>
 
