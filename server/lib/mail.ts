@@ -22,7 +22,7 @@ export const sendMagicLinkEmail = async (email: string, url: string) => {
   const { error } = await getResendClient().emails.send({
     from: MAIL_FROM,
     to: email,
-    subject: 'Votre lien de connexion binōm',
+    subject: 'Votre lien de connexion',
     text: `Cliquez sur ce lien pour vous connecter : ${url}\n\nCe lien expire dans 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.`
   })
 
