@@ -1,18 +1,22 @@
-name: Quality
+name: CI
 
 on:
   pull_request:
+  push:
+    branches: [main, staging]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  checks:
+  quality:
+    name: Lint / Typecheck / Test / Build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
@@ -23,11 +27,77 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
-      - name: Run lint
+      - name: Lint
         run: npm run lint
 
-      - name: Run typecheck
+      - name: Typecheck
         run: npm run typecheck
+
+      - name: Unit/integration tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  e2e:
+    name: Playwright E2E
+    needs: quality
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/staging' ||
+      contains(github.event.pull_request.labels.*.name, 'e2e')
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    env:
+      NUXT_PUBLIC_SITE_URL: http://localhost:3100
+      NUXT_DOCUMENTS_BUCKET: billing
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase stack
+        run: supabase start
+
+      - name: Export local Supabase credentials
+        # Ces clés ne sont valables que pour le conteneur Docker éphémère de ce run
+        # (127.0.0.1, détruit à la fin du job) : on les récupère dynamiquement plutôt
+        # que de committer une valeur qui a la forme d'un secret (bloqué par GitHub
+        # Push Protection, même pour une clé locale non réutilisable ailleurs).
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          {
+            echo "DATABASE_URL=$DB_URL"
+            echo "NUXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NUXT_PUBLIC_SUPABASE_KEY=$PUBLISHABLE_KEY"
+            echo "NUXT_SUPABASE_SECRET_KEY=$SECRET_KEY"
+          } >> "$GITHUB_ENV"
+
+      - name: Apply database migrations
+        run: npm run db:migrate
+
+      - name: Seed database
+        run: npm run db:seed
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
