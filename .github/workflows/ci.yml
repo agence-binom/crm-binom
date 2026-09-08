@@ -102,12 +102,12 @@ jobs:
 
       - name: Export local Supabase credentials
         run: |
-          eval "$(supabase status -o env | sed 's/^/export /')"
+          STATUS_JSON="$(supabase status -o json)"
           {
-            echo "DATABASE_URL=$DB_URL"
-            echo "NUXT_PUBLIC_SUPABASE_URL=$API_URL"
-            echo "NUXT_PUBLIC_SUPABASE_KEY=$PUBLISHABLE_KEY"
-            echo "NUXT_SUPABASE_SECRET_KEY=$SECRET_KEY"
+            echo "DATABASE_URL=$(echo "$STATUS_JSON" | jq -r '.DB_URL')"
+            echo "NUXT_PUBLIC_SUPABASE_URL=$(echo "$STATUS_JSON" | jq -r '.API_URL')"
+            echo "NUXT_PUBLIC_SUPABASE_KEY=$(echo "$STATUS_JSON" | jq -r '.PUBLISHABLE_KEY')"
+            echo "NUXT_SUPABASE_SECRET_KEY=$(echo "$STATUS_JSON" | jq -r '.SECRET_KEY')"
           } >> "$GITHUB_ENV"
 
       - name: Apply database migrations
