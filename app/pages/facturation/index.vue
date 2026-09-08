@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow } from '@nuxt/ui'
-import { billingDashboardStatuses } from '~/constants/billing'
+import { billingDashboardStatuses, isActiveBillingTone } from '~/constants/billing'
 import type { BillingDashboardStatus } from '~/constants/billing'
 import type { BillingProjectStatus } from '~/lib/billing'
 import type { BillingStatus, BillingStepKey } from '~/lib/documents'
@@ -16,7 +16,7 @@ const emptyPagination = {
 
 const searchInput = ref('')
 const searchQuery = ref('')
-const statusFilter = ref<BillingDashboardStatus>('all')
+const statusFilter = ref<BillingDashboardStatus>('active')
 const projectFilterId = ref<number | null>(null)
 const page = ref(1)
 
@@ -81,12 +81,12 @@ const pagination = computed(() => data.value?.pagination || emptyPagination)
 const isLoading = computed(() => status.value === 'pending')
 
 const hasActiveFilters = computed(() =>
-  Boolean(searchInput.value.trim()) || statusFilter.value !== 'all' || projectFilterId.value !== null
+  Boolean(searchInput.value.trim()) || statusFilter.value !== 'active' || projectFilterId.value !== null
 )
 
 const isAllCaughtUp = computed(() =>
   !isLoading.value
-  && (statusFilter.value === 'neutral' || statusFilter.value === 'warning')
+  && (statusFilter.value === 'active' || isActiveBillingTone(statusFilter.value))
   && !searchInput.value.trim()
   && projectFilterId.value === null
   && billingProjects.value.length === 0
@@ -103,6 +103,7 @@ const selectedProjectOption = computed({
 
 const statusFilterLabels: Record<BillingDashboardStatus, string> = {
   all: 'Tous les statuts',
+  active: 'En cours',
   neutral: 'À émettre',
   warning: 'En attente',
   success: 'Complet',
@@ -126,6 +127,10 @@ const onRowClick = (event: Event, row: TableRow<BillingProjectStatus>) => {
 
 const columns: TableColumn<BillingProjectStatus>[] = [
   {
+    id: 'client',
+    header: 'Client'
+  },
+  {
     id: 'project',
     header: 'Projet',
     meta: {
@@ -134,10 +139,6 @@ const columns: TableColumn<BillingProjectStatus>[] = [
         td: 'w-48 max-w-48'
       }
     }
-  },
-  {
-    id: 'client',
-    header: 'Client'
   },
   {
     id: 'progress',

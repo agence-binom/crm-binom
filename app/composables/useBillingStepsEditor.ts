@@ -67,6 +67,8 @@ export function useBillingStepsEditor(options: {
     try {
       const response = await $fetch<{ documents: AnnotatedBillingDocument[] }>(`/api/billing-documents/project/${projectId}`)
       documents.value = response.documents
+    } catch (error) {
+      showError('Échec du chargement', error, 'Impossible de charger les documents de facturation.')
     } finally {
       isLoading.value = false
     }
@@ -116,7 +118,7 @@ export function useBillingStepsEditor(options: {
         category,
         icon: palette.icon ?? billingDocumentTypeIcons[step.documentType],
         title: getBillingStepLabel(step),
-        date: step.status === 'completed' ? formatDateOnly(document?.statusDate ?? document?.createdAt) : undefined,
+        date: step.status === 'completed' && step.documentType !== 'commercial_proposal' ? formatDateOnly(document?.statusDate ?? document?.createdAt) : undefined,
         description: document?.description || undefined,
         dateLabel: dateLabelByKey[step.key],
         document,

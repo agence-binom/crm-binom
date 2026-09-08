@@ -2,10 +2,12 @@ import { relations } from 'drizzle-orm'
 import { billingDocumentsTable } from './billing-documents'
 import { clientsTable } from './clients'
 import { contactsTable } from './contacts'
+import { deliverablesTable } from './deliverables'
 import { documentsTable } from './documents'
 import { projectsTable } from './projects'
 import { tasksTable } from './tasks'
 import { resourcesTable } from './resources'
+import { taskAssigneesTable } from './task-assignees'
 import { taskAttachmentsTable } from './task-attachments'
 import { usersTable } from './users'
 
@@ -28,6 +30,7 @@ export const projectsRelations = relations(projectsTable, ({ one, many }) => ({
   }),
   tasks: many(tasksTable),
   resources: many(resourcesTable),
+  deliverables: many(deliverablesTable),
   billingDocuments: many(billingDocumentsTable)
 }))
 
@@ -47,16 +50,31 @@ export const tasksRelations = relations(tasksTable, ({ one, many }) => ({
     fields: [tasksTable.projectId],
     references: [projectsTable.id]
   }),
-  assignee: one(usersTable, {
-    fields: [tasksTable.assignedTo],
-    references: [usersTable.id]
-  }),
+  assignees: many(taskAssigneesTable),
   attachments: many(taskAttachmentsTable)
+}))
+
+export const taskAssigneesRelations = relations(taskAssigneesTable, ({ one }) => ({
+  task: one(tasksTable, {
+    fields: [taskAssigneesTable.taskId],
+    references: [tasksTable.id]
+  }),
+  user: one(usersTable, {
+    fields: [taskAssigneesTable.userId],
+    references: [usersTable.id]
+  })
 }))
 
 export const resourcesRelations = relations(resourcesTable, ({ one }) => ({
   project: one(projectsTable, {
     fields: [resourcesTable.projectId],
+    references: [projectsTable.id]
+  })
+}))
+
+export const deliverablesRelations = relations(deliverablesTable, ({ one }) => ({
+  project: one(projectsTable, {
+    fields: [deliverablesTable.projectId],
     references: [projectsTable.id]
   })
 }))

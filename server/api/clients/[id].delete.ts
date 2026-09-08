@@ -4,6 +4,7 @@ import { contactsTable } from '~/db/schema/contacts'
 import { projectsTable } from '~/db/schema/projects'
 import { and, eq } from 'drizzle-orm'
 import { clientIdSchema } from '~/validation/clients'
+import { logActivity } from '~~/server/utils/activity-log'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, clientIdSchema.parse)
@@ -48,6 +49,8 @@ export default defineEventHandler(async (event) => {
   await db
     .delete(clientsTable)
     .where(eq(clientsTable.id, id))
+
+  void logActivity(event, { entityType: 'client', entityId: id, action: 'delete', metadata: { name: existingClient[0]!.name } })
 
   setResponseStatus(event, 204)
   return null

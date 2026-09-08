@@ -39,18 +39,16 @@ export const formatDateOnly = (date: string | Date | null | undefined) => {
   })
 }
 
-// Known Supabase Auth and Storage messages are translated; unknown messages are preserved.
-const SUPABASE_ERROR_TRANSLATIONS: Array<[RegExp, string]> = [
-  [/^signups not allowed for otp$/i, 'Cette adresse email n\'est pas autorisée à se connecter.'],
-  [/^email rate limit exceeded$/i, 'Trop de tentatives. Merci de réessayer dans quelques minutes.'],
-  [/^for security purposes, you can only request this after \d+ seconds\.?$/i, 'Pour des raisons de sécurité, merci de patienter avant de redemander un lien de connexion.'],
-  [/^token has expired or is invalid$/i, 'Ce lien de connexion a expiré ou est invalide.'],
-  [/^invalid flow state, no valid flow state found$/i, 'Ce lien de connexion a expiré ou a déjà été utilisé.'],
-  [/^auth session missing!?$/i, 'Votre session a expiré, merci de vous reconnecter.'],
-  [/^invalid refresh token/i, 'Votre session a expiré, merci de vous reconnecter.'],
+// Known Better Auth and Supabase Storage messages are translated; unknown messages are preserved.
+// Auth passe par Better Auth depuis la migration, Storage reste sur Supabase pour l'instant - d'où
+// le mélange des deux origines dans cette même table.
+const AUTH_AND_STORAGE_ERROR_TRANSLATIONS: Array<[RegExp, string]> = [
+  [/rate limit/i, 'Trop de tentatives. Merci de réessayer dans quelques minutes.'],
+  [/^(token expired|invalid token)$/i, 'Ce lien de connexion a expiré ou est invalide.'],
+  [/^session expired\b/i, 'Votre session a expiré, merci de vous reconnecter.'],
   [/^user not found$/i, 'Aucun compte ne correspond à cette adresse email.'],
-  [/^email not confirmed$/i, 'Cette adresse email n\'a pas été confirmée.'],
-  [/^invalid login credentials$/i, 'Identifiants incorrects.'],
+  [/^email not verified$/i, 'Cette adresse email n\'a pas été confirmée.'],
+  [/^invalid email or password$/i, 'Identifiants incorrects.'],
   [/^the resource already exists$/i, 'Un fichier du même nom existe déjà.'],
   [/^(the resource was not found|object not found)$/i, 'Fichier introuvable.'],
   [/^new row violates row-level security policy/i, 'Accès refusé à ce fichier.'],
@@ -59,7 +57,7 @@ const SUPABASE_ERROR_TRANSLATIONS: Array<[RegExp, string]> = [
 
 export const translateSupabaseError = (message: string): string | undefined => {
   const trimmed = message.trim()
-  return SUPABASE_ERROR_TRANSLATIONS.find(([pattern]) => pattern.test(trimmed))?.[1]
+  return AUTH_AND_STORAGE_ERROR_TRANSLATIONS.find(([pattern]) => pattern.test(trimmed))?.[1]
 }
 
 // h3's readValidatedBody/getValidatedQuery wrap every failed Zod parse behind the generic

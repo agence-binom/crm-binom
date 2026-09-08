@@ -1,16 +1,9 @@
 <script setup lang="ts">
+import { authClient } from '~/lib/auth-client'
+
 definePageMeta({ layout: false })
 
-const route = useRoute()
-const supabase = useSupabaseClient()
-const user = useSupabaseUser()
-const session = useSupabaseSession()
 const { showError } = useFeedbackToast()
-
-const getAuthCode = () => {
-  const code = route.query.code
-  return typeof code === 'string' && code.length > 0 ? code : null
-}
 
 const redirectToLogin = async (error?: unknown, description?: string) => {
   if (error || description) {
@@ -21,7 +14,7 @@ const redirectToLogin = async (error?: unknown, description?: string) => {
     )
   }
 
-  await supabase.auth.signOut()
+  await authClient.signOut()
   await navigateTo('/login', { replace: true })
 }
 
@@ -49,37 +42,17 @@ const validateAuthorizedSession = async () => {
   }
 }
 
-const ensureSession = async () => {
-  if (session.value || user.value) {
-    return session.value
-  }
-
-  const { data: sessionData } = await supabase.auth.getSession()
-  if (sessionData.session) {
-    return sessionData.session
-  }
-
-  const code = getAuthCode()
-  if (!code) {
-    return null
-  }
-
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-  if (error) {
-    throw error
-  }
-
-  return data.session
-}
-
 onMounted(async () => {
   try {
-    const resolvedSession = await ensureSession()
+    // Le lien magic-link pointe vers l'endpoint de vérification de Better Auth
+    // (/api/auth/magic-link/verify), qui pose déjà le cookie de session et redirige ici -
+    // contrairement à Supabase, il n'y a plus d'échange de code à faire côté client.
+    const { data } = await authClient.getSession()
 
-    if (!resolvedSession) {
+    if (!data) {
       await redirectToLogin(
         null,
-        'Aucune session Supabase n’a pu être créée depuis ce lien de connexion.'
+        'Aucune session n’a pu être créée depuis ce lien de connexion.'
       )
       return
     }

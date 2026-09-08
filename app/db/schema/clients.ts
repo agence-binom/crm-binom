@@ -1,4 +1,5 @@
 import { boolean, integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
+import { usersTable } from './users'
 
 export const clientsTable = pgTable('clients', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -15,6 +16,8 @@ export const clientsTable = pgTable('clients', {
   icon: varchar({ length: 100 }),
   archived: boolean().notNull().default(false),
   description: text(),
+  createdBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }).enableRLS()

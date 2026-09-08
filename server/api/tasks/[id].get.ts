@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '~/db'
 import { tasksTable } from '~/db/schema/tasks'
+import { getTaskAssigneeIds } from '~~/server/utils/tasks'
 import { taskIdSchema } from '~/validation/tasks'
 
 export default defineEventHandler(async (event) => {
@@ -15,5 +16,5 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return task
+  return { ...task, assigneeIds: await getTaskAssigneeIds(id) }
 })

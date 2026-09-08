@@ -158,7 +158,7 @@ const onDeleteTask = async (taskId: number) => {
           v-for="task in taskList"
           :key="task.id"
           :task="task"
-          :user-name="task.assignedTo ? usersMap.get(task.assignedTo) : 'Non assigné'"
+          :user-names="task.assigneeIds.map(id => usersMap.get(id)).filter((name): name is string => Boolean(name))"
           :project-name="task.projectId ? projectsMap.get(task.projectId)?.name : undefined"
           :client-name="task.projectId ? projectsMap.get(task.projectId)?.clientName : undefined"
           :client-id="task.projectId ? projectsMap.get(task.projectId)?.clientId : undefined"

@@ -1,7 +1,6 @@
 import { createError, type H3Event } from 'h3'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import type { InferSelectModel } from 'drizzle-orm'
-import { serverSupabaseServiceRole } from '#supabase/server'
 import { db } from '~/db'
 import { contactsTable } from '~/db/schema/contacts'
 import { clientsTable } from '~/db/schema/clients'
@@ -99,10 +98,14 @@ export const findConflictingPortalContact = async (email: string, excludeContact
   return conflict ?? null
 }
 
-// `middleware/01-auth.ts` sets this on every /api/portal/* request - centralized here so the cast
+// `middleware/01-auth.ts` sets these on every /api/portal/* request - centralized here so the cast
 // isn't repeated at every endpoint.
 export const getPortalClient = (event: H3Event) => (
   event.context.portalClient as InferSelectModel<typeof clientsTable>
+)
+
+export const getPortalContact = (event: H3Event) => (
+  event.context.portalContact as InferSelectModel<typeof contactsTable>
 )
 
 // Every portal endpoint scoped to a single project (resources, billing documents...) must call
@@ -129,13 +132,17 @@ export const requirePortalProject = async (clientId: number, projectId: number) 
   return project
 }
 
-export const getPortalServiceRoleClient = (event: H3Event) => {
-  try {
-    return serverSupabaseServiceRole(event)
-  } catch {
+// Une ressource appartenant au bon projet (voir requirePortalProject) n'est pas forcément
+// modifiable par le contact courant : seul son auteur peut la modifier/supprimer, pas les autres
+// contacts du même client. 404 plutôt que 403, comme requirePortalProject, pour ne pas révéler
+// l'existence d'une ressource créée par quelqu'un d'autre.
+export const requireOwnedPortalResource = <T extends { createdByContactId: number | null }>(resource: T, contactId: number): T => {
+  if (resource.createdByContactId !== contactId) {
     throw createError({
-      statusCode: 500,
-      statusMessage: 'L’accès portail requiert SUPABASE_SECRET_KEY ou SUPABASE_SERVICE_KEY côté serveur'
+      statusCode: 404,
+      statusMessage: 'Ressource non trouvée'
     })
   }
+
+  return resource
 }

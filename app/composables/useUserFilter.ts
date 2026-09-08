@@ -13,8 +13,14 @@ export function useUserFilter(tasks: Ref<Task[]>, users?: Ref<User[]>) {
     tasks.value
       .filter(task => task.status !== 'done')
       .forEach((task) => {
-        const userId = task.assignedTo ?? null
-        counts.set(userId, (counts.get(userId) ?? 0) + 1)
+        if (task.assigneeIds.length === 0) {
+          counts.set(null, (counts.get(null) ?? 0) + 1)
+          return
+        }
+
+        task.assigneeIds.forEach((userId) => {
+          counts.set(userId, (counts.get(userId) ?? 0) + 1)
+        })
       })
 
     return counts
@@ -55,10 +61,10 @@ export function useUserFilter(tasks: Ref<Task[]>, users?: Ref<User[]>) {
     }
 
     if (selectedUserId.value === 0) {
-      return tasks.value.filter(t => !t.assignedTo)
+      return tasks.value.filter(t => t.assigneeIds.length === 0)
     }
 
-    return tasks.value.filter(t => t.assignedTo === selectedUserId.value)
+    return tasks.value.filter(t => t.assigneeIds.includes(selectedUserId.value as number))
   })
 
   return {

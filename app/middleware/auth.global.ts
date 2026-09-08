@@ -1,7 +1,7 @@
+import { authClient } from '~/lib/auth-client'
+
 export default defineNuxtRouteMiddleware(async (to) => {
-  const user = useSupabaseUser()
-  const session = useSupabaseSession()
-  const supabase = useSupabaseClient()
+  const session = authClient.useSession()
   const authorizedSessionEmail = useState<string | null>('authorized-session-email', () => null)
   const portalSessionEmail = useState<string | null>('portal-session-email', () => null)
 
@@ -11,30 +11,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const isPortalPage = (path: string) => path === '/espace-client' || path.startsWith('/espace-client/')
 
   const getNormalizedUserEmail = () => {
-    if (!user.value || typeof user.value !== 'object') {
-      return null
-    }
-
-    const maybeEmail = Reflect.get(user.value, 'email')
-    return typeof maybeEmail === 'string' ? maybeEmail.trim().toLowerCase() : null
-  }
-
-  const restoreClientSession = async () => {
-    if (import.meta.server || session.value || user.value) {
-      return
-    }
-
-    const [{ data: sessionData }, { data: claimsData }] = await Promise.all([
-      supabase.auth.getSession(),
-      supabase.auth.getClaims()
-    ])
-
-    if (sessionData.session) {
-      const { user: _user, ...safeSession } = sessionData.session
-      session.value = safeSession
-    }
-
-    user.value = claimsData?.claims ?? null
+    const email = session.value.data?.user?.email
+    return typeof email === 'string' ? email.trim().toLowerCase() : null
   }
 
   const verifyAuthorizedSession = async () => {
@@ -61,16 +39,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const signOutAndRedirectToLogin = async () => {
     if (import.meta.client) {
-      await supabase.auth.signOut()
+      await authClient.signOut()
     }
 
     return navigateTo('/login')
   }
 
-  await restoreClientSession()
-
   const normalizedEmail = getNormalizedUserEmail()
-  const hasHydratedAuthState = Boolean(user.value || session.value)
   const hasValidatedAuthorizedSession = Boolean(
     normalizedEmail
     && authorizedSessionEmail.value === normalizedEmail
@@ -82,10 +57,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const isPortalSessionValid = async () => hasValidatedPortalSession || await verifyPortalSession()
 
   if (publicPages.includes(to.path)) {
-    if (!hasHydratedAuthState && !hasValidatedAuthorizedSession && !hasValidatedPortalSession) {
-      return
-    }
-
     if (hasValidatedAuthorizedSession || await verifyAuthorizedSession()) {
       return navigateTo('/')
     }

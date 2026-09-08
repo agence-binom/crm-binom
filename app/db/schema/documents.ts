@@ -1,4 +1,5 @@
 import { integer, pgTable, varchar, text, timestamp } from 'drizzle-orm/pg-core'
+import { usersTable } from './users'
 
 // Pure file storage: a `documents` row always represents a real uploaded file, generically
 // attachable to any entity (client, project, task, resource, or a billing_documents record via
@@ -14,6 +15,8 @@ export const documentsTable = pgTable('documents', {
   entityType: varchar({ length: 50 }).notNull(), // 'project', 'client', 'task', 'resource', etc.
   entityId: integer().notNull(), // Related entity ID
   description: text(),
+  createdBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
+  updatedBy: integer().references(() => usersTable.id, { onDelete: 'set null' }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow()
 }).enableRLS()

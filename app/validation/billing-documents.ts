@@ -8,7 +8,7 @@ export const invoiceSubtypes = ['acompte', 'solde', 'unique', 'avoir'] as const
 // Valid states per document type, per the Figma state-machine spec. `invoice` covers both the
 // 'acompte' and 'unique'/'solde' subtypes - they share the exact same set of valid states.
 export const documentStatusesByType: Record<typeof billingDocumentTypes[number], readonly typeof documentStatuses[number][]> = {
-  commercial_proposal: ['draft', 'sent', 'refused', 'completed', 'cancelled'],
+  commercial_proposal: ['draft', 'sent', 'refused', 'completed', 'cancelled', 'non_applicable'],
   quote: ['draft', 'sent', 'refused', 'completed', 'cancelled', 'non_applicable'],
   invoice: ['draft', 'sent', 'completed', 'cancelled', 'non_applicable']
 }
@@ -27,8 +27,8 @@ export const isFactureNetUrl = (value: string) => {
   }
 }
 
-const refineBillingDocument = (
-  data: { documentType?: typeof billingDocumentTypes[number], externalUrl?: string, subtype?: string, status?: typeof documentStatuses[number] },
+const refineSubtypeAndStatus = (
+  data: { documentType?: typeof billingDocumentTypes[number], subtype?: string, status?: typeof documentStatuses[number] },
   ctx: z.RefinementCtx
 ) => {
   if (data.subtype && data.documentType && data.documentType !== 'invoice') {
@@ -46,8 +46,22 @@ const refineBillingDocument = (
       message: 'Ce statut n\'est pas valide pour ce type de document'
     })
   }
+}
+
+const refineBillingDocument = (
+  data: { documentType?: typeof billingDocumentTypes[number], externalUrl?: string, subtype?: string, status?: typeof documentStatuses[number] },
+  ctx: z.RefinementCtx
+) => {
+  refineSubtypeAndStatus(data, ctx)
 
   if (!data.documentType || !billingDocumentTypesRequiringFactureNetLink.includes(data.documentType)) {
+    return
+  }
+
+  // A step that's still "à émettre" or has been marked "Non applicable" has no Facture.net
+  // document to link to yet (or ever, in the "Non applicable" case) - only require the link once
+  // the step actually represents a real quote/invoice being worked (sent, completed, cancelled...).
+  if (data.status === 'draft' || data.status === 'non_applicable') {
     return
   }
 
@@ -72,9 +86,10 @@ const refineBillingDocument = (
 }
 
 // Creates a billing step record with no attached file yet (status/date/description only) - e.g.
-// marking "Devis: Validée" ahead of attaching the PDF, or a step "Non applicable". A quote/invoice
-// still needs its Facture.net link even at this stage — the drawer's own "Lien Facture.net" field
-// is meant to be filled in alongside the status, not deferred until a file is uploaded.
+// marking "Devis: Validée" ahead of attaching the PDF. A quote/invoice needs its Facture.net link
+// filled in alongside the status (not deferred until a file is uploaded) as soon as the status
+// represents real work in progress - but not while it's still "à émettre" or "Non applicable",
+// since neither has a Facture.net document to point to (see `refineBillingDocument`).
 export const billingDocumentCreateSchema = z.object({
   projectId: z.coerce.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif'),
   documentType: z.enum(billingDocumentTypes),
@@ -86,15 +101,16 @@ export const billingDocumentCreateSchema = z.object({
 }).superRefine(refineBillingDocument)
 
 // Metadata for the "upload a file for this billing step" multipart route. Deliberately excludes
-// `status` - the workflow status of a step is never implied by uploading its file.
+// `status` - the workflow status of a step is never implied by uploading its file - and
+// `externalUrl`, which belongs to the billing-document step (set from the drawer) rather than
+// to the file being attached to it.
 export const billingDocumentUploadMetadataSchema = z.object({
   projectId: z.coerce.number().int('L\'ID projet doit être un entier').positive('L\'ID projet doit être positif'),
   documentType: z.enum(billingDocumentTypes),
   subtype: z.enum(invoiceSubtypes).optional(),
-  externalUrl: documentExternalUrlSchema.optional(),
   name: z.string().trim().max(255, 'Le nom est trop long').optional().or(z.literal('')),
   description: z.string().trim().max(1000, 'La description est trop longue').optional().or(z.literal(''))
-}).superRefine(refineBillingDocument)
+}).superRefine(refineSubtypeAndStatus)
 
 // `documentType`/`subtype`/`projectId` are the step's identity and never change after creation.
 export const billingDocumentUpdateSchema = z.object({

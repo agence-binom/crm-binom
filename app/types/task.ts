@@ -3,7 +3,7 @@ import type { TaskPriority, TaskStatus, TaskWorkspace } from '~/constants/tasks'
 export type Task = {
   id: number
   projectId: number | null
-  assignedTo: number | null
+  assigneeIds: number[]
   title: string
   notes: string | null
   status: TaskStatus

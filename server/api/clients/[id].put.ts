@@ -2,6 +2,8 @@ import { db } from '~/db/index'
 import { clientsTable } from '~/db/schema/clients'
 import { eq } from 'drizzle-orm'
 import { clientUpdateSchema, clientIdSchema } from '~/validation/clients'
+import { logActivity } from '~~/server/utils/activity-log'
+import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, clientIdSchema.parse)
@@ -21,9 +23,11 @@ export default defineEventHandler(async (event) => {
 
   const clientUpdated = await db
     .update(clientsTable)
-    .set({ ...body, updatedAt: new Date() })
+    .set({ ...body, updatedBy: getAppUser(event).id, updatedAt: new Date() })
     .where(eq(clientsTable.id, id))
     .returning()
+
+  void logActivity(event, { entityType: 'client', entityId: id, action: 'update', metadata: { name: clientUpdated[0]!.name } })
 
   return {
     message: 'Client modifié',

@@ -2,44 +2,18 @@
 -- Replayed automatically by `supabase db reset` (see [db.seed] in config.toml).
 -- Never run this file against a staging/production project.
 
--- Login accounts (auth.users + public.users).
--- Magic-link sign-in is intercepted by Mailpit at http://127.0.0.1:54324
--- ("password123" is set but unused by the OTP flow).
-
-insert into auth.users (
-  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-  recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data,
-  created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token
-) values
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'admin@crmbinom.test', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'employee@crmbinom.test', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'client@crmbinom.test', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '');
-
-insert into auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-select gen_random_uuid(), id, json_build_object('sub', id::text, 'email', email), 'email', id::text, now(), now(), now()
-from auth.users
-where email in ('admin@crmbinom.test', 'employee@crmbinom.test', 'client@crmbinom.test');
+-- Login accounts (public.users). Les identités Better Auth (auth_user/auth_account) ne sont pas
+-- créées ici : scripts/seed.ts les crée juste après via auth.api.signUpEmail (mot de passe
+-- "password123", raccourci de bootstrap de session réservé au dev/CI - voir emailAndPassword dans
+-- server/lib/better-auth.ts). "authUserId" reste vide ci-dessous, il se relie tout seul par email
+-- à la première session validée (voir server/api/auth/session.get.ts).
 
 -- Le rôle 'client' n'existe plus pour les utilisateurs internes (voir issue #101) : ce compte
 -- reste utile en l'état pour tester le cas "employé sans droits admin" (invite/revoke portail).
-insert into public.users ("authUserId", name, email, role) values
-  ('a0000000-0000-0000-0000-000000000001', 'Alice Admin', 'admin@crmbinom.test', 'admin'),
-  ('a0000000-0000-0000-0000-000000000002', 'Eric Employé', 'employee@crmbinom.test', 'employee'),
-  ('a0000000-0000-0000-0000-000000000003', 'Camille Client', 'client@crmbinom.test', 'employee');
-
--- Client-portal test accounts (issue #100).
-insert into auth.users (
-  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-  recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data,
-  created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token
-) values
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'jean.dupont@atelier-dupont.fr', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', ''),
-  ('00000000-0000-0000-0000-000000000000', 'a0000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'marie.petit@atelier-dupont.fr', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '');
-
-insert into auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-select gen_random_uuid(), id, json_build_object('sub', id::text, 'email', email), 'email', id::text, now(), now(), now()
-from auth.users
-where email in ('jean.dupont@atelier-dupont.fr', 'marie.petit@atelier-dupont.fr');
+insert into public.users (name, email, role) values
+  ('Alice Admin', 'admin@crmbinom.test', 'admin'),
+  ('Eric Employé', 'employee@crmbinom.test', 'employee'),
+  ('Camille Client', 'client@crmbinom.test', 'employee');
 
 insert into public.clients (name, email, phone, address, city, "postalCode", country, website, siret, notes, description, archived) values
   ('Atelier Dupont', 'contact@atelier-dupont.fr', '+33 1 42 33 44 55', '12 rue des Lilas', 'Paris', '75011', 'France', 'https://atelier-dupont.fr', '12345678900012', 'Client historique, très réactif.', 'Atelier de menuiserie artisanale.', false),

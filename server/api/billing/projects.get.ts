@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import { db } from '~/db'
+import { isActiveBillingTone } from '~/constants/billing'
 import { buildBillingProjectStatus, type BillingProjectDocument, type BillingProjectStatus } from '~/lib/billing'
 import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { clientsTable } from '~/db/schema/clients'
@@ -120,9 +121,11 @@ export default defineEventHandler(async (event) => {
     documents: documentsByProjectId.get(row.id) ?? []
   }))
 
-  const filteredItems = query.status === 'all'
-    ? allItems
-    : allItems.filter(item => item.billingStatus.tone === query.status)
+  const filteredItems = allItems.filter((item) => {
+    if (query.status === 'all') return true
+    if (query.status === 'active') return isActiveBillingTone(item.billingStatus.tone)
+    return item.billingStatus.tone === query.status
+  })
 
   const totalItems = filteredItems.length
   const totalPages = Math.max(1, Math.ceil(totalItems / query.pageSize))

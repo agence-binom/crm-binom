@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 import { db } from '../app/db'
 import { clientsTable } from '../app/db/schema/clients'
 import { contactsTable } from '../app/db/schema/contacts'
-import { createSessionStorageState } from './helpers/supabase-session'
+import { createSessionStorageState } from './helpers/better-auth-session'
 
 /**
  * Seuls les admins peuvent gérer l'accès portail d'un contact (voir issue #101) : un employé
@@ -34,7 +34,17 @@ test.afterAll(async () => {
   await db.delete(clientsTable).where(eq(clientsTable.id, clientId))
 })
 
-test('un employé ne peut pas donner l\'accès portail à un contact', async ({ browser, baseURL }) => {
+test('un employé ne peut pas activer l\'accès portail d\'un contact', async ({ browser, baseURL }) => {
+  const storageState = await createSessionStorageState('employee@crmbinom.test', 'password123', baseURL!)
+  const context = await browser.newContext({ storageState })
+
+  const response = await context.request.post(`/api/contacts/${contactId}/portal/activate`)
+  expect(response.status()).toBe(403)
+
+  await context.close()
+})
+
+test('un employé ne peut pas envoyer le mail de connexion à un contact', async ({ browser, baseURL }) => {
   const storageState = await createSessionStorageState('employee@crmbinom.test', 'password123', baseURL!)
   const context = await browser.newContext({ storageState })
 

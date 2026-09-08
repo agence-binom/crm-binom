@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '~/db'
 import { projectsTable } from '~/db/schema/projects'
 import { projectIdSchema } from '~/validation/projects'
+import { logActivity } from '~~/server/utils/activity-log'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, projectIdSchema.parse)
@@ -26,6 +27,8 @@ export default defineEventHandler(async (event) => {
   }
 
   await db.delete(projectsTable).where(eq(projectsTable.id, id))
+
+  void logActivity(event, { entityType: 'project', entityId: id, action: 'delete', metadata: { name: existingProject.name } })
 
   setResponseStatus(event, 204)
   return null

@@ -39,6 +39,8 @@ npm run dev
 | `SUPABASE_SECRET_KEY` | Oui | Clé secrète Supabase (service role) - utilisée côté serveur uniquement |
 | `DOCUMENTS_BUCKET` | Oui | Nom du bucket Supabase Storage pour les documents (ex : `documents`) |
 | `NUXT_PUBLIC_SITE_URL` | Oui | URL publique du site (ex : `http://localhost:3000`) |
+| `BETTER_AUTH_SECRET` | Oui | Secret Better Auth (≥32 caractères aléatoires) - `npx @better-auth/cli secret` ou `openssl rand -base64 32` |
+| `RESEND_API_KEY` | Oui | Clé API Resend pour l'envoi des emails magic-link |
 | `REDIS_URL` | Non | URL Redis pour le rate limiting multi-instance en production (ex : `redis://localhost:6379`) |
 
 > **Note `DATABASE_URL`** : utiliser la connection string **Session pooler** (`aws-0-<region>.pooler.supabase.com:5432`), pas l'hôte direct (`db.<ref>.supabase.co:5432`). L'hôte direct requiert IPv6, ce qui provoque des erreurs DNS sur les réseaux IPv4-only classiques.
@@ -84,11 +86,11 @@ La CI tourne sur chaque push via `.github/workflows/quality.yml` et exécute dan
 
 ## Authentification
 
-Connexion par **magic-link uniquement** (Supabase Auth). L'envoi du lien est restreint aux adresses e-mail déjà présentes dans `public.users` - toute adresse inconnue reçoit une erreur côté serveur.
+Connexion par **magic-link uniquement** ([Better Auth](https://www.better-auth.com/), voir `server/lib/better-auth.ts`), envoyé par email via Resend. L'envoi du lien est restreint aux adresses e-mail déjà présentes dans `public.users` (staff) ou correspondant à un contact portail actif (`public.contacts`) - toute autre adresse reçoit le même message de succès générique côté UI (pas de fuite d'existence de compte), mais aucun email n'est réellement envoyé.
 
-Le middleware `server/middleware/01-auth.ts` vérifie le token Supabase sur toutes les routes `/api/*` sauf `/api/auth/*`.
+Le middleware `server/middleware/01-auth.ts` vérifie la session Better Auth sur toutes les routes `/api/*` sauf `/api/health` et `/api/auth/*` (Better Auth gère l'autorisation de ses propres routes).
 
-Pour ajouter un utilisateur : l'insérer dans `public.users` avec les champs `name`, `email`, et `auth_user_id` (UUID Supabase Auth).
+Pour ajouter un utilisateur staff : l'insérer dans `public.users` avec les champs `name`, `email` et `role` - pas besoin de renseigner `authUserId`, il se relie automatiquement à la bonne identité Better Auth dès la première connexion réussie.
 
 ---
 

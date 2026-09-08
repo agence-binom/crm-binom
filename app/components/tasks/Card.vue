@@ -7,14 +7,16 @@ import {
 import { formatDateOnly } from '~/lib/utils'
 import type { Task } from '~/types'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   task: Task
-  userName?: string
+  userNames?: string[]
   projectName?: string
   clientName?: string | null
   clientId?: number
   showProjectBadge?: boolean
-}>()
+}>(), {
+  userNames: () => []
+})
 
 const emit = defineEmits<{
   update: [taskId: number]
@@ -116,7 +118,8 @@ const projectLink = computed(() => {
             </div>
           </AppLink>
           <UBadge
-            v-if="props.userName"
+            v-for="userName in (props.userNames.length ? props.userNames : ['Non assigné'])"
+            :key="userName"
             variant="soft"
             color="neutral"
             size="md"
@@ -126,7 +129,7 @@ const projectLink = computed(() => {
               name="i-lucide-user-round"
               class="mr-1"
             />
-            {{ props.userName }}
+            {{ userName }}
           </UBadge>
 
           <UBadge

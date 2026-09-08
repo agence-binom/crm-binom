@@ -3,6 +3,7 @@ import { db } from '~/db'
 import { taskAttachmentsTable } from '~/db/schema/task-attachments'
 import { taskAttachmentIdSchema } from '~/validation/task-attachments'
 import { deleteStoredDocumentFile } from '~~/server/utils/documents'
+import { logActivity } from '~~/server/utils/activity-log'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, taskAttachmentIdSchema.parse)
@@ -20,6 +21,8 @@ export default defineEventHandler(async (event) => {
   }
 
   await db.delete(taskAttachmentsTable).where(eq(taskAttachmentsTable.id, id))
+
+  void logActivity(event, { entityType: 'task_attachment', entityId: id, action: 'delete', metadata: { name: attachment.name } })
 
   setResponseStatus(event, 204)
   return null

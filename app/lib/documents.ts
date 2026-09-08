@@ -13,7 +13,8 @@ export const documentStatusLabels: Record<BillingDocumentType, Partial<Record<Do
     sent: 'En attente de validation',
     refused: 'Refusée',
     completed: 'Validée',
-    cancelled: 'Annulée'
+    cancelled: 'Annulée',
+    non_applicable: 'Non applicable'
   },
   quote: {
     draft: 'À émettre',
@@ -65,7 +66,7 @@ export const requiresFactureNetLink = (type: BillingDocumentType): boolean =>
 // completed, cancelled or refused, the date that happened should be recorded. Surfaces what's still
 // missing so it can replace the description in red instead of failing silently.
 const statusesRequiringFile: DocumentStatus[] = ['completed']
-const statusesRequiringDate: DocumentStatus[] = ['completed', 'cancelled', 'refused']
+const statusesRequiringDate: DocumentStatus[] = ['completed', 'refused']
 
 export const getDocumentWarning = (document: {
   type: BillingDocumentType
@@ -82,7 +83,7 @@ export const getDocumentWarning = (document: {
     if (requiresFactureNetLink && !document.hasLink) missing.push('Lien Facture.net manquant')
   }
 
-  if (statusesRequiringDate.includes(document.status) && !document.statusDate) {
+  if (document.type !== 'commercial_proposal' && statusesRequiringDate.includes(document.status) && !document.statusDate) {
     missing.push('Date manquante')
   }
 
@@ -110,6 +111,14 @@ export const getBillingDocumentTitle = (document: { documentType: BillingDocumen
   if (document.documentType !== 'invoice') return billingDocumentTypeLabels[document.documentType]
   return invoiceSubtypeLabels[getEffectiveInvoiceSubtype({ type: document.documentType, subtype: document.subtype }) ?? 'unique']
 }
+
+// Same label, for callers (e.g. the activity log) holding a raw drizzle row whose documentType is
+// typed as plain `string` (varchar column, no DB enum) rather than the narrower BillingDocumentType.
+export const getBillingDocumentLabel = (document: { documentType: string, subtype?: string | null }) => (
+  document.documentType in billingDocumentTypeLabels
+    ? getBillingDocumentTitle(document as { documentType: BillingDocumentType, subtype?: string | null })
+    : document.documentType
+)
 
 export type DocumentLifecycle = 'current' | 'superseded'
 
@@ -212,7 +221,13 @@ export const computeProjectBillingSteps = <T extends BillingDocumentLike>(
   })
 
   const proposalStatus = deriveStepStatus(null, proposalDocument?.status)
-  const quoteStatus = deriveStepStatus(proposalStatus, quoteDocument?.status)
+
+  // A deliberately skipped Proposition ("non_applicable") clears the way forward like a completed
+  // step would - same rule as the Devis→acompte and acompte→Facture skips below, so a real
+  // refused/cancelled proposal (which should still block the Devis) isn't confused with one that
+  // was simply marked not applicable.
+  const proposalSkipsToQuote = proposalDocument?.status === 'non_applicable'
+  const quoteStatus = deriveStepStatus(proposalSkipsToQuote ? 'completed' : proposalStatus, quoteDocument?.status)
 
   const quoteSkipsAcompte = quoteStatus === 'non_applicable'
   const acompteApplies = requiresAcompte && !quoteSkipsAcompte
