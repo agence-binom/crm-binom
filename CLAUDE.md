@@ -60,13 +60,14 @@ Ces trois commandes tournent aussi en pre-commit hook (`.husky/pre-commit`) — 
 
 **Autonome, sans demander confirmation :**
 - Lire le code, explorer, expliquer.
-- Modifier du code applicatif dans une branche dédiée, committer localement.
+- Modifier du code applicatif dans une branche dédiée (fichiers modifiés/stagés, mais pas committés).
 - Ajouter/modifier des tests, lancer `npm test`, `npm run lint`, `npm run typecheck` en local.
-- Modifier `CLAUDE.md` lui-même pour refléter une règle qui a changé (avec le changement dans la même PR que le code concerné, pas dans une PR à part qui décrit un changement pas encore fait).
+- Préparer une modification de `CLAUDE.md` lui-même pour refléter une règle qui a changé (avec le changement dans la même PR que le code concerné, pas dans une PR à part qui décrit un changement pas encore fait) — mais pas la committer, voir ci-dessous.
 
 **Nécessite une validation humaine explicite avant d'agir :**
-- **`git push`, sur n'importe quelle branche — y compris une branche de feature créée juste pour ouvrir une PR.** Un commit local ne suffit jamais comme justification pour pousser sans demander d'abord, même en plein milieu d'une série de tâches déjà validées.
-- Ouvrir une PR (conséquence directe du point précédent, puisque ça nécessite un push).
+- **`git commit`, sur n'importe quelle branche.** Même un commit purement local, même en plein milieu d'une série de tâches déjà validées, nécessite de demander d'abord — laisser les changements stagés et prêts plutôt que de committer silencieusement.
+- **`git push`, sur n'importe quelle branche — y compris une branche de feature créée juste pour ouvrir une PR.** Un commit local ne suffit jamais comme justification pour pousser sans demander d'abord.
+- Ouvrir une PR (conséquence directe du point précédent, puisque ça nécessite un commit et un push).
 - Toute modification de branch protection / ruleset GitHub, de secrets, de permissions de token CI/CD, de webhooks.
 - Toute action sur `staging`/`main` qui n'est pas un merge de PR review-approuvée (force-push, reset, suppression de branche).
 - Toute modification touchant Coolify, le déploiement, ou la configuration Supabase en environnement partagé (staging inclus, vu qu'il partage la base avec la prod).
