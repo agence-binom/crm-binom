@@ -101,10 +101,6 @@ jobs:
         run: supabase start
 
       - name: Export local Supabase credentials
-        # Ces clés ne sont valables que pour le conteneur Docker éphémère de ce run
-        # (127.0.0.1, détruit à la fin du job) : on les récupère dynamiquement plutôt
-        # que de committer une valeur qui a la forme d'un secret (bloqué par GitHub
-        # Push Protection, même pour une clé locale non réutilisable ailleurs).
         run: |
           eval "$(supabase status -o env | sed 's/^/export /')"
           {
