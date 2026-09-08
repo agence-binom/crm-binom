@@ -1,0 +1,36 @@
+name: Staging smoke test
+
+on:
+  push:
+    branches: [staging]
+
+jobs:
+  smoke-test:
+    name: Health check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check STAGING_URL is configured
+        run: |
+          if [ -z "${{ vars.STAGING_URL }}" ]; then
+            echo "::error::La variable de repo STAGING_URL n'est pas définie (Settings > Secrets and variables > Actions > Variables)."
+            exit 1
+          fi
+
+      - name: Poll /api/health until the staging deploy is up
+        run: |
+          url="${{ vars.STAGING_URL }}/api/health"
+          for attempt in $(seq 1 10); do
+            echo "Attempt $attempt: $url"
+            if status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url"); then
+              if [ "$status" = "200" ]; then
+                echo "Staging is healthy (HTTP $status)."
+                exit 0
+              fi
+              echo "Got HTTP $status, retrying in 30s..."
+            else
+              echo "Request failed, retrying in 30s..."
+            fi
+            sleep 30
+          done
+          echo "::error::Staging health check failed after 10 attempts."
+          exit 1
