@@ -18,7 +18,9 @@ jobs:
 
       - name: Poll /api/health until the staging deploy is up
         run: |
-          url="${{ vars.STAGING_URL }}/api/health"
+          base="${{ vars.STAGING_URL }}"
+          base="${base%/}"
+          url="$base/api/health"
           for attempt in $(seq 1 10); do
             echo "Attempt $attempt: $url"
             if status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url"); then
