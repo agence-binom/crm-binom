@@ -101,13 +101,14 @@ jobs:
 
       - name: Export local Supabase credentials
         run: |
-          eval "$(supabase status -o env | sed 's/^/export /')"
-          {
-            echo "DATABASE_URL=$DB_URL"
-            echo "NUXT_PUBLIC_SUPABASE_URL=$API_URL"
-            echo "NUXT_PUBLIC_SUPABASE_KEY=$PUBLISHABLE_KEY"
-            echo "NUXT_SUPABASE_SECRET_KEY=$SECRET_KEY"
-          } >> "$GITHUB_ENV"
+          while IFS='=' read -r key value; do
+            case "$key" in
+              DB_URL) echo "DATABASE_URL=$value" >> "$GITHUB_ENV" ;;
+              API_URL) echo "NUXT_PUBLIC_SUPABASE_URL=$value" >> "$GITHUB_ENV" ;;
+              PUBLISHABLE_KEY) echo "NUXT_PUBLIC_SUPABASE_KEY=$value" >> "$GITHUB_ENV" ;;
+              SECRET_KEY) echo "NUXT_SUPABASE_SECRET_KEY=$value" >> "$GITHUB_ENV" ;;
+            esac
+          done < <(supabase status -o env)
 
       - name: Apply database migrations
         run: npm run db:migrate
