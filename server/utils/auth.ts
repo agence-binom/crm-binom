@@ -14,7 +14,7 @@ export const getAppUser = (event: H3Event) => (
   event.context.appUser as InferSelectModel<typeof usersTable>
 )
 
-export const PUBLIC_AUTH_API_PATHS = ['/api/auth/authorize-email']
+export const PUBLIC_AUTH_API_PATHS = ['/api/auth/authorize-email', '/api/health']
 
 export const requireSupabaseUser = async (event: H3Event) => {
   const userSession = await serverSupabaseUser(event)
