@@ -10,42 +10,74 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Lint / Typecheck / Test / Build
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Use pinned npm version
         run: npm install -g npm@$(node -p "require('./package.json').packageManager.split('@')[1]")
-
       - name: Install dependencies
         run: npm ci
-
       - name: Lint
         run: npm run lint
 
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Use pinned npm version
+        run: npm install -g npm@$(node -p "require('./package.json').packageManager.split('@')[1]")
+      - name: Install dependencies
+        run: npm ci
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Unit/integration tests
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Use pinned npm version
+        run: npm install -g npm@$(node -p "require('./package.json').packageManager.split('@')[1]")
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
         run: npm test
 
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Use pinned npm version
+        run: npm install -g npm@$(node -p "require('./package.json').packageManager.split('@')[1]")
+      - name: Install dependencies
+        run: npm ci
       - name: Build
         run: npm run build
 
   e2e:
     name: Playwright E2E
-    needs: quality
-    if: >
-      github.ref == 'refs/heads/main' ||
-      github.ref == 'refs/heads/staging' ||
-      contains(github.event.pull_request.labels.*.name, 'e2e')
+    needs: [lint, typecheck, test, build]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || contains(github.event.pull_request.labels.*.name, 'e2e')
     timeout-minutes: 60
     runs-on: ubuntu-latest
     env:
@@ -53,19 +85,18 @@ jobs:
       NUXT_DOCUMENTS_BUCKET: billing
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
+      - name: Use pinned npm version
+        run: npm install -g npm@$(node -p "require('./package.json').packageManager.split('@')[1]")
       - name: Install dependencies
         run: npm ci
 
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-
       - name: Start local Supabase stack
         run: supabase start
 
@@ -85,13 +116,11 @@ jobs:
 
       - name: Apply database migrations
         run: npm run db:migrate
-
       - name: Seed database
         run: npm run db:seed
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
-
       - name: Run Playwright tests
         run: npx playwright test
 
