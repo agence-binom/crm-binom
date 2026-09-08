@@ -29,7 +29,7 @@ CRM interne à binōm : un seul organisme utilise l'app côté staff (`public.us
 
 ## Base de données
 
-Toute modification du schéma Drizzle (`app/db/schema.ts`) suit ces trois étapes dans l'ordre :
+Toute modification du schéma Drizzle (`app/db/schema/*`) suit ces trois étapes dans l'ordre :
 
 ```bash
 npm run db:generate   # génère la migration
