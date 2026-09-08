@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 import { db } from '../app/db'
 import { clientsTable } from '../app/db/schema/clients'
 import { contactsTable } from '../app/db/schema/contacts'
-import { createSessionStorageState } from './helpers/supabase-session'
+import { createSessionStorageState } from './helpers/better-auth-session'
 
 /**
  * Seuls les admins peuvent gérer l'accès portail d'un contact (voir issue #101) : un employé

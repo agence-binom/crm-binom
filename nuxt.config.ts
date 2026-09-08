@@ -59,20 +59,6 @@ export default defineNuxtConfig({
   },
 
   supabase: {
-    redirect: false,
-    redirectOptions: {
-      login: '/login',
-      callback: '/confirm',
-      exclude: ['/login', '/confirm']
-    },
-    cookieOptions: {
-      // Le module force `secure: true` par défaut, mais `nuxt dev` (utilisé par le webServer des
-      // tests e2e / CI) sert l'appli en HTTP sur localhost : Safari/WebKit refuse alors d'écrire
-      // ou de supprimer un cookie `Secure` côté client, ce qui empêche la déconnexion (le cookie
-      // de session survit au `signOut()` et le middleware renvoie l'utilisateur dans l'espace
-      // client). En production/staging (HTTPS), NODE_ENV vaut `production` et le cookie reste
-      // `Secure`.
-      secure: process.env.NODE_ENV === 'production'
-    }
+    redirect: false
   }
 })

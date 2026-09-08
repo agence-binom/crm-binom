@@ -4,21 +4,23 @@ Source de vérité versionnée des règles d'ingénierie de ce repo. À tenir à
 
 ## Stack
 
-Nuxt 4, Nuxt UI v4, Drizzle ORM, Supabase (Auth + Postgres + Storage). Détails d'installation et de structure : [README.md](README.md).
+Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres (hébergé chez Supabase), Better Auth (magic-link), Resend (envoi d'email), Supabase Storage (documents). Détails d'installation et de structure : [README.md](README.md).
 
 ## Ce que le repo est (et n'est pas)
 
-CRM interne à binōm : un seul organisme utilise l'app côté staff (`public.users`, magic-link Supabase). Il n'y a **pas** de multi-tenant au sens SaaS — pas d'`organization_id` à filtrer partout. La frontière de sécurité réelle est **staff interne vs client externe via le portail** (`/api/portal/*`), voir plus bas.
+CRM interne à binōm : un seul organisme utilise l'app côté staff (`public.users`, magic-link Better Auth). Il n'y a **pas** de multi-tenant au sens SaaS — pas d'`organization_id` à filtrer partout. La frontière de sécurité réelle est **staff interne vs client externe via le portail** (`/api/portal/*`), voir plus bas.
 
 ## Sécurité — ce qui est non négociable
 
-- **Toute route `/api/*`** passe par `server/middleware/01-auth.ts`, sauf les chemins listés dans `PUBLIC_AUTH_API_PATHS` (`server/utils/auth.ts`). N'ajouter un chemin à cette liste que s'il ne renvoie et n'accepte réellement aucune donnée sensible (ex: `/api/health`).
+- **Toute route `/api/*`** passe par `server/middleware/01-auth.ts`, sauf les chemins couverts par `isPublicAuthApiPath` (`server/utils/auth.ts`) : `/api/health` et tout `/api/auth/*` (Better Auth gère l'autorisation de ses propres routes — sign-in/sign-out ne peuvent pas exiger d'être déjà connecté). N'étendre cette liste que pour un chemin qui ne renvoie et n'accepte réellement aucune donnée sensible.
+- **L'authentification passe par Better Auth** (`server/lib/better-auth.ts`, plugin magic-link uniquement — pas de mot de passe dans l'UI réelle). Le seul point qui décide si un email a le droit de recevoir un lien de connexion, c'est le callback `sendMagicLink` dans ce fichier : il revérifie lui-même que l'email correspond à un `public.users` ou à un contact portail actif, indépendamment de tout check côté client (defense in depth). Ne jamais faire confiance à un check d'autorisation fait uniquement côté client pour ce flux.
+- `emailAndPassword` est activé uniquement hors production (`NODE_ENV !== 'production'`) — raccourci de bootstrap pour les comptes de test (`scripts/seed.ts`, `e2e/helpers/better-auth-session.ts`), jamais exposé dans l'UI. Ne jamais l'activer en production.
 - **Le portail client** (`/api/portal/*`) est résolu une seule fois dans le middleware (`requireActivePortalContactWithClient`) et exposé via `event.context.portalContact` / `event.context.portalClient`. Un nouvel endpoint sous `/api/portal/` hérite automatiquement de cette vérification — ne pas la dupliquer, ne pas la contourner.
 - Un utilisateur staff est résolu via `event.context.appUser` (`getAppUser`), jamais en interrogeant `usersTable` à nouveau dans un handler.
 - Rate limiting IP (120 req/min) sur `/api/*` avant l'auth (`00-rate-limit.ts`) — ne pas le désactiver pour un nouvel endpoint sans raison explicite.
 - `DATABASE_URL` doit utiliser le **Session pooler** Supabase (l'hôte direct requiert IPv6 et casse en CI/certains réseaux) — voir `server/utils/database-errors.ts` pour le message d'erreur associé si ça arrive.
 - Ne jamais committer `.env` ou une valeur réelle de secret. Secret scanning + push protection sont actifs au niveau du repo (GitHub natif) — un push contenant un secret sera bloqué côté GitHub, ce n'est pas juste une convention.
-- `SUPABASE_SECRET_KEY` (service role) est côté serveur uniquement — ne jamais l'exposer dans `runtimeConfig.public` ni dans une réponse API.
+- `SUPABASE_SECRET_KEY` (service role, Storage uniquement désormais), `BETTER_AUTH_SECRET` et `RESEND_API_KEY` sont côté serveur uniquement — ne jamais les exposer dans `runtimeConfig.public` ni dans une réponse API.
 
 ## Conventions de code
 
@@ -76,6 +78,7 @@ Ces trois commandes tournent aussi en pre-commit hook (`.husky/pre-commit`) — 
 
 ## Dette / TODO connus (pas urgents, mais à ne pas oublier)
 
-- Staging partage vraisemblablement la base Supabase de prod — à vérifier/confirmer avant de s'appuyer dessus pour des tests qui écrivent des données.
+- Staging partage vraisemblablement la base Supabase de prod — à vérifier/confirmer avant de s'appuyer dessus pour des tests qui écrivent des données. Migration Auth → Better Auth déjà faite (staging, DB Supabase inchangée) ; reste DB (Postgres self-hosté sur VPS, cadré séparément) puis Storage.
 - Scope du PAT `PROJECT_TOKEN` (utilisé par `staging-merge.yml`) non audité dans le cadre de ce passage — à vérifier qu'il n'a que les droits GitHub Projects nécessaires, pas plus.
 - Scan de secrets fait uniquement sur l'état actuel des fichiers trackés, pas sur l'historique git complet — envisager un passage `gitleaks --log-opts="--all"` ou équivalent si un doute survient sur un secret ayant pu être commité puis retiré.
+- L'envoi réel du mail magic-link (via `invite.post.ts` pour le portail, et le flux de login normal) n'est couvert par aucun test e2e automatisé (seul le RBAC autour est testé) — à valider manuellement avec un vrai `RESEND_API_KEY` avant de considérer le flux portail fiable en staging. Vérifier aussi que le domaine d'envoi (`server/lib/mail.ts`, `MAIL_FROM`) est correctement vérifié côté Resend (SPF/DKIM), sinon les mails partent en spam ou échouent silencieusement.

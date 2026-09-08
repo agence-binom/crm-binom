@@ -1,24 +1,21 @@
 import { createError } from 'h3'
 import { eq } from 'drizzle-orm'
-import { findAuthorizedAppUserByAuthUserId, findAuthorizedAppUserByEmail, requireSupabaseUser } from '../../utils/auth'
+import { findAuthorizedAppUserByAuthUserId, findAuthorizedAppUserByEmail, requireBetterAuthSession } from '../../utils/auth'
 import { db } from '~/db'
 import { usersTable } from '~/db/schema/users'
 
 const UNAUTHORIZED_LOGIN_MESSAGE = 'Cette adresse email n\'est pas autorisée à accéder à l\'application.'
 
 export default defineEventHandler(async (event) => {
-  const userSession = await requireSupabaseUser(event)
+  const session = await requireBetterAuthSession(event)
+  const authUserId = session.user.id
 
-  const authUserId: string | undefined = userSession.id ?? (userSession as Record<string, unknown>).sub as string | undefined
+  let user = await findAuthorizedAppUserByAuthUserId(authUserId)
 
-  let user = authUserId
-    ? await findAuthorizedAppUserByAuthUserId(authUserId)
-    : null
+  if (!user && session.user.email) {
+    user = await findAuthorizedAppUserByEmail(session.user.email)
 
-  if (!user && userSession.email) {
-    user = await findAuthorizedAppUserByEmail(userSession.email)
-
-    if (user && authUserId) {
+    if (user) {
       await db
         .update(usersTable)
         .set({ authUserId })

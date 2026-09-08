@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import type { FullConfig } from '@playwright/test'
-import { createSessionStorageState } from './helpers/supabase-session'
+import { createSessionStorageState } from './helpers/better-auth-session'
 
 const STORAGE_STATE_PATH = 'playwright/.auth/user.json'
 const TEST_USER_EMAIL = process.env.PLAYWRIGHT_TEST_USER_EMAIL ?? 'admin@crmbinom.test'

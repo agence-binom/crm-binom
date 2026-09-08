@@ -1,7 +1,6 @@
 import { createError, type H3Event } from 'h3'
 import { and, eq, ne, sql } from 'drizzle-orm'
 import type { InferSelectModel } from 'drizzle-orm'
-import { serverSupabaseServiceRole } from '#supabase/server'
 import { db } from '~/db'
 import { contactsTable } from '~/db/schema/contacts'
 import { clientsTable } from '~/db/schema/clients'
@@ -146,15 +145,4 @@ export const requireOwnedPortalResource = <T extends { createdByContactId: numbe
   }
 
   return resource
-}
-
-export const getPortalServiceRoleClient = (event: H3Event) => {
-  try {
-    return serverSupabaseServiceRole(event)
-  } catch {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'L’accès portail requiert SUPABASE_SECRET_KEY ou SUPABASE_SERVICE_KEY côté serveur'
-    })
-  }
 }

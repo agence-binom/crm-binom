@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
+import { authClient } from '~/lib/auth-client'
 
-const supabase = useSupabaseClient()
 const { data: sessionData } = usePortalSession()
 const { data: projectsData } = usePortalProjects()
 
@@ -25,7 +25,7 @@ const navItems = computed<NavigationMenuItem[]>(() => (
 ))
 
 const handleLogout = async () => {
-  const { error } = await supabase.auth.signOut()
+  const { error } = await authClient.signOut()
   if (error) return
 
   await navigateTo('/login', { replace: true })
