@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Client, Contact } from '~/types'
+import type { LinkExistingSelection } from '~/components/LinkExistingModal.vue'
 
 const { data, refresh } = await useFetch('/api/contacts/dashboard')
 const allContacts = computed<Contact[]>(() => data.value?.contacts || [])
@@ -23,8 +24,10 @@ const toggleArchived = () => {
 
 const isContactModalOpen = ref(false)
 const isClientModalOpen = ref(false)
+const isLinkClientModalOpen = ref(false)
 const selectedContactId = ref<number | null>(null)
 const sourceContactIdForClient = ref<number | null>(null)
+const sourceContactIdForClientLink = ref<number | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 const { setArchived } = useArchiveAction()
@@ -73,6 +76,11 @@ const openCreateClientFromContact = (contactId: number) => {
   isClientModalOpen.value = true
 }
 
+const openLinkClientToContact = (contactId: number) => {
+  sourceContactIdForClientLink.value = contactId
+  isLinkClientModalOpen.value = true
+}
+
 const handleContactSaved = async () => {
   await refresh()
 }
@@ -109,6 +117,37 @@ const handleClientModalClosed = (open: boolean) => {
   }
 }
 
+const handleLinkClientModalClosed = (open: boolean) => {
+  isLinkClientModalOpen.value = open
+
+  if (!open) {
+    sourceContactIdForClientLink.value = null
+  }
+}
+
+const handleClientLinked = async (selection: LinkExistingSelection) => {
+  const contactId = sourceContactIdForClientLink.value
+  if (!contactId) return
+
+  try {
+    await $fetch(`/api/contacts/${contactId}`, {
+      method: 'PUT',
+      body: { clientId: selection.id }
+    })
+    await refresh()
+  } catch (error) {
+    console.error('Erreur lors de l’association du contact au client:', error)
+    showError(
+      'Association impossible',
+      error,
+      'Le contact n’a pas pu être associé à ce client.'
+    )
+  } finally {
+    isLinkClientModalOpen.value = false
+    sourceContactIdForClientLink.value = null
+  }
+}
+
 const onDeleteContact = async (contactId: number) => {
   await deleteResource('contact', contactId, '/api/contacts', refresh)
 }
@@ -135,6 +174,7 @@ const onRestoreContact = async (contactId: number) => {
       @restore="onRestoreContact"
       @toggle-archived="toggleArchived"
       @create-client="openCreateClientFromContact"
+      @link-client="openLinkClientToContact"
     />
 
     <ContactsModal
@@ -150,6 +190,15 @@ const onRestoreContact = async (contactId: number) => {
       :initial-values="clientInitialValues"
       @update:open="handleClientModalClosed"
       @saved="handleClientSaved"
+    />
+
+    <LinkExistingModal
+      :open="isLinkClientModalOpen"
+      entity-type="clients"
+      title="Lier un client existant"
+      description="Rechercher un client déjà présent en base et l'associer à ce contact."
+      @update:open="handleLinkClientModalClosed"
+      @select="handleClientLinked"
     />
 
     <ConfirmModal

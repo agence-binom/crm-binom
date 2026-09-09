@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TableColumn } from '@nuxt/ui'
+import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import type { Contact } from '~/types'
 
 const props = defineProps<{
@@ -15,11 +15,25 @@ const emit = defineEmits<{
   'archive': [contactId: number]
   'restore': [contactId: number]
   'createClient': [contactId: number]
+  'linkClient': [contactId: number]
   'toggleArchived': []
   'update:search': [value: string]
 }>()
 
 const getContactFullName = (contact: Contact) => `${contact.firstName} ${contact.lastName}`
+
+const getClientMenuItems = (contactId: number): DropdownMenuItem[][] => [[
+  {
+    label: 'Créer un client',
+    icon: 'i-lucide-circle-plus',
+    onSelect: () => emit('createClient', contactId)
+  },
+  {
+    label: 'Lier un client existant',
+    icon: 'i-lucide-link',
+    onSelect: () => emit('linkClient', contactId)
+  }
+]]
 
 const columns: TableColumn<Contact>[] = [
   {
@@ -153,14 +167,15 @@ const columns: TableColumn<Contact>[] = [
               >
                 Non associé
               </UBadge>
-              <UButton
-                icon="i-lucide-plus"
-                size="xs"
-                color="neutral"
-                variant="soft"
-                aria-label="Créer un client depuis ce contact"
-                @click="emit('createClient', row.original.id)"
-              />
+              <UDropdownMenu :items="getClientMenuItems(row.original.id)">
+                <UButton
+                  icon="i-lucide-plus"
+                  size="xs"
+                  color="neutral"
+                  variant="soft"
+                  aria-label="Associer un client à ce contact"
+                />
+              </UDropdownMenu>
             </template>
           </div>
         </template>
