@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { LinkExistingSelection } from '~/components/LinkExistingModal.vue'
+
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
 
@@ -11,11 +13,15 @@ const isClientInfoModalOpen = ref(false)
 const isPortalAccessModalOpen = ref(false)
 const isContactModalOpen = ref(false)
 const isProjectModalOpen = ref(false)
+const isLinkContactModalOpen = ref(false)
+const isReassignConfirmOpen = ref(false)
 const selectedContactId = ref<number | null>(null)
 const selectedProjectId = ref<number | null>(null)
+const pendingContactLink = ref<LinkExistingSelection | null>(null)
 
 const { deleteResource, confirmModalOpen, confirmModalMessage, onConfirm, onCancel } = useDeleteConfirmation()
 const { setArchived } = useArchiveAction()
+const { showError } = useFeedbackToast()
 
 const onDeleteClient = async (clientId: number) => {
   await deleteResource('client', clientId, '/api/clients', async () => {
@@ -47,6 +53,60 @@ const openEditContact = (contactId: number) => {
 
 const handleContactChange = async () => {
   await refresh()
+}
+
+const openLinkContact = () => {
+  isLinkContactModalOpen.value = true
+}
+
+const handleLinkContactModalClosed = (open: boolean) => {
+  isLinkContactModalOpen.value = open
+}
+
+const linkContactToClient = async (selection: LinkExistingSelection) => {
+  try {
+    await $fetch(`/api/contacts/${selection.id}`, {
+      method: 'PUT',
+      body: { clientId: clientId.value }
+    })
+    await refresh()
+  } catch (error) {
+    console.error('Erreur lors du rattachement du contact au client:', error)
+    showError(
+      'Association impossible',
+      error,
+      'Le contact n’a pas pu être rattaché à ce client.'
+    )
+  } finally {
+    pendingContactLink.value = null
+  }
+}
+
+const handleContactLinkSelected = (selection: LinkExistingSelection) => {
+  isLinkContactModalOpen.value = false
+
+  if (selection.clientName) {
+    pendingContactLink.value = selection
+    isReassignConfirmOpen.value = true
+    return
+  }
+
+  void linkContactToClient(selection)
+}
+
+const reassignConfirmMessage = computed(() => {
+  if (!pendingContactLink.value) return ''
+  return `${pendingContactLink.value.label} est déjà associé à ${pendingContactLink.value.clientName}. Le rattacher à ce client le retirera de ${pendingContactLink.value.clientName}. Continuer ?`
+})
+
+const confirmContactLink = () => {
+  isReassignConfirmOpen.value = false
+  if (pendingContactLink.value) void linkContactToClient(pendingContactLink.value)
+}
+
+const cancelContactLink = () => {
+  isReassignConfirmOpen.value = false
+  pendingContactLink.value = null
 }
 
 const openCreateProject = () => {
@@ -144,6 +204,15 @@ const projectToEdit = computed(() => {
       :client-id="clientId"
       @saved="handleProjectChange"
     />
+
+    <LinkExistingModal
+      :open="isLinkContactModalOpen"
+      entity-type="contacts"
+      title="Rattacher un contact existant"
+      description="Rechercher un contact déjà présent en base et l'associer à ce client."
+      @update:open="handleLinkContactModalClosed"
+      @select="handleContactLinkSelected"
+    />
     <div class="flex flex-col gap-8">
       <ClientsProjects
         :projects="projects"
@@ -159,6 +228,7 @@ const projectToEdit = computed(() => {
         :contacts="contacts"
         :client-id="clientId"
         @create="openCreateContact"
+        @link-existing="openLinkContact"
         @edit="openEditContact"
         @delete="onDeleteContact"
         @archive="onArchiveContact"
@@ -172,6 +242,14 @@ const projectToEdit = computed(() => {
       :message="confirmModalMessage"
       @confirm="onConfirm"
       @cancel="onCancel"
+    />
+
+    <ConfirmModal
+      :open="isReassignConfirmOpen"
+      title="Contact déjà associé"
+      :message="reassignConfirmMessage"
+      @confirm="confirmContactLink"
+      @cancel="cancelContactLink"
     />
   </div>
 </template>
