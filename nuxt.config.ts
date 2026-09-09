@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/supabase'],
+  modules: ['@nuxt/eslint', '@nuxt/ui'],
 
   devtools: {
     enabled: true
@@ -14,6 +14,10 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     documentsBucket: process.env.DOCUMENTS_BUCKET,
+    s3Endpoint: process.env.NUXT_S3_ENDPOINT,
+    s3Region: process.env.NUXT_S3_REGION,
+    s3AccessKeyId: process.env.NUXT_S3_ACCESS_KEY_ID,
+    s3SecretAccessKey: process.env.NUXT_S3_SECRET_ACCESS_KEY,
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL,
       appEnv: process.env.NUXT_PUBLIC_APP_ENV || 'production'
@@ -56,9 +60,5 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
-  },
-
-  supabase: {
-    redirect: false
   }
 })

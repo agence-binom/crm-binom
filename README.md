@@ -2,7 +2,7 @@
 
 CRM interne de binōm - gestion des clients, projets, tâches (kanban), contacts, devis, factures, paiements et documents.
 
-Stack : Nuxt 4, Nuxt UI v3, Drizzle ORM, Supabase (Auth + Postgres + Storage).
+Stack : Nuxt 4, Nuxt UI v3, Drizzle ORM, Supabase (Postgres), Better Auth, stockage S3-compatible (Garage).
 
 ---
 
@@ -10,7 +10,7 @@ Stack : Nuxt 4, Nuxt UI v3, Drizzle ORM, Supabase (Auth + Postgres + Storage).
 
 - Node.js 22+
 - Un projet Supabase avec les tables créées (`npm run db:migrate`)
-- Un bucket Supabase Storage pour les documents
+- Un bucket sur un stockage S3-compatible (Garage, ou tout autre) pour les documents
 
 ---
 
@@ -34,10 +34,11 @@ npm run dev
 | Variable | Obligatoire | Description |
 |---|---|---|
 | `DATABASE_URL` | Oui | Connection string Postgres (Supabase **Session pooler** - voir note ci-dessous) |
-| `SUPABASE_URL` | Oui | URL du projet Supabase (`https://<ref>.supabase.co`) |
-| `SUPABASE_KEY` | Oui | Clé publique Supabase (anon/publishable) |
-| `SUPABASE_SECRET_KEY` | Oui | Clé secrète Supabase (service role) - utilisée côté serveur uniquement |
-| `DOCUMENTS_BUCKET` | Oui | Nom du bucket Supabase Storage pour les documents (ex : `documents`) |
+| `NUXT_S3_ENDPOINT` | Oui | URL de l'endpoint S3-compatible (ex : Garage sur Coolify, ou tout autre) |
+| `NUXT_S3_REGION` | Non | Région S3 (accepte une valeur arbitraire pour Garage, ex : `garage`) |
+| `NUXT_S3_ACCESS_KEY_ID` | Oui | Access key ID du storage - utilisée côté serveur uniquement |
+| `NUXT_S3_SECRET_ACCESS_KEY` | Oui | Secret access key du storage - utilisée côté serveur uniquement |
+| `DOCUMENTS_BUCKET` | Oui | Nom du bucket S3 pour les documents (ex : `documents`) |
 | `NUXT_PUBLIC_SITE_URL` | Oui | URL publique du site (ex : `http://localhost:3000`) |
 | `BETTER_AUTH_SECRET` | Oui | Secret Better Auth (≥32 caractères aléatoires) - `npx @better-auth/cli secret` ou `openssl rand -base64 32` |
 | `RESEND_API_KEY` | Oui | Clé API Resend pour l'envoi des emails magic-link |
@@ -94,9 +95,9 @@ Pour ajouter un utilisateur staff : l'insérer dans `public.users` avec les cham
 
 ---
 
-## Documents (Supabase Storage)
+## Documents (stockage S3-compatible)
 
-Les documents sont stockés dans le bucket défini par `DOCUMENTS_BUCKET`. Le bucket doit exister dans Supabase Storage avant le premier upload. Les URLs signées ont une durée de validité de 1 heure.
+Les documents sont stockés dans le bucket défini par `DOCUMENTS_BUCKET`, sur l'endpoint S3-compatible défini par `NUXT_S3_ENDPOINT` (Garage en local/staging via Coolify). Le bucket doit exister avant le premier upload. Les URLs signées ont une durée de validité de 1 heure.
 
 ---
 

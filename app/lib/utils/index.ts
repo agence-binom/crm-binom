@@ -39,9 +39,10 @@ export const formatDateOnly = (date: string | Date | null | undefined) => {
   })
 }
 
-// Known Better Auth and Supabase Storage messages are translated; unknown messages are preserved.
-// Auth passe par Better Auth depuis la migration, Storage reste sur Supabase pour l'instant - d'où
-// le mélange des deux origines dans cette même table.
+// Known Better Auth and S3-compatible storage messages are translated; unknown messages are preserved.
+// Storage errors are matched as "<AWS SDK error name>: <message>" (see translateStorageError callers) -
+// object keys already embed a UUID (buildDocumentStoragePath), so a same-key collision on upload is not
+// realistically expected and isn't specially translated.
 const AUTH_AND_STORAGE_ERROR_TRANSLATIONS: Array<[RegExp, string]> = [
   [/rate limit/i, 'Trop de tentatives. Merci de réessayer dans quelques minutes.'],
   [/^(token expired|invalid token)$/i, 'Ce lien de connexion a expiré ou est invalide.'],
@@ -49,13 +50,12 @@ const AUTH_AND_STORAGE_ERROR_TRANSLATIONS: Array<[RegExp, string]> = [
   [/^user not found$/i, 'Aucun compte ne correspond à cette adresse email.'],
   [/^email not verified$/i, 'Cette adresse email n\'a pas été confirmée.'],
   [/^invalid email or password$/i, 'Identifiants incorrects.'],
-  [/^the resource already exists$/i, 'Un fichier du même nom existe déjà.'],
-  [/^(the resource was not found|object not found)$/i, 'Fichier introuvable.'],
-  [/^new row violates row-level security policy/i, 'Accès refusé à ce fichier.'],
-  [/^the object exceeded the maximum allowed size/i, 'Le fichier dépasse la taille maximale autorisée.']
+  [/^(NoSuchKey|NoSuchBucket|NotFound):/, 'Fichier introuvable.'],
+  [/^AccessDenied:/, 'Accès refusé à ce fichier.'],
+  [/^EntityTooLarge:/, 'Le fichier dépasse la taille maximale autorisée.']
 ]
 
-export const translateSupabaseError = (message: string): string | undefined => {
+export const translateStorageError = (message: string): string | undefined => {
   const trimmed = message.trim()
   return AUTH_AND_STORAGE_ERROR_TRANSLATIONS.find(([pattern]) => pattern.test(trimmed))?.[1]
 }
@@ -109,7 +109,7 @@ export const getErrorMessage = (error: unknown, fallback: string) => {
   }
 
   if (error instanceof Error && error.message) {
-    return translateSupabaseError(error.message) ?? error.message
+    return translateStorageError(error.message) ?? error.message
   }
 
   return fallback

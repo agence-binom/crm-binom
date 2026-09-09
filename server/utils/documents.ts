@@ -1,14 +1,15 @@
 import { randomUUID } from 'node:crypto'
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { eq } from 'drizzle-orm'
 import { createError, type H3Event } from 'h3'
 import { useRuntimeConfig } from '#imports'
-import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
 import { tasksTable } from '~/db/schema/tasks'
 import { getDocumentValidationError, sanitizeDocumentFilename, sanitizeDocumentPathSegment } from '~~/server/lib/documents-upload'
-import { translateSupabaseError } from '~/lib/utils'
+import { translateStorageError } from '~/lib/utils'
 
 const DOCUMENT_SIGNED_URL_TTL_SECONDS = 60 * 60
 
@@ -26,24 +27,37 @@ const isManagedStoragePath = (filepath: string | null) => Boolean(
 
 const getStorageBucket = (event: H3Event) => useRuntimeConfig(event).documentsBucket
 
-const getReadableStorageClient = async (event: H3Event) => {
-  try {
-    return serverSupabaseServiceRole(event)
-  } catch {
-    return await serverSupabaseClient(event)
-  }
-}
+let cachedStorageClient: S3Client | undefined
 
-const getPrivilegedStorageClient = (event: H3Event) => {
-  try {
-    return serverSupabaseServiceRole(event)
-  } catch {
+const getStorageClient = (event: H3Event) => {
+  if (cachedStorageClient) {
+    return cachedStorageClient
+  }
+
+  const { s3Endpoint, s3Region, s3AccessKeyId, s3SecretAccessKey } = useRuntimeConfig(event)
+
+  if (!s3Endpoint || !s3AccessKeyId || !s3SecretAccessKey) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Le storage documents requiert SUPABASE_SECRET_KEY ou SUPABASE_SERVICE_KEY côté serveur'
+      statusMessage: 'Le storage documents requiert NUXT_S3_ENDPOINT, NUXT_S3_ACCESS_KEY_ID et NUXT_S3_SECRET_ACCESS_KEY côté serveur'
     })
   }
+
+  cachedStorageClient = new S3Client({
+    endpoint: s3Endpoint,
+    region: s3Region || 'garage',
+    forcePathStyle: true,
+    credentials: {
+      accessKeyId: s3AccessKeyId,
+      secretAccessKey: s3SecretAccessKey
+    }
+  })
+
+  return cachedStorageClient
 }
+
+const formatStorageErrorMessage = (error: unknown) =>
+  error instanceof Error ? `${error.name}: ${error.message}` : String(error)
 
 export const assertValidDocumentFile = (file: File) => {
   const errorMessage = getDocumentValidationError(file)
@@ -127,22 +141,23 @@ export const uploadDocumentFile = async (
   filepath: string,
   file: File
 ) => {
-  const client = getPrivilegedStorageClient(event)
+  const client = getStorageClient(event)
   const bucket = getStorageBucket(event)
   const fileBuffer = new Uint8Array(await file.arrayBuffer())
 
-  const { error } = await client.storage
-    .from(bucket)
-    .upload(filepath, fileBuffer, {
-      contentType: file.type,
-      cacheControl: '3600',
-      upsert: false
-    })
-
-  if (error) {
+  try {
+    await client.send(new PutObjectCommand({
+      Bucket: bucket,
+      Key: filepath,
+      Body: fileBuffer,
+      ContentType: file.type,
+      CacheControl: '3600'
+    }))
+  } catch (error) {
+    const message = formatStorageErrorMessage(error)
     throw createError({
       statusCode: 500,
-      statusMessage: `Impossible de téléverser le document: ${translateSupabaseError(error.message) ?? error.message}`
+      statusMessage: `Impossible de téléverser le document: ${translateStorageError(message) ?? message}`
     })
   }
 }
@@ -155,14 +170,16 @@ export const deleteStoredDocumentFile = async (
     return
   }
 
-  const client = getPrivilegedStorageClient(event)
+  const client = getStorageClient(event)
   const bucket = getStorageBucket(event)
-  const { error } = await client.storage.from(bucket).remove([filepath])
 
-  if (error) {
+  try {
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: filepath }))
+  } catch (error) {
+    const message = formatStorageErrorMessage(error)
     throw createError({
       statusCode: 500,
-      statusMessage: `Impossible de supprimer le fichier stocké: ${translateSupabaseError(error.message) ?? error.message}`
+      statusMessage: `Impossible de supprimer le fichier stocké: ${translateStorageError(message) ?? message}`
     })
   }
 }
@@ -190,18 +207,20 @@ const resolveDocumentDownloadUrl = async (
     return null
   }
 
-  const client = await getReadableStorageClient(event)
+  const client = getStorageClient(event)
   const bucket = getStorageBucket(event)
-  const { data, error } = await client.storage
-    .from(bucket)
-    .createSignedUrl(filepath, DOCUMENT_SIGNED_URL_TTL_SECONDS)
 
-  if (error) {
-    console.error(`[documents] Impossible de générer le lien de téléchargement pour "${filepath}": ${error.message}`)
+  try {
+    return await getSignedUrl(
+      client,
+      new GetObjectCommand({ Bucket: bucket, Key: filepath }),
+      { expiresIn: DOCUMENT_SIGNED_URL_TTL_SECONDS }
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(`[documents] Impossible de générer le lien de téléchargement pour "${filepath}": ${message}`)
     return null
   }
-
-  return data.signedUrl
 }
 
 export const withDocumentDownloadUrl = async <T extends DocumentWithPath>(
