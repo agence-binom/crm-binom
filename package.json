@@ -25,11 +25,12 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1128.0",
+    "@aws-sdk/s3-request-presigner": "^3.1128.0",
     "@formkit/drag-and-drop": "^0.6.1",
     "@iconify-json/lucide": "^1.2.129",
     "@iconify-json/simple-icons": "^1.2.94",
     "@nuxt/ui": "4.11.0",
-    "@supabase/supabase-js": "^2.115.0",
     "better-auth": "^1.7.3",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
@@ -43,7 +44,6 @@
     "@emnapi/runtime": "1.11.3",
     "@emnapi/wasi-threads": "2.1.0",
     "@nuxt/eslint": "^1.12.1",
-    "@nuxtjs/supabase": "^2.0.3",
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.4.1",
     "drizzle-kit": "^0.31.8",

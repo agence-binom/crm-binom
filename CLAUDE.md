@@ -4,7 +4,7 @@ Source de vérité versionnée des règles d'ingénierie de ce repo. À tenir à
 
 ## Stack
 
-Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres (hébergé chez Supabase), Better Auth (magic-link), Resend (envoi d'email), Supabase Storage (documents). Détails d'installation et de structure : [README.md](README.md).
+Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres (hébergé chez Supabase), Better Auth (magic-link), Resend (envoi d'email), stockage S3-compatible pour les documents (Garage sur Coolify en staging, Supabase Storage encore en prod — bascule prod à faire séparément). Détails d'installation et de structure : [README.md](README.md).
 
 ## Ce que le repo est (et n'est pas)
 
@@ -20,7 +20,7 @@ CRM interne à binōm : un seul organisme utilise l'app côté staff (`public.us
 - Rate limiting IP (120 req/min) sur `/api/*` avant l'auth (`00-rate-limit.ts`) — ne pas le désactiver pour un nouvel endpoint sans raison explicite.
 - `DATABASE_URL` doit utiliser le **Session pooler** Supabase (l'hôte direct requiert IPv6 et casse en CI/certains réseaux) — voir `server/utils/database-errors.ts` pour le message d'erreur associé si ça arrive.
 - Ne jamais committer `.env` ou une valeur réelle de secret. Secret scanning + push protection sont actifs au niveau du repo (GitHub natif) — un push contenant un secret sera bloqué côté GitHub, ce n'est pas juste une convention.
-- `SUPABASE_SECRET_KEY` (service role, Storage uniquement désormais), `BETTER_AUTH_SECRET` et `RESEND_API_KEY` sont côté serveur uniquement — ne jamais les exposer dans `runtimeConfig.public` ni dans une réponse API.
+- `NUXT_S3_ACCESS_KEY_ID`/`NUXT_S3_SECRET_ACCESS_KEY` (storage documents), `BETTER_AUTH_SECRET` et `RESEND_API_KEY` sont côté serveur uniquement — ne jamais les exposer dans `runtimeConfig.public` ni dans une réponse API.
 
 ## Conventions de code
 
@@ -78,7 +78,7 @@ Ces trois commandes tournent aussi en pre-commit hook (`.husky/pre-commit`) — 
 
 ## Dette / TODO connus (pas urgents, mais à ne pas oublier)
 
-- Staging partage vraisemblablement la base Supabase de prod — à vérifier/confirmer avant de s'appuyer dessus pour des tests qui écrivent des données. Migration Auth → Better Auth déjà faite (staging, DB Supabase inchangée) ; reste DB (Postgres self-hosté sur VPS, cadré séparément) puis Storage.
+- Staging partage vraisemblablement la base Supabase de prod — à vérifier/confirmer avant de s'appuyer dessus pour des tests qui écrivent des données. Migration Auth → Better Auth déjà faite (staging, DB Supabase inchangée) ; Storage déjà basculé sur Garage (S3-compatible, Coolify) en staging (issue #138) ; reste DB (Postgres self-hosté sur VPS, cadré séparément). Prod reste sur Supabase Storage pour l'instant — le code applicatif est désormais backend-agnostique (client S3 générique), seule la bascule des env vars et la migration des fichiers existants restent à faire côté prod.
 - Scope du PAT `PROJECT_TOKEN` (utilisé par `staging-merge.yml`) non audité dans le cadre de ce passage — à vérifier qu'il n'a que les droits GitHub Projects nécessaires, pas plus.
 - Scan de secrets fait uniquement sur l'état actuel des fichiers trackés, pas sur l'historique git complet — envisager un passage `gitleaks --log-opts="--all"` ou équivalent si un doute survient sur un secret ayant pu être commité puis retiré.
 - L'envoi réel du mail magic-link (via `invite.post.ts` pour le portail, et le flux de login normal) n'est couvert par aucun test e2e automatisé (seul le RBAC autour est testé) — à valider manuellement avec un vrai `RESEND_API_KEY` avant de considérer le flux portail fiable en staging. Vérifier aussi que le domaine d'envoi (`server/lib/mail.ts`, `MAIL_FROM`) est correctement vérifié côté Resend (SPF/DKIM), sinon les mails partent en spam ou échouent silencieusement.
