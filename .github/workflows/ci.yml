@@ -116,8 +116,27 @@ jobs:
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
-      - name: Run Playwright tests
-        run: npx playwright test
+
+      # Chaque projet tourne dans sa propre invocation plutôt qu'un seul `npx playwright test` :
+      # le rate limiter IP (server/middleware/00-rate-limit.ts, 120 req/min) partage un seul bucket
+      # mémoire pour tout le trafic e2e (une seule IP source, le runner CI). Sur un run combiné, le
+      # budget peut s'épuiser avant la fin des 48 tests (observé en CI : 429 sur des endpoints
+      # authentifiés, pris pour des bugs applicatifs). `reuseExistingServer` est `false` en CI, donc
+      # chaque invocation relance un serveur Nitro neuf et repart avec un bucket vide.
+      - name: Run Playwright tests (chromium)
+        env:
+          PLAYWRIGHT_HTML_REPORT: playwright-report/chromium
+        run: npx playwright test --project=chromium --output=test-results/chromium
+      - name: Run Playwright tests (firefox)
+        if: ${{ !cancelled() }}
+        env:
+          PLAYWRIGHT_HTML_REPORT: playwright-report/firefox
+        run: npx playwright test --project=firefox --output=test-results/firefox
+      - name: Run Playwright tests (webkit)
+        if: ${{ !cancelled() }}
+        env:
+          PLAYWRIGHT_HTML_REPORT: playwright-report/webkit
+        run: npx playwright test --project=webkit --output=test-results/webkit
 
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
