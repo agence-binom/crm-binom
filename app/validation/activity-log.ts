@@ -9,7 +9,7 @@ export type ActivityLogQuery = z.infer<typeof activityLogQuerySchema>
 
 // Seule source de vérité pour les types d'entité/action journalisés : partagée par logActivity
 // (server/utils/activity-log.ts) et par l'affichage du journal (app/lib/activity-log.ts).
-export const activityEntityTypes = ['client', 'contact', 'project', 'task', 'resource', 'document', 'billing_document', 'deliverable', 'task_attachment', 'user'] as const
+export const activityEntityTypes = ['client', 'contact', 'project', 'task', 'resource', 'document', 'billing_document', 'deliverable', 'task_attachment', 'user', 'timeEntry'] as const
 export type ActivityEntityType = typeof activityEntityTypes[number]
 
 export const activityActions = ['create', 'update', 'delete'] as const

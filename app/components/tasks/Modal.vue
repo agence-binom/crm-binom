@@ -137,6 +137,10 @@ const selectedAssignees = computed({
   set: options => selectAssignees((options ?? []).map(option => option.value))
 })
 
+const taskAssignees = computed(() => userOptions.value
+  .filter(user => formState.assigneeIds.includes(user.value))
+  .map(user => ({ id: user.value, name: user.label })))
+
 const taskAttachments = ref<TaskAttachment[]>([])
 const loadTaskAttachments = async () => {
   if (!effectiveTaskId.value) {
@@ -181,6 +185,8 @@ const fillFromTask = (task: Task) => {
 
 const savingField = ref<EditableTaskField | null>(null)
 const titleInput = useTemplateRef('titleInput')
+const selectedTimeEntryId = ref<number | null>(null)
+const isTimeEntryModalOpen = ref(false)
 
 watch(
   () => props.open,
@@ -317,6 +323,11 @@ const onDeleteTask = async () => {
     emit('deleted', taskId)
     isOpen.value = false
   })
+}
+
+const openCreateTimeEntry = () => {
+  selectedTimeEntryId.value = null
+  isTimeEntryModalOpen.value = true
 }
 
 const priorityChipUi = computed(() => ({
@@ -508,15 +519,22 @@ const statusChipUi = computed(() => ({
           <UButton
             variant="soft"
             color="neutral"
-            @click="isOpen = false"
+            @click="openCreateTimeEntry"
           >
-            Fermer
+            Ajouter du temps
           </UButton>
         </div>
       </div>
     </template>
   </UModal>
 
+  <TimeEntriesModal
+    v-if="effectiveTaskId"
+    v-model:open="isTimeEntryModalOpen"
+    :task-id="effectiveTaskId"
+    :time-entry-id="selectedTimeEntryId"
+    :assignees="taskAssignees"
+  />
   <ConfirmModal
     :open="confirmModalOpen"
     title="Confirmer la suppression"
