@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
       .select()
       .from(tasksTable)
       .where(eq(tasksTable.workspace, query.workspace))
-      .orderBy(desc(tasksTable.createdAt), asc(tasksTable.id)),
+      .orderBy(asc(tasksTable.createdAt), asc(tasksTable.id)),
     db
       .select({
         id: usersTable.id,
