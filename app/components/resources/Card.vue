@@ -24,6 +24,16 @@ const icon = computed(() => (
     : getResourceTypeIcon(props.resource.type)
 ))
 
+const imageFailed = ref(false)
+
+const thumbnailUrl = computed(() => (
+  props.resource.type === 'document'
+  && props.resource.mimetype?.startsWith('image/')
+  && !imageFailed.value
+    ? props.resource.downloadUrl
+    : null
+))
+
 const getExternalHref = (resource: ProjectResource) => {
   if (resource.type === 'link') return resource.url ?? undefined
   if (resource.type === 'document') return resource.downloadUrl ?? undefined
@@ -57,7 +67,16 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 <template>
   <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
     <div class="flex min-w-0 flex-1 items-center gap-2.5">
+      <img
+        v-if="thumbnailUrl"
+        :src="thumbnailUrl"
+        :alt="resource.filename || resource.name"
+        loading="lazy"
+        class="size-9 shrink-0 rounded-md object-cover"
+        @error="imageFailed = true"
+      >
       <UIcon
+        v-else
         :name="icon"
         class="size-4 shrink-0 text-slate-400"
       />

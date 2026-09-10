@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import type { TaskStatus, TaskWorkspace } from '~/constants/tasks'
-import { sortTasksByDueDate } from '~/lib/tasks'
+import { sortTasksByCompletedAtDesc, sortTasksByDueDate } from '~/lib/tasks'
 import type { Task, User } from '~/types'
 
 type ToDoListProjectOption = {
   id: number
   name: string
   clientName?: string | null
+}
+
+const TASK_STATUS_SORTERS: Record<TaskStatus, (tasks: Task[]) => Task[]> = {
+  todo: sortTasksByDueDate,
+  in_progress: sortTasksByDueDate,
+  waiting: sortTasksByDueDate,
+  validationBinom: sortTasksByDueDate,
+  validationClient: sortTasksByDueDate,
+  done: sortTasksByCompletedAtDesc
 }
 
 const props = withDefaults(defineProps<{
@@ -60,18 +69,16 @@ const visibleTasks = computed(() => {
       }
     })
 
-  return sortTasksByDueDate(tasks)
+  return tasks
 })
 
 const tasksByStatus = computed<Record<TaskStatus, Task[]>>(() => {
-  return {
-    todo: visibleTasks.value.filter(t => t.status === 'todo'),
-    in_progress: visibleTasks.value.filter(t => t.status === 'in_progress'),
-    waiting: visibleTasks.value.filter(t => t.status === 'waiting'),
-    validationBinom: visibleTasks.value.filter(t => t.status === 'validationBinom'),
-    validationClient: visibleTasks.value.filter(t => t.status === 'validationClient'),
-    done: visibleTasks.value.filter(t => t.status === 'done')
-  }
+  const entries = (Object.keys(TASK_STATUS_SORTERS) as TaskStatus[]).map((status) => {
+    const tasksForStatus = visibleTasks.value.filter(t => t.status === status)
+    return [status, TASK_STATUS_SORTERS[status](tasksForStatus)] as const
+  })
+
+  return Object.fromEntries(entries) as Record<TaskStatus, Task[]>
 })
 
 const displayedStatuses = computed<TaskStatus[]>(() => {
