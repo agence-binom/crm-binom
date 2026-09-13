@@ -32,13 +32,14 @@ CRM interne à binōm : un seul organisme utilise l'app côté staff (`public.us
 
 ## Base de données
 
-Toute modification du schéma Drizzle (`app/db/schema/*`) suit ces trois étapes dans l'ordre :
+Toute modification du schéma Drizzle (`app/db/schema/*`) suit ces deux étapes dans l'ordre :
 
 ```bash
 npm run db:generate   # génère la migration
 npm run db:migrate    # l'applique sur la base cible
-npm run db:types      # resynchronise app/types/database.types.ts depuis le schéma live
 ```
+
+Il n'y a pas d'étape de génération de types : le schéma Drizzle est la seule source de vérité, les types se déduisent de `$inferSelect`/`$inferInsert`. L'ancien `npm run db:types` produisait `app/types/database.types.ts` au format du client Supabase JS — plus personne ne l'importait depuis la bascule sur Drizzle, script et fichier ont été supprimés.
 
 La base de dev tourne dans Docker (`npm run db:up`, `compose.dev.yml`) sur la même image que la prod — pas de CLI Supabase, elle n'est plus une dépendance du repo. `npm run db:reset:local` (reset du schéma → migrate → seed) refuse de tourner ailleurs que sur `localhost` sans `--force`.
 

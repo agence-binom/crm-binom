@@ -140,7 +140,6 @@ defineExpose({ isDirty, save, reset: resetDraft })
         <UInput
           v-model="statusDateInput"
           type="date"
-          class="w-full"
         />
       </UFormField>
     </div>
@@ -153,7 +152,6 @@ defineExpose({ isDirty, save, reset: resetDraft })
         v-model="externalUrlInput"
         type="url"
         placeholder="https://www.facture.net/..."
-        class="w-full"
       />
     </UFormField>
 
@@ -161,7 +159,6 @@ defineExpose({ isDirty, save, reset: resetDraft })
       <UTextarea
         v-model="description"
         :rows="2"
-        class="w-full"
       />
     </UFormField>
 

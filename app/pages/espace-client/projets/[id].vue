@@ -89,100 +89,42 @@ const isDeliverablesLoading = computed(() => deliverablesStatus.value === 'pendi
         </h1>
       </div>
 
-      <div class="flex flex-col gap-4 border-b border-slate-100 py-8">
-        <h2 class="text-base font-semibold text-slate-900">
-          Livrables
-        </h2>
-        <USkeleton
-          v-if="isDeliverablesLoading"
-          class="h-24"
-        />
-        <UAlert
-          v-else-if="deliverablesError"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          title="Impossible de charger les livrables"
-          :description="getErrorMessage(deliverablesError, 'Merci de réessayer dans quelques instants.')"
-        >
-          <template #actions>
-            <UButton
-              color="error"
-              variant="soft"
-              @click="refreshDeliverables()"
-            >
-              Réessayer
-            </UButton>
-          </template>
-        </UAlert>
-        <PortalDeliverablesList
-          v-else
-          :deliverables="deliverables"
-        />
-      </div>
+      <PortalProjectSection
+        class="border-b border-slate-100"
+        title="Documents importants"
+        description="Votre proposition commerciale, votre devis et vos factures, mis à disposition par l'agence."
+        error-title="Impossible de charger les documents"
+        :loading="isBillingDocumentsLoading"
+        :error="billingDocumentsError"
+        @retry="refreshBillingDocuments()"
+      >
+        <PortalBillingDocumentsList :documents="billingDocuments" />
+      </PortalProjectSection>
 
-      <div class="flex flex-col gap-4 border-b border-slate-100 py-8">
-        <h2 class="text-base font-semibold text-slate-900">
-          Documents importants
-        </h2>
-        <USkeleton
-          v-if="isBillingDocumentsLoading"
-          class="h-24"
-        />
-        <UAlert
-          v-else-if="billingDocumentsError"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          title="Impossible de charger les documents"
-          :description="getErrorMessage(billingDocumentsError, 'Merci de réessayer dans quelques instants.')"
-        >
-          <template #actions>
-            <UButton
-              color="error"
-              variant="soft"
-              @click="refreshBillingDocuments()"
-            >
-              Réessayer
-            </UButton>
-          </template>
-        </UAlert>
-        <PortalBillingDocumentsList
-          v-else
-          :documents="billingDocuments"
-        />
-      </div>
+      <PortalProjectSection
+        class="border-b border-slate-100"
+        title="Livrables"
+        description="Ce que l'agence produit pour votre projet : fichiers, liens ou notes, ajoutés au fil de son avancement."
+        error-title="Impossible de charger les livrables"
+        :loading="isDeliverablesLoading"
+        :error="deliverablesError"
+        @retry="refreshDeliverables()"
+      >
+        <PortalDeliverablesList :deliverables="deliverables" />
+      </PortalProjectSection>
 
-      <div class="py-8">
-        <USkeleton
-          v-if="isResourcesLoading"
-          class="h-24"
-        />
-        <UAlert
-          v-else-if="resourcesError"
-          color="error"
-          variant="soft"
-          icon="i-lucide-circle-alert"
-          title="Impossible de charger les ressources"
-          :description="getErrorMessage(resourcesError, 'Merci de réessayer dans quelques instants.')"
-        >
-          <template #actions>
-            <UButton
-              color="error"
-              variant="soft"
-              @click="refreshResources()"
-            >
-              Réessayer
-            </UButton>
-          </template>
-        </UAlert>
+      <PortalProjectSection
+        error-title="Impossible de charger les ressources"
+        :loading="isResourcesLoading"
+        :error="resourcesError"
+        @retry="refreshResources()"
+      >
         <PortalResourcesList
-          v-else
           :resources="resources"
           :project-id="projectId"
           @refresh="refreshResources"
         />
-      </div>
+      </PortalProjectSection>
     </template>
   </div>
 </template>
