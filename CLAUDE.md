@@ -4,7 +4,7 @@ Source de vérité versionnée des règles d'ingénierie de ce repo. À tenir à
 
 ## Stack
 
-Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres (hébergé chez Supabase), Better Auth (magic-link), Resend (envoi d'email), stockage S3-compatible pour les documents (Garage sur Coolify en staging, Supabase Storage encore en prod — bascule prod à faire séparément). Détails d'installation et de structure : [README.md](README.md).
+Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres auto-hébergé (image `supabase/postgres:17.4.1.032` sur Coolify ; même image en local via `compose.dev.yml` et en CI), Better Auth (magic-link), Resend (envoi d'email), stockage S3-compatible pour les documents (Garage sur Coolify en staging, Supabase Storage encore en prod — bascule prod à faire séparément). Détails d'installation et de structure : [README.md](README.md).
 
 ## Ce que le repo est (et n'est pas)
 
