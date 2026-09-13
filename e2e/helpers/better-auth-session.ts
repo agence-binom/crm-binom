@@ -64,7 +64,7 @@ export const createSessionStorageState = async (
   const setCookieHeaders = headers.getSetCookie()
   if (setCookieHeaders.length === 0) {
     throw new Error(
-      `Aucun cookie de session généré pour "${email}". Vérifiez que le user existe (supabase/seed.sql + scripts/seed.ts) et que la base locale est à jour (npm run db:reset:local).`
+      `Aucun cookie de session généré pour "${email}". Vérifiez que le user existe (scripts/seed.sql + scripts/seed.ts) et que la base locale est à jour (npm run db:reset:local).`
     )
   }
 

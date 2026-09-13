@@ -1,5 +1,5 @@
 -- Local development seed data only.
--- Replayed automatically by `supabase db reset` (see [db.seed] in config.toml).
+-- Rejoué par `npm run db:seed` (scripts/seed.ts), lui-même enchaîné par `npm run db:reset:local`.
 -- Never run this file against a staging/production project.
 
 -- Login accounts (public.users). Les identités Better Auth (auth_user/auth_account) ne sont pas

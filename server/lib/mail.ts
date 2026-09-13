@@ -19,6 +19,16 @@ const getResendClient = () => {
 }
 
 export const sendMagicLinkEmail = async (email: string, url: string) => {
+  // Hors production, le lien est écrit dans le terminal du serveur de dev au lieu d'être envoyé.
+  // Sans ça, le flux portail est intestable en local : les contacts du seed ont des domaines
+  // fictifs (@atelier-dupont.fr, @crmbinom.test) dont personne ne relèvera jamais la boîte - et un
+  // envoi Resend vers ces domaines échouerait, faisant remonter une erreur à l'UI.
+  // Aucun effet en production : NODE_ENV y vaut 'production', le comportement est inchangé.
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`\n🔗 Magic link — ${email}\n${url}\n`)
+    return
+  }
+
   const { error } = await getResendClient().emails.send({
     from: MAIL_FROM,
     to: email,

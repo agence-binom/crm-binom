@@ -2,14 +2,14 @@
 
 CRM interne de binōm - gestion des clients, projets, tâches (kanban), contacts, devis, factures, paiements et documents.
 
-Stack : Nuxt 4, Nuxt UI v3, Drizzle ORM, Supabase (Postgres), Better Auth, stockage S3-compatible (Garage).
+Stack : Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres auto-hébergé (image `supabase/postgres` sur Coolify), Better Auth, stockage S3-compatible (Garage).
 
 ---
 
 ## Prérequis
 
 - Node.js 22+
-- Un projet Supabase avec les tables créées (`npm run db:migrate`)
+- Docker (base Postgres de développement, voir `compose.dev.yml`)
 - Un bucket sur un stockage S3-compatible (Garage, ou tout autre) pour les documents
 
 ---
@@ -21,11 +21,17 @@ npm install
 cp .env.example .env
 ```
 
-Renseigner toutes les variables dans `.env` (voir section ci-dessous), puis :
+Renseigner toutes les variables dans `.env` (voir section ci-dessous). Les valeurs par défaut de
+`DATABASE_URL` pointent déjà sur la base locale Docker. Ensuite :
 
 ```bash
+npm run db:up          # Démarre Postgres en local (première fois : pull de l'image, ~1 min)
+npm run db:reset:local # Schéma à zéro, migrations Drizzle, jeu de données de test
 npm run dev
 ```
+
+Comptes de test créés par le seed (mot de passe `password123`, connexion par mot de passe
+disponible uniquement hors production) : `admin@crmbinom.test`, `employee@crmbinom.test`.
 
 ---
 
@@ -33,7 +39,7 @@ npm run dev
 
 | Variable | Obligatoire | Description |
 |---|---|---|
-| `DATABASE_URL` | Oui | Connection string Postgres (Supabase **Session pooler** - voir note ci-dessous) |
+| `DATABASE_URL` | Oui | Connection string Postgres (base locale Docker en dev - voir note ci-dessous) |
 | `NUXT_S3_ENDPOINT` | Oui | URL de l'endpoint S3-compatible (ex : Garage sur Coolify, ou tout autre) |
 | `NUXT_S3_REGION` | Non | Région S3 (accepte une valeur arbitraire pour Garage, ex : `garage`) |
 | `NUXT_S3_ACCESS_KEY_ID` | Oui | Access key ID du storage - utilisée côté serveur uniquement |
@@ -44,7 +50,7 @@ npm run dev
 | `RESEND_API_KEY` | Oui | Clé API Resend pour l'envoi des emails magic-link |
 | `REDIS_URL` | Non | URL Redis pour le rate limiting multi-instance en production (ex : `redis://localhost:6379`) |
 
-> **Note `DATABASE_URL`** : utiliser la connection string **Session pooler** (`aws-0-<region>.pooler.supabase.com:5432`), pas l'hôte direct (`db.<ref>.supabase.co:5432`). L'hôte direct requiert IPv6, ce qui provoque des erreurs DNS sur les réseaux IPv4-only classiques.
+> **Note `DATABASE_URL`** : le rôle utilisé doit être **le même que celui qui joue les migrations** (`postgres`). Les tables ont RLS activé sans aucune policy (`.enableRLS()` dans `app/db/schema`) : seul leur propriétaire voit les lignes, un autre rôle obtiendrait des résultats vides sans aucune erreur. Voir `scripts/dev-db-init.sql`.
 
 ---
 
@@ -65,10 +71,13 @@ npm run typecheck    # TypeScript (vue-tsc)
 ```
 
 ```bash
-npm run db:migrate   # Applique les migrations Drizzle sur la base
-npm run db:generate  # Génère les fichiers de migration depuis le schéma Drizzle
-npm run db:types     # Régénère app/types/database.types.ts depuis le schéma Supabase live
-npm run db:studio    # Lance Drizzle Studio (interface DB locale)
+npm run db:up         # Démarre la base Postgres locale (Docker)
+npm run db:down       # L'arrête (le volume, donc les données, est conservé)
+npm run db:reset:local # Schéma à zéro puis migrations et seed - base locale uniquement
+npm run db:migrate    # Applique les migrations Drizzle sur la base
+npm run db:generate   # Génère les fichiers de migration depuis le schéma Drizzle
+npm run db:types      # Régénère app/types/database.types.ts depuis le schéma live
+npm run db:studio     # Lance Drizzle Studio (interface DB locale)
 ```
 
 ---
@@ -90,6 +99,12 @@ La CI tourne sur chaque push via `.github/workflows/quality.yml` et exécute dan
 Connexion par **magic-link uniquement** ([Better Auth](https://www.better-auth.com/), voir `server/lib/better-auth.ts`), envoyé par email via Resend. L'envoi du lien est restreint aux adresses e-mail déjà présentes dans `public.users` (staff) ou correspondant à un contact portail actif (`public.contacts`) - toute autre adresse reçoit le même message de succès générique côté UI (pas de fuite d'existence de compte), mais aucun email n'est réellement envoyé.
 
 Le middleware `server/middleware/01-auth.ts` vérifie la session Better Auth sur toutes les routes `/api/*` sauf `/api/health` et `/api/auth/*` (Better Auth gère l'autorisation de ses propres routes).
+
+**En local, le magic-link n'est pas envoyé par email : il s'affiche dans le terminal du serveur de
+dev** (`server/lib/mail.ts`, actif dès que `NODE_ENV !== 'production'`). Saisir n'importe quelle
+adresse seedée sur `/login`, puis copier le lien depuis le terminal. C'est le seul moyen de tester
+le portail client en local, ses contacts de seed ayant des domaines fictifs. Le comportement en
+production est inchangé (envoi Resend réel).
 
 Pour ajouter un utilisateur staff : l'insérer dans `public.users` avec les champs `name`, `email` et `role` - pas besoin de renseigner `authUserId`, il se relie automatiquement à la bonne identité Better Auth dès la première connexion réussie.
 
@@ -122,7 +137,7 @@ Un rate limiter basé sur l'IP protège toutes les routes `/api/*` : 120 requêt
 server/
   middleware/
     00-rate-limit.ts   # Rate limiting IP (avant auth)
-    01-auth.ts         # Vérification token Supabase
+    01-auth.ts         # Vérification de la session Better Auth
   api/                 # Routes API REST (Nitro)
   utils/               # Helpers serveur (auth, erreurs DB, documents)
   lib/                 # Logique métier serveur (upload documents, gestion utilisateurs auth)
@@ -149,14 +164,18 @@ Règle : un type qui décrit uniquement des données UI ou métier va dans `app/
 
 ## Base de données
 
-Le schéma Drizzle est dans `app/db/schema.ts`. Toute modification du schéma requiert :
+Le schéma Drizzle est dans `app/db/schema/`. Toute modification du schéma requiert :
 
 ```bash
 npm run db:generate   # Génère la migration
 npm run db:migrate    # Applique sur la base cible
-npm run db:types      # Resynchronise les types Supabase
-npm run typecheck     # Vérifie que le module @nuxtjs/supabase résout correctement
+npm run db:types      # Resynchronise app/types/database.types.ts
+npm run typecheck     # Vérifie que les types générés sont cohérents avec le code
 ```
+
+Tester une migration sur la base locale (`npm run db:reset:local`) avant d'ouvrir une PR : en
+production les migrations tournent au démarrage du conteneur (`scripts/migrate-production.mjs`),
+une migration cassée bloque donc le démarrage du service.
 
 ---
 
