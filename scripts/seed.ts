@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import postgres from 'postgres'
 
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const seedPath = resolve(rootDir, 'supabase/seed.sql')
+const seedPath = resolve(rootDir, 'scripts/seed.sql')
 
 if (!process.env.DATABASE_URL) {
   throw new Error('Missing DATABASE_URL. Set it in .env before seeding.')
@@ -16,7 +16,7 @@ const isLocalHost = seedHostname === 'localhost' || seedHostname === '127.0.0.1'
 if (!isLocalHost && !process.argv.includes('--force')) {
   throw new Error(
     `DATABASE_URL pointe vers "${seedHostname}", pas vers une base locale. `
-    + 'Ce seed insère un compte admin avec un mot de passe faible et connu (voir supabase/seed.sql) : '
+    + 'Ce seed insère un compte admin avec un mot de passe faible et connu (voir scripts/seed.sql) : '
     + 'ne jamais le rejouer sur staging/prod. Si c\'est volontaire, relancez avec --force.'
   )
 }

@@ -4,7 +4,7 @@ Source de vérité versionnée des règles d'ingénierie de ce repo. À tenir à
 
 ## Stack
 
-Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres (hébergé chez Supabase), Better Auth (magic-link), Resend (envoi d'email), stockage S3-compatible pour les documents (Garage sur Coolify en staging, Supabase Storage encore en prod — bascule prod à faire séparément). Détails d'installation et de structure : [README.md](README.md).
+Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres auto-hébergé (image `supabase/postgres:17.4.1.032` sur Coolify ; même image en local via `compose.dev.yml` et en CI), Better Auth (magic-link), Resend (envoi d'email), stockage S3-compatible pour les documents (Garage sur Coolify en staging, Supabase Storage encore en prod — bascule prod à faire séparément). Détails d'installation et de structure : [README.md](README.md).
 
 ## Ce que le repo est (et n'est pas)
 
@@ -14,11 +14,12 @@ CRM interne à binōm : un seul organisme utilise l'app côté staff (`public.us
 
 - **Toute route `/api/*`** passe par `server/middleware/01-auth.ts`, sauf les chemins couverts par `isPublicAuthApiPath` (`server/utils/auth.ts`) : `/api/health` et tout `/api/auth/*` (Better Auth gère l'autorisation de ses propres routes — sign-in/sign-out ne peuvent pas exiger d'être déjà connecté). N'étendre cette liste que pour un chemin qui ne renvoie et n'accepte réellement aucune donnée sensible.
 - **L'authentification passe par Better Auth** (`server/lib/better-auth.ts`, plugin magic-link uniquement — pas de mot de passe dans l'UI réelle). Le seul point qui décide si un email a le droit de recevoir un lien de connexion, c'est le callback `sendMagicLink` dans ce fichier : il revérifie lui-même que l'email correspond à un `public.users` ou à un contact portail actif, indépendamment de tout check côté client (defense in depth). Ne jamais faire confiance à un check d'autorisation fait uniquement côté client pour ce flux.
+- Hors production, `sendMagicLinkEmail` (`server/lib/mail.ts`) **n'envoie rien** : il écrit le lien dans le terminal du serveur de dev. Sans ça le portail est intestable en local (contacts de seed sur domaines fictifs) et un envoi Resend vers ces adresses échouerait. Le garde est `NODE_ENV !== 'production'` — ne pas l'élargir, ce log ne doit jamais atteindre la production.
 - `emailAndPassword` est activé uniquement hors production (`NODE_ENV !== 'production'`) — raccourci de bootstrap pour les comptes de test (`scripts/seed.ts`, `e2e/helpers/better-auth-session.ts`), jamais exposé dans l'UI. Ne jamais l'activer en production.
 - **Le portail client** (`/api/portal/*`) est résolu une seule fois dans le middleware (`requireActivePortalContactWithClient`) et exposé via `event.context.portalContact` / `event.context.portalClient`. Un nouvel endpoint sous `/api/portal/` hérite automatiquement de cette vérification — ne pas la dupliquer, ne pas la contourner.
 - Un utilisateur staff est résolu via `event.context.appUser` (`getAppUser`), jamais en interrogeant `usersTable` à nouveau dans un handler.
 - Rate limiting IP (120 req/min) sur `/api/*` avant l'auth (`00-rate-limit.ts`) — ne pas le désactiver pour un nouvel endpoint sans raison explicite.
-- `DATABASE_URL` doit utiliser le **Session pooler** Supabase (l'hôte direct requiert IPv6 et casse en CI/certains réseaux) — voir `server/utils/database-errors.ts` pour le message d'erreur associé si ça arrive.
+- `DATABASE_URL` doit utiliser **le rôle propriétaire des tables** (`postgres`, celui qui joue les migrations). Toutes les tables sont en RLS sans aucune policy (`.enableRLS()`) : un autre rôle lit zéro ligne sans lever la moindre erreur — symptôme « pages vides, aucun log ». Voir `scripts/dev-db-init.sql`. Le hint Session pooler/IPv6 dans `server/utils/database-errors.ts` est un reste de l'hébergement Supabase : à retirer une fois la prod entièrement migrée.
 - Ne jamais committer `.env` ou une valeur réelle de secret. Secret scanning + push protection sont actifs au niveau du repo (GitHub natif) — un push contenant un secret sera bloqué côté GitHub, ce n'est pas juste une convention.
 - `NUXT_S3_ACCESS_KEY_ID`/`NUXT_S3_SECRET_ACCESS_KEY` (storage documents), `BETTER_AUTH_SECRET` et `RESEND_API_KEY` sont côté serveur uniquement — ne jamais les exposer dans `runtimeConfig.public` ni dans une réponse API.
 
@@ -36,8 +37,10 @@ Toute modification du schéma Drizzle (`app/db/schema/*`) suit ces trois étapes
 ```bash
 npm run db:generate   # génère la migration
 npm run db:migrate    # l'applique sur la base cible
-npm run db:types      # resynchronise les types Supabase
+npm run db:types      # resynchronise app/types/database.types.ts depuis le schéma live
 ```
+
+La base de dev tourne dans Docker (`npm run db:up`, `compose.dev.yml`) sur la même image que la prod — pas de CLI Supabase, elle n'est plus une dépendance du repo. `npm run db:reset:local` (reset du schéma → migrate → seed) refuse de tourner ailleurs que sur `localhost` sans `--force`.
 
 Les migrations de production tournent au démarrage du conteneur (`scripts/migrate-production.mjs`, appelé par `scripts/start-production.sh`) — une migration cassée bloque le démarrage du service plutôt que de laisser l'app tourner contre un schéma incohérent. Une migration qui échoue en prod est donc un incident de disponibilité, pas juste un bug applicatif : à tester localement (`npm run db:reset:local`) avant toute PR qui touche le schéma.
 
