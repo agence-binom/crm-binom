@@ -1,15 +1,25 @@
 <script setup lang="ts">
-import { resourceCreateSchema, resourceUpdateSchema, resourceFileInputAccept, resourceMaxSizeBytes } from '~/validation/resources'
+import { resourceCreateFormSchema, resourceEditFormSchema, resourceFileInputAccept, resourceMaxSizeBytes } from '~/validation/resources'
 import { resourceTypes, type ResourceType } from '~/constants/resources'
 import { getResourceTypeIcon, getResourceTypeLabel } from '~/lib/resources'
 import { formatFileSize } from '~/lib/utils'
 import type { ProjectResource } from '~/types'
 
-const props = defineProps<{
+// Modal partagé par l'app agence et le portail client : les deux routes exposent la même forme
+// (POST `base`, PUT `base/:id`, POST `base/upload`), seule la base change. La frontière staff /
+// client reste côté serveur (`server/middleware/01-auth.ts`) - `apiBase` ne choisit qu'une URL,
+// il n'accorde aucun droit : un contact portail qui viserait /api/resources se prend un 401.
+const props = withDefaults(defineProps<{
   open: boolean
   projectId: number
   resource?: ProjectResource | null
-}>()
+  apiBase?: '/api/resources' | '/api/portal/resources'
+  createLabel?: string
+}>(), {
+  resource: null,
+  apiBase: '/api/resources',
+  createLabel: 'Créer la ressource'
+})
 
 const emit = defineEmits<{
   'update:open': [open: boolean]
@@ -26,23 +36,22 @@ const isOpen = computed({
 const isSaving = ref(false)
 const isEditing = computed(() => Boolean(props.resource))
 
-const schema = computed(() => (isEditing.value ? resourceUpdateSchema : resourceCreateSchema))
+// formState est bindé directement par les inputs ci-dessous, donc UForm valide bien ce qui est
+// soumis (et Entrée soumet le formulaire).
+const schema = computed(() => (isEditing.value ? resourceEditFormSchema : resourceCreateFormSchema))
 const modalTitle = computed(() => (isEditing.value ? 'Modifier la ressource' : 'Nouvelle ressource'))
-const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : 'Créer la ressource'))
+const submitLabel = computed(() => (isEditing.value ? 'Enregistrer' : props.createLabel))
 
-const formState = reactive({
+const createInitialFormState = () => ({
   type: 'document' as ResourceType,
+  projectId: props.projectId,
   name: '',
   description: '',
   url: '',
   content: ''
 })
 
-const selectedType = ref<ResourceType>('document')
-const name = ref('')
-const description = ref('')
-const url = ref('')
-const content = ref('')
+const formState = reactive(createInitialFormState())
 const selectedFiles = ref<File[]>([])
 
 const typeOptions = resourceTypes.map(type => ({
@@ -54,20 +63,16 @@ const typeOptions = resourceTypes.map(type => ({
 const maxFileSizeLabel = formatFileSize(resourceMaxSizeBytes)
 
 const resetForm = () => {
-  selectedType.value = 'document'
-  name.value = ''
-  description.value = ''
-  url.value = ''
-  content.value = ''
+  Object.assign(formState, createInitialFormState())
   selectedFiles.value = []
 }
 
 const fillFromResource = (resource: ProjectResource) => {
-  selectedType.value = resource.type
-  name.value = resource.name ?? ''
-  description.value = resource.description ?? ''
-  url.value = resource.type === 'link' ? (resource.url ?? '') : ''
-  content.value = resource.type === 'text' ? (resource.content ?? '') : ''
+  formState.type = resource.type
+  formState.name = resource.name ?? ''
+  formState.description = resource.description ?? ''
+  formState.url = resource.type === 'link' ? (resource.url ?? '') : ''
+  formState.content = resource.type === 'text' ? (resource.content ?? '') : ''
   selectedFiles.value = []
 }
 
@@ -82,16 +87,57 @@ watch(
 
 const isMultipleFiles = computed(() => selectedFiles.value.length > 1)
 
+// Un document créé sans nom reprend celui de son fichier (createResourceInsertValues, partagé par
+// les deux routes d'upload) : l'afficher en placeholder rend ce repli visible avant validation.
+const namePlaceholder = computed(() => (formState.type === 'document' && selectedFiles.value[0]?.name) || 'Ex: Cahier des charges')
+
 const isValid = computed(() => {
-  if (selectedType.value === 'document') {
-    if (isEditing.value) return Boolean(name.value.trim())
-    if (isMultipleFiles.value) return selectedFiles.value.length > 0
-    return Boolean(name.value.trim()) && selectedFiles.value.length > 0
+  if (formState.type === 'document') {
+    if (isEditing.value) return Boolean(formState.name.trim())
+    return selectedFiles.value.length > 0
   }
-  if (!name.value.trim()) return false
-  if (selectedType.value === 'link') return Boolean(url.value.trim())
-  return Boolean(content.value.trim())
+  if (!formState.name.trim()) return false
+  if (formState.type === 'link') return Boolean(formState.url.trim())
+  return Boolean(formState.content.trim())
 })
+
+const uploadDocuments = async () => {
+  const filesToUpload = selectedFiles.value
+  const sharedName = isMultipleFiles.value ? '' : formState.name.trim()
+  const sharedDescription = formState.description.trim()
+
+  const results = await Promise.allSettled(filesToUpload.map((file) => {
+    const uploadFormData = new FormData()
+    uploadFormData.set('file', file)
+    uploadFormData.set('projectId', String(props.projectId))
+    uploadFormData.set('name', sharedName)
+    uploadFormData.set('description', sharedDescription)
+
+    return $fetch(`${props.apiBase}/upload`, { method: 'POST', body: uploadFormData })
+  }))
+
+  const failures = results
+    .map((result, index) => ({ result, file: filesToUpload[index] }))
+    .filter((entry): entry is { result: PromiseRejectedResult, file: File } => entry.result.status === 'rejected')
+
+  selectedFiles.value = failures.map(entry => entry.file)
+
+  if (failures.length) {
+    showError(
+      failures.length === filesToUpload.length ? 'Enregistrement impossible' : 'Ajout partiellement réussi',
+      failures[0]?.result.reason,
+      `${failures.length} fichier(s) sur ${filesToUpload.length} n'ont pas pu être ajoutés.`
+    )
+
+    // Un succès partiel rafraîchit la liste mais garde le modal ouvert pour réessayer les fichiers
+    // en échec ; seul un succès complet tombe dans le emit+fermeture partagé en bas de onSubmit,
+    // si bien que `saved` n'est jamais émis deux fois.
+    if (failures.length < filesToUpload.length) emit('saved')
+    return false
+  }
+
+  return true
+}
 
 const onSubmit = async () => {
   if (!isValid.value) return
@@ -102,54 +148,27 @@ const onSubmit = async () => {
     if (isEditing.value) {
       if (!props.resource) throw new Error('resource manquante pour la mise à jour')
 
-      await $fetch(`/api/resources/${props.resource.id}`, {
+      await $fetch(`${props.apiBase}/${props.resource.id}`, {
         method: 'PUT',
         body: {
-          name: name.value.trim(),
-          description: description.value.trim(),
-          ...(selectedType.value === 'link' ? { url: url.value.trim() } : {}),
-          ...(selectedType.value === 'text' ? { content: content.value } : {})
+          name: formState.name.trim(),
+          description: formState.description.trim(),
+          ...(formState.type === 'link' ? { url: formState.url.trim() } : {}),
+          ...(formState.type === 'text' ? { content: formState.content } : {})
         }
       })
-    } else if (selectedType.value === 'document') {
-      const filesToUpload = selectedFiles.value
-      const sharedName = isMultipleFiles.value ? '' : name.value.trim()
-
-      const results = await Promise.allSettled(filesToUpload.map((file) => {
-        const formData = new FormData()
-        formData.set('file', file)
-        formData.set('projectId', String(props.projectId))
-        formData.set('name', sharedName)
-        formData.set('description', description.value.trim())
-
-        return $fetch('/api/resources/upload', { method: 'POST', body: formData })
-      }))
-
-      const failures = results
-        .map((result, index) => ({ result, file: filesToUpload[index] }))
-        .filter((entry): entry is { result: PromiseRejectedResult, file: File } => entry.result.status === 'rejected')
-
-      selectedFiles.value = failures.map(entry => entry.file)
-
-      if (failures.length) {
-        showError(
-          failures.length === filesToUpload.length ? 'Enregistrement impossible' : 'Ajout partiellement réussi',
-          failures[0]?.result.reason,
-          `${failures.length} fichier(s) sur ${filesToUpload.length} n'ont pas pu être ajoutés.`
-        )
-      }
-
-      if (failures.length < filesToUpload.length) emit('saved')
-      if (failures.length) return
+    } else if (formState.type === 'document') {
+      const uploadedAll = await uploadDocuments()
+      if (!uploadedAll) return
     } else {
-      await $fetch('/api/resources', {
+      await $fetch(props.apiBase, {
         method: 'POST',
         body: {
-          type: selectedType.value,
+          type: formState.type,
           projectId: props.projectId,
-          name: name.value.trim(),
-          description: description.value.trim(),
-          ...(selectedType.value === 'link' ? { url: url.value.trim() } : { content: content.value })
+          name: formState.name.trim(),
+          description: formState.description.trim(),
+          ...(formState.type === 'link' ? { url: formState.url.trim() } : { content: formState.content })
         }
       })
     }
@@ -195,7 +214,7 @@ const onSubmit = async () => {
             Type de ressource
           </p>
           <AttachmentTypeSelector
-            v-model="selectedType"
+            v-model="formState.type"
             :options="typeOptions"
             :locked="isEditing"
           />
@@ -205,12 +224,11 @@ const onSubmit = async () => {
           v-if="!isMultipleFiles"
           label="Nom"
           name="name"
-          required
+          :required="isEditing || formState.type !== 'document'"
         >
           <UInput
-            v-model="name"
-            placeholder="Ex: Cahier des charges"
-            class="w-full"
+            v-model="formState.name"
+            :placeholder="namePlaceholder"
           />
         </UFormField>
         <p
@@ -221,7 +239,7 @@ const onSubmit = async () => {
         </p>
 
         <div
-          v-if="selectedType === 'document'"
+          v-if="formState.type === 'document'"
           class="space-y-3"
         >
           <label class="text-sm font-medium text-slate-700">
@@ -239,16 +257,15 @@ const onSubmit = async () => {
         </div>
 
         <UFormField
-          v-else-if="selectedType === 'link'"
+          v-else-if="formState.type === 'link'"
           label="Lien"
           name="url"
           required
         >
           <UInput
-            v-model="url"
+            v-model="formState.url"
             type="url"
             placeholder="https://..."
-            class="w-full"
           />
         </UFormField>
 
@@ -259,22 +276,20 @@ const onSubmit = async () => {
           required
         >
           <UTextarea
-            v-model="content"
+            v-model="formState.content"
             :rows="6"
-            class="w-full"
             placeholder="Rédigez votre note ici..."
           />
         </UFormField>
 
         <UFormField
-          v-if="selectedType !== 'text' || description.trim()"
+          v-if="formState.type !== 'text' || formState.description.trim()"
           label="Description"
           name="description"
         >
           <UInput
-            v-model="description"
+            v-model="formState.description"
             placeholder="Décris brièvement la ressource si nécessaire."
-            class="w-full"
           />
         </UFormField>
 
@@ -296,7 +311,7 @@ const onSubmit = async () => {
             {{ submitLabel }}
           </UButton>
         </div>
-      </Uform>
+      </UForm>
     </template>
   </UModal>
 </template>
