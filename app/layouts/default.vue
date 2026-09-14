@@ -5,9 +5,6 @@ import { authClient } from '~/lib/auth-client'
 const { data: session } = await useAppSession()
 const isAdmin = computed(() => session.value?.user?.role === 'admin')
 
-const { data: session } = await useAppSession()
-const isAdmin = computed(() => session.value?.user?.role === 'admin')
-
 const collapsed = ref(false)
 
 const handleLogout = async () => {
