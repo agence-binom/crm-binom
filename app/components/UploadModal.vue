@@ -247,7 +247,6 @@ const onUpload = async () => {
           <UInput
             v-model="description"
             placeholder="Décris brièvement le document si nécessaire."
-            class="w-full"
           />
         </UFormField>
 

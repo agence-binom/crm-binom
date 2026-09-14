@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { createSessionStorageState } from './helpers/better-auth-session'
 
-// Ces tests créent leurs propres contextes/sessions Supabase (contact actif, contact révoqué),
+// Ces tests créent leurs propres contextes/sessions Better Auth (contact actif, contact révoqué),
 // distinctes de la session interne par défaut (voir playwright.config.ts) : ils n'utilisent donc
 // pas le storageState de page par défaut.
 test.use({ storageState: { cookies: [], origins: [] } })

@@ -174,7 +174,6 @@ const onSubmit = async () => {
             <UInput
               v-model="formState.name"
               placeholder="Ex: Entreprise ABC"
-              class="w-full"
             />
           </UFormField>
 
@@ -213,7 +212,6 @@ const onSubmit = async () => {
               v-model="formState.description"
               :rows="3"
               placeholder="Quelques mots pour resituer le client ou sa mission."
-              class="w-full"
             />
           </UFormField>
 
@@ -224,7 +222,6 @@ const onSubmit = async () => {
             >
               <UInput
                 v-model="formState.email"
-                class="w-full"
               />
             </UFormField>
 
@@ -235,7 +232,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.phone"
                 type="tel"
-                class="w-full"
               />
             </UFormField>
           </div>
@@ -247,7 +243,6 @@ const onSubmit = async () => {
             <UInput
               v-model="formState.address"
               type="text"
-              class="w-full"
             />
           </UFormField>
 
@@ -259,7 +254,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.postalCode"
                 type="text"
-                class="w-full"
               />
             </UFormField>
 
@@ -270,7 +264,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.city"
                 type="text"
-                class="w-full"
               />
             </UFormField>
           </div>
@@ -283,7 +276,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.country"
                 type="text"
-                class="w-full"
               />
             </UFormField>
 
@@ -294,7 +286,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.website"
                 type="url"
-                class="w-full"
               />
             </UFormField>
           </div>
@@ -308,7 +299,6 @@ const onSubmit = async () => {
                 v-model="formState.siret"
                 type="text"
                 placeholder="12345678901234"
-                class="w-full"
               />
             </UFormField>
 
@@ -319,7 +309,6 @@ const onSubmit = async () => {
               <UTextarea
                 v-model="formState.notes"
                 :rows="3"
-                class="w-full"
               />
             </UFormField>
           </div>

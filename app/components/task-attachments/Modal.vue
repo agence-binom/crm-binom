@@ -191,7 +191,6 @@ const onSubmit = async () => {
           <UInput
             v-model="name"
             placeholder="Ex: Cahier des charges"
-            class="w-full"
           />
         </UFormField>
         <p
@@ -229,7 +228,6 @@ const onSubmit = async () => {
             v-model="url"
             type="url"
             placeholder="https://..."
-            class="w-full"
           />
         </UFormField>
 
@@ -240,7 +238,6 @@ const onSubmit = async () => {
           <UInput
             v-model="description"
             placeholder="Décris brièvement le document ou le lien si nécessaire."
-            class="w-full"
           />
         </UFormField>
 

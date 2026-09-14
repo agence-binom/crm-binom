@@ -394,7 +394,6 @@ const statusChipUi = computed(() => ({
           fixed
           trailing-icon="i-lucide-pencil"
           aria-label="Titre de la tâche"
-          class="w-full"
           :ui="{
             root: 'group',
             base: 'text-2xl font-semibold tracking-tight text-slate-900 -mx-2 px-2 py-1 rounded-lg ring-1 ring-transparent transition-colors group-hover:bg-slate-50 focus:bg-white focus:ring-slate-300',
@@ -463,6 +462,7 @@ const statusChipUi = computed(() => ({
                   v-model="formState.dueTime"
                   type="time"
                   aria-label="Heure d'échéance"
+                  class="w-auto"
                   @blur="onDueDateChange"
                 />
               </div>
@@ -476,7 +476,6 @@ const statusChipUi = computed(() => ({
           variant="none"
           trailing-icon="i-lucide-pencil"
           aria-label="Notes"
-          class="w-full"
           :ui="{
             root: 'group',
             base: '-mx-2 px-2 py-1.5 rounded-lg text-sm text-slate-600 ring-1 ring-transparent transition-colors group-hover:bg-slate-50 focus:bg-white focus:ring-slate-300',
