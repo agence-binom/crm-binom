@@ -12,21 +12,35 @@ export type TaskLifecycleInput = {
   now?: Date
 }
 
-function getDueDateTimestamp(dueDate: string | null) {
-  if (!dueDate) {
-    return Number.POSITIVE_INFINITY
+function getTimestampOrFallback(value: string | null, fallback: number) {
+  if (!value) {
+    return fallback
   }
 
-  const timestamp = new Date(dueDate).getTime()
-  return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp
+  const timestamp = new Date(value).getTime()
+  return Number.isNaN(timestamp) ? fallback : timestamp
 }
 
 export function compareTasksByDueDate<T extends TaskWithDueDate>(left: T, right: T) {
-  return getDueDateTimestamp(left.dueDate) - getDueDateTimestamp(right.dueDate)
+  return getTimestampOrFallback(left.dueDate, Number.POSITIVE_INFINITY)
+    - getTimestampOrFallback(right.dueDate, Number.POSITIVE_INFINITY)
 }
 
 export function sortTasksByDueDate<T extends TaskWithDueDate>(tasks: T[]) {
   return [...tasks].sort(compareTasksByDueDate)
+}
+
+export type TaskWithCompletedAt = {
+  completedAt: string | null
+}
+
+export function compareTasksByCompletedAtDesc<T extends TaskWithCompletedAt>(left: T, right: T) {
+  return getTimestampOrFallback(right.completedAt, Number.NEGATIVE_INFINITY)
+    - getTimestampOrFallback(left.completedAt, Number.NEGATIVE_INFINITY)
+}
+
+export function sortTasksByCompletedAtDesc<T extends TaskWithCompletedAt>(tasks: T[]) {
+  return [...tasks].sort(compareTasksByCompletedAtDesc)
 }
 
 export function getTaskStatusLabel(status: TaskStatus) {

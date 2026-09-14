@@ -281,6 +281,13 @@
       "when": 1788725577771,
       "tag": "0039_sour_luckman",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1788889259488,
+      "tag": "0040_gigantic_ares",
+      "breakpoints": true
     }
   ]
 }

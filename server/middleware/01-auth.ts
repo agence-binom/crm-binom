@@ -1,7 +1,6 @@
 import { createError, getRequestURL } from 'h3'
-import { serverSupabaseUser } from '#supabase/server'
 import { toPublicDatabaseError } from '../utils/database-errors'
-import { PUBLIC_AUTH_API_PATHS, requireAuthorizedAppUserByEmail } from '../utils/auth'
+import { isPublicAuthApiPath, requireAuthorizedAppUserByEmail, requireBetterAuthSession } from '../utils/auth'
 import { requireActivePortalContactWithClient } from '../utils/client-portal'
 
 // Toute route /api/portal/* est traitée ici plutôt que déléguée à chaque handler : ça garantit
@@ -13,10 +12,11 @@ const PORTAL_API_PREFIX = '/api/portal/'
 export default defineEventHandler(async (event) => {
   const path = getRequestURL(event).pathname
   if (!path.startsWith('/api')) return
-  if (PUBLIC_AUTH_API_PATHS.includes(path)) return
+  if (isPublicAuthApiPath(path)) return
 
-  const userSession = await serverSupabaseUser(event)
-  if (!userSession) {
+  const session = await requireBetterAuthSession(event)
+  const email = session.user.email
+  if (!email) {
     throw createError({
       statusCode: 401,
       statusMessage: 'Unauthorized'
@@ -25,13 +25,13 @@ export default defineEventHandler(async (event) => {
 
   try {
     if (path.startsWith(PORTAL_API_PREFIX)) {
-      const { contact, client } = await requireActivePortalContactWithClient(userSession.email)
+      const { contact, client } = await requireActivePortalContactWithClient(email)
       event.context.portalContact = contact
       event.context.portalClient = client
       return
     }
 
-    event.context.appUser = await requireAuthorizedAppUserByEmail(userSession.email)
+    event.context.appUser = await requireAuthorizedAppUserByEmail(email)
   } catch (error) {
     throw toPublicDatabaseError(error)
   }

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-
-const user = useSupabaseUser()
-const supabase = useSupabaseClient()
+import { authClient } from '~/lib/auth-client'
 
 const { data: session } = await useAppSession()
 const isAdmin = computed(() => session.value?.user?.role === 'admin')
@@ -10,7 +8,7 @@ const isAdmin = computed(() => session.value?.user?.role === 'admin')
 const collapsed = ref(false)
 
 const handleLogout = async () => {
-  const { error } = await supabase.auth.signOut()
+  const { error } = await authClient.signOut()
   if (error) return
 
   await navigateTo('/login', { replace: true })
@@ -19,7 +17,7 @@ const handleLogout = async () => {
 const items = ref<DropdownMenuItem[][]>([
   [
     {
-      label: user.value?.email || 'Utilisateur',
+      label: session.value?.user?.email || 'Utilisateur',
       type: 'label'
     }
   ], [

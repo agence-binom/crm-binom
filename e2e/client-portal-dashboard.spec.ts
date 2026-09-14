@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
-import { createSessionStorageState } from './helpers/supabase-session'
+import { createSessionStorageState } from './helpers/better-auth-session'
 
 // Contexte dédié (contact actif jean.dupont), voir e2e/client-portal-auth.spec.ts. Ce contact a
-// deux projets seedés (supabase/seed.sql) : "Identité visuelle" et "Refonte site vitrine".
+// deux projets seedés (scripts/seed.sql) : "Identité visuelle" et "Refonte site vitrine".
 test.use({ storageState: { cookies: [], origins: [] } })
 
 test('un contact actif voit les sections de son projet avec leurs états vides', async ({ browser, baseURL }) => {

@@ -82,6 +82,7 @@ jobs:
     env:
       NUXT_PUBLIC_SITE_URL: http://localhost:3100
       NUXT_DOCUMENTS_BUCKET: billing
+      DATABASE_URL: postgresql://postgres:postgres@localhost:54322/postgres
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -93,21 +94,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - uses: supabase/setup-cli@v3
-        with:
-          version: latest
-      - name: Start local Supabase stack
-        run: supabase start
-
-      - name: Export local Supabase credentials
-        run: |
-          STATUS_JSON="$(supabase status -o json)"
-          {
-            echo "DATABASE_URL=$(echo "$STATUS_JSON" | jq -r '.DB_URL')"
-            echo "NUXT_PUBLIC_SUPABASE_URL=$(echo "$STATUS_JSON" | jq -r '.API_URL')"
-            echo "NUXT_PUBLIC_SUPABASE_KEY=$(echo "$STATUS_JSON" | jq -r '.PUBLISHABLE_KEY')"
-            echo "NUXT_SUPABASE_SECRET_KEY=$(echo "$STATUS_JSON" | jq -r '.SECRET_KEY')"
-          } >> "$GITHUB_ENV"
+      # Même définition de base qu'en local (compose.dev.yml) plutôt qu'un bloc `services:` : une
+      # seule source de vérité pour l'image, la version et la collation. `--wait` s'appuie sur le
+      # healthcheck du compose, pas besoin de boucle d'attente ici.
+      - name: Start Postgres
+        run: docker compose -f compose.dev.yml up -d --wait
 
       - name: Apply database migrations
         run: npm run db:migrate
@@ -116,8 +107,27 @@ jobs:
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
-      - name: Run Playwright tests
-        run: npx playwright test
+
+      # Chaque projet tourne dans sa propre invocation plutôt qu'un seul `npx playwright test` :
+      # le rate limiter IP (server/middleware/00-rate-limit.ts, 120 req/min) partage un seul bucket
+      # mémoire pour tout le trafic e2e (une seule IP source, le runner CI). Sur un run combiné, le
+      # budget peut s'épuiser avant la fin des 48 tests (observé en CI : 429 sur des endpoints
+      # authentifiés, pris pour des bugs applicatifs). `reuseExistingServer` est `false` en CI, donc
+      # chaque invocation relance un serveur Nitro neuf et repart avec un bucket vide.
+      - name: Run Playwright tests (chromium)
+        env:
+          PLAYWRIGHT_HTML_REPORT: playwright-report/chromium
+        run: npx playwright test --project=chromium --output=test-results/chromium
+      - name: Run Playwright tests (firefox)
+        if: ${{ !cancelled() }}
+        env:
+          PLAYWRIGHT_HTML_REPORT: playwright-report/firefox
+        run: npx playwright test --project=firefox --output=test-results/firefox
+      - name: Run Playwright tests (webkit)
+        if: ${{ !cancelled() }}
+        env:
+          PLAYWRIGHT_HTML_REPORT: playwright-report/webkit
+        run: npx playwright test --project=webkit --output=test-results/webkit
 
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}

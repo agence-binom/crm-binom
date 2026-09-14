@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import { getErrorMessage } from '~/lib/utils'
+import { authClient } from '~/lib/auth-client'
 
 definePageMeta({ layout: false })
 
-const supabase = useSupabaseClient()
-const config = useRuntimeConfig()
 const { showSuccess } = useFeedbackToast()
 const loading = ref(false)
 const authError = ref<string | null>(null)
 
-const signInWithOtp = async ({ email }: { email: string }) => {
-  const redirectUrl = config.public.siteUrl
-    ? `${config.public.siteUrl}/confirm`
-    : `${window.location.origin}/confirm`
+const signInWithMagicLink = async ({ email }: { email: string }) => {
   const successMessage = 'Si cette adresse email est autorisée, un lien de connexion a été envoyé.'
 
   loading.value = true
@@ -25,13 +21,7 @@ const signInWithOtp = async ({ email }: { email: string }) => {
     })
 
     if (response.authorized) {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: redirectUrl,
-          shouldCreateUser: false
-        }
-      })
+      const { error } = await authClient.signIn.magicLink({ email, callbackURL: '/confirm' })
 
       if (error) {
         throw error
@@ -63,7 +53,7 @@ const signInWithOtp = async ({ email }: { email: string }) => {
         <AppAuth
           :error="authError"
           :loading="loading"
-          @submit="signInWithOtp"
+          @submit="signInWithMagicLink"
         />
       </UCard>
     </div>
