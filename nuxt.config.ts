@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/supabase'],
+  modules: ['@nuxt/eslint', '@nuxt/ui'],
 
   devtools: {
     enabled: true
@@ -14,6 +14,10 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     documentsBucket: process.env.DOCUMENTS_BUCKET,
+    s3Endpoint: process.env.NUXT_S3_ENDPOINT,
+    s3Region: process.env.NUXT_S3_REGION,
+    s3AccessKeyId: process.env.NUXT_S3_ACCESS_KEY_ID,
+    s3SecretAccessKey: process.env.NUXT_S3_SECRET_ACCESS_KEY,
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL,
       appEnv: process.env.NUXT_PUBLIC_APP_ENV || 'production'
@@ -55,24 +59,6 @@ export default defineNuxtConfig({
         commaDangle: 'never',
         braceStyle: '1tbs'
       }
-    }
-  },
-
-  supabase: {
-    redirect: false,
-    redirectOptions: {
-      login: '/login',
-      callback: '/confirm',
-      exclude: ['/login', '/confirm']
-    },
-    cookieOptions: {
-      // Le module force `secure: true` par défaut, mais `nuxt dev` (utilisé par le webServer des
-      // tests e2e / CI) sert l'appli en HTTP sur localhost : Safari/WebKit refuse alors d'écrire
-      // ou de supprimer un cookie `Secure` côté client, ce qui empêche la déconnexion (le cookie
-      // de session survit au `signOut()` et le middleware renvoie l'utilisateur dans l'espace
-      // client). En production/staging (HTTPS), NODE_ENV vaut `production` et le cookie reste
-      // `Secure`.
-      secure: process.env.NODE_ENV === 'production'
     }
   }
 })

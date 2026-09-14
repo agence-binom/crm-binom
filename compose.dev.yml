@@ -1,0 +1,29 @@
+# Base Postgres de développement. Même image que la prod (Coolify) : les extensions, la version
+# majeure et surtout la collation ICU `en_US.UTF-8` imposée par POSTGRES_INITDB_ARGS y sont
+# identiques - un `postgres:17` nu trierait les `order by` différemment de la prod.
+#
+#   npm run db:up          démarre la base (attend le healthcheck)
+#   npm run db:reset:local remet le schéma à zéro, migre, seed
+#   npm run db:down        arrête la base (le volume est conservé)
+
+services:
+  db:
+    image: supabase/postgres:17.4.1.032
+    environment:
+      # POSTGRES_USER vaut supabase_admin par défaut dans cette image, et POSTGRES_DB vaut
+      # postgres : ne pas y toucher, les scripts d'init de l'image ciblent la base `postgres` en
+      # dur. Le rôle applicatif (`postgres`) est configuré par scripts/dev-db-init.sql.
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '54322:5432'
+    volumes:
+      - crm-binom-db:/var/lib/postgresql/data
+      - ./scripts/dev-db-init.sql:/docker-entrypoint-initdb.d/zz-dev-role.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U supabase_admin -d postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  crm-binom-db:

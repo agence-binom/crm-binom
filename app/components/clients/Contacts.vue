@@ -8,6 +8,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   create: []
+  linkExisting: []
   edit: [contactId: number]
   delete: [contactId: number]
   archive: [contactId: number]
@@ -37,6 +38,14 @@ const toggleArchived = () => {
           @click="toggleArchived"
         >
           {{ showArchived ? 'Voir les contacts actifs' : 'Voir les contacts archivés' }}
+        </UButton>
+        <UButton
+          icon="i-lucide-link"
+          variant="soft"
+          color="neutral"
+          @click="emit('linkExisting')"
+        >
+          Rattacher un contact existant
         </UButton>
         <UButton
           icon="i-lucide-circle-plus"
@@ -83,6 +92,14 @@ const toggleArchived = () => {
           @click="emit('create')"
         >
           Créer le premier contact
+        </UButton>
+        <UButton
+          icon="i-lucide-link"
+          variant="soft"
+          color="neutral"
+          @click="emit('linkExisting')"
+        >
+          Rattacher un contact existant
         </UButton>
       </template>
     </AppEmptyState>
