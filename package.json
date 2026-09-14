@@ -26,15 +26,15 @@
   },
   "dependencies": {
     "@formkit/drag-and-drop": "^0.6.1",
-    "@iconify-json/lucide": "^1.2.129",
-    "@iconify-json/simple-icons": "^1.2.94",
-    "@nuxt/ui": "4.11.0",
-    "@supabase/supabase-js": "^2.115.0",
+    "@iconify-json/lucide": "^1.2.131",
+    "@iconify-json/simple-icons": "^1.2.95",
+    "@nuxt/ui": "4.11.1",
+    "@supabase/supabase-js": "^2.116.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "nuxt": "4.5.2",
     "postgres": "^3.4.7",
-    "zod": "^4.5.4"
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@emnapi/core": "1.11.3",
@@ -43,12 +43,12 @@
     "@nuxt/eslint": "^1.12.1",
     "@nuxtjs/supabase": "^2.0.3",
     "@playwright/test": "^1.63.0",
-    "@supabase/ssr": "^0.12.6",
-    "@types/node": "^26.4.1",
+    "@supabase/ssr": "^0.12.7",
+    "@types/node": "^26.5.1",
     "drizzle-kit": "^0.31.8",
     "eslint": "^10.10.0",
     "husky": "^9.1.7",
-    "rolldown": "1.2.7",
+    "rolldown": "1.2.8",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.1"
