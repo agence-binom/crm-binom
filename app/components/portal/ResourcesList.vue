@@ -49,17 +49,23 @@ const onModalOpenChange = (open: boolean) => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-between">
-      <h2 class="text-base font-semibold text-slate-900">
-        Ressources
-      </h2>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex flex-col gap-1">
+        <h2 class="text-base font-semibold text-slate-900">
+          Ressources
+        </h2>
+        <p class="text-sm text-slate-500">
+          Les fichiers, liens et notes échangés avec l'agence. Vous ne pouvez modifier ou supprimer que ceux que vous avez ajoutés.
+        </p>
+      </div>
       <UButton
         icon="i-lucide-circle-plus"
         color="neutral"
         variant="soft"
+        class="shrink-0 self-start"
         @click="isModalOpen = true"
       >
-        Nouvelle ressource
+        Ajouter une ressource
       </UButton>
     </div>
 
@@ -81,13 +87,14 @@ const onModalOpenChange = (open: boolean) => {
       v-else
       icon="i-lucide-folder-open"
       title="Aucune ressource pour le moment"
-      description="Les fichiers et ressources partagés par l'agence apparaîtront ici."
     />
 
-    <PortalResourceModal
+    <ResourcesModal
       :open="isModalOpen"
       :project-id="projectId"
       :resource="resourceToEdit"
+      api-base="/api/portal/resources"
+      create-label="Ajouter une ressource"
       @update:open="onModalOpenChange"
       @saved="onSaved"
     />

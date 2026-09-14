@@ -28,7 +28,8 @@ test('un contact actif voit les sections de son projet avec leurs états vides',
   await expect(page.getByRole('heading', { name: 'Ressources' })).toBeVisible()
   await expect(page.getByText('Aucune ressource pour le moment')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Nouvelle ressource' }).click()
+  await page.getByRole('button', { name: 'Ajouter une ressource' }).click()
+  await expect(page.getByRole('heading', { name: 'Nouvelle ressource' })).toBeVisible()
   await expect(page.getByText('Type de ressource')).toBeVisible()
 
   await context.close()

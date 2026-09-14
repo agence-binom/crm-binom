@@ -66,7 +66,6 @@ const getMenuItems = (document: BillingDocumentRecord): DropdownMenuItem[][] => 
     v-else
     icon="i-lucide-file-text"
     title="Aucun document pour le moment"
-    description="Votre proposition commerciale, votre devis et vos factures apparaîtront ici."
   />
 
   <BillingDocumentDetailsModal

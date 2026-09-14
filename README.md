@@ -76,7 +76,6 @@ npm run db:down       # L'arrête (le volume, donc les données, est conservé)
 npm run db:reset:local # Schéma à zéro puis migrations et seed - base locale uniquement
 npm run db:migrate    # Applique les migrations Drizzle sur la base
 npm run db:generate   # Génère les fichiers de migration depuis le schéma Drizzle
-npm run db:types      # Régénère app/types/database.types.ts depuis le schéma live
 npm run db:studio     # Lance Drizzle Studio (interface DB locale)
 ```
 
@@ -169,8 +168,7 @@ Le schéma Drizzle est dans `app/db/schema/`. Toute modification du schéma requ
 ```bash
 npm run db:generate   # Génère la migration
 npm run db:migrate    # Applique sur la base cible
-npm run db:types      # Resynchronise app/types/database.types.ts
-npm run typecheck     # Vérifie que les types générés sont cohérents avec le code
+npm run typecheck     # Vérifie que le code est cohérent avec les types inférés du schéma Drizzle
 ```
 
 Tester une migration sur la base locale (`npm run db:reset:local`) avant d'ouvrir une PR : en

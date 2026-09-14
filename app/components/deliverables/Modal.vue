@@ -210,7 +210,6 @@ const onSubmit = async () => {
           <UInput
             v-model="name"
             placeholder="Ex: Maquette page d'accueil"
-            class="w-full"
           />
         </UFormField>
         <p
@@ -248,7 +247,6 @@ const onSubmit = async () => {
             v-model="url"
             type="url"
             placeholder="https://..."
-            class="w-full"
           />
         </UFormField>
 
@@ -261,7 +259,6 @@ const onSubmit = async () => {
           <UTextarea
             v-model="content"
             :rows="6"
-            class="w-full"
             placeholder="Rédigez votre note ici..."
           />
         </UFormField>
@@ -274,7 +271,6 @@ const onSubmit = async () => {
           <UInput
             v-model="description"
             placeholder="Décris brièvement le livrable si nécessaire."
-            class="w-full"
           />
         </UFormField>
 

@@ -163,7 +163,6 @@ const onSubmit = async () => {
             <UInput
               v-model="formState.name"
               placeholder="Ex: Refonte site web"
-              class="w-full"
             />
           </UFormField>
 
@@ -176,7 +175,6 @@ const onSubmit = async () => {
                 v-model="formState.url"
                 type="url"
                 placeholder="https://example.com"
-                class="w-full"
               />
             </UFormField>
 
@@ -205,7 +203,6 @@ const onSubmit = async () => {
               v-model="formState.description"
               :rows="4"
               placeholder="Décris brièvement le périmètre, l'objectif ou le contexte."
-              class="w-full"
             />
           </UFormField>
 
@@ -217,7 +214,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.startDate"
                 type="date"
-                class="w-full"
               />
             </UFormField>
 
@@ -228,7 +224,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.endDate"
                 type="date"
-                class="w-full"
               />
             </UFormField>
           </div>
