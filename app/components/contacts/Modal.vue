@@ -175,7 +175,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.firstName"
                 placeholder="Jean"
-                class="w-full"
               />
             </UFormField>
 
@@ -187,7 +186,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.lastName"
                 placeholder="Dupont"
-                class="w-full"
               />
             </UFormField>
           </div>
@@ -201,7 +199,6 @@ const onSubmit = async () => {
                 v-model="formState.email"
                 type="email"
                 placeholder="jean.dupont@example.com"
-                class="w-full"
               />
             </UFormField>
 
@@ -212,7 +209,6 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.position"
                 placeholder="Directeur commercial"
-                class="w-full"
               />
             </UFormField>
           </div>
@@ -226,7 +222,6 @@ const onSubmit = async () => {
                 v-model="formState.phone"
                 type="tel"
                 placeholder="01 23 45 67 89"
-                class="w-full"
               />
             </UFormField>
 
@@ -238,7 +233,6 @@ const onSubmit = async () => {
                 v-model="formState.mobile"
                 type="tel"
                 placeholder="06 12 34 56 78"
-                class="w-full"
               />
             </UFormField>
           </div>
@@ -263,7 +257,6 @@ const onSubmit = async () => {
               v-model="formState.notes"
               :rows="4"
               placeholder="Contexte, informations utiles, preferences..."
-              class="w-full"
             />
           </UFormField>
 

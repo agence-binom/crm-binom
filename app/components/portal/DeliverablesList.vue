@@ -27,7 +27,6 @@ const sortedDeliverables = computed(() => sortByCreatedAtDesc(props.deliverables
       v-else
       icon="i-lucide-package"
       title="Aucun livrable pour le moment"
-      description="Les maquettes et prototypes partagés par l'agence apparaîtront ici."
     />
   </div>
 </template>
