@@ -1,7 +1,6 @@
 import { Resend } from 'resend'
 
-// Un seul point d'envoi mail pour toute l'app (magic-link, futur renvoi d'invitation portail) —
-// pas deux mécanismes différents comme avant (Supabase Auth gérait ça en interne, invisible ici).
+// Un seul point d'envoi mail pour toute l'app (magic-link, futur renvoi d'invitation portail).
 // process.env directement (pas useRuntimeConfig) : ce fichier est aussi importé par
 // scripts/seed.ts via tsx, hors du build Nuxt.
 const MAIL_FROM = 'Agence binōm <contact@agence-binom.fr>'

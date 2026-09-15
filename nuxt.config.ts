@@ -13,7 +13,8 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    documentsBucket: process.env.DOCUMENTS_BUCKET,
+    // Préfixe NUXT_ : Nitro peut surcharger cette clé au démarrage du conteneur, sans rebuild.
+    documentsBucket: process.env.NUXT_DOCUMENTS_BUCKET,
     s3Endpoint: process.env.NUXT_S3_ENDPOINT,
     s3Region: process.env.NUXT_S3_REGION,
     s3AccessKeyId: process.env.NUXT_S3_ACCESS_KEY_ID,
@@ -32,24 +33,9 @@ export default defineNuxtConfig({
 
   nitro: {
     storage: {
-      // En dev : driver mémoire (défaut).
-      // En production multi-instance, passer sur Redis :
-      //   1. Installer ioredis : npm install ioredis
-      //   2. Définir REDIS_URL dans l'environnement
-      //   3. Remplacer la config ci-dessous par :
-      //      'rate-limit': { driver: 'redis', url: process.env.REDIS_URL }
+      // Driver mémoire : suffisant tant qu'une seule instance sert le trafic. En multi-instance
+      // chaque instance compterait son propre quota - passer sur Redis (procédure dans le README).
       'rate-limit': { driver: 'memory' }
-    }
-  },
-
-  vite: {
-    build: {
-      rollupOptions: {
-        onwarn(warning, warn) {
-          if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return
-          warn(warning)
-        }
-      }
     }
   },
 

@@ -45,8 +45,7 @@ const parseSetCookie = (setCookie: string): ParsedCookie => {
  * Auth expose email+password en dev/CI pour ce genre de bootstrap (voir emailAndPassword dans
  * server/lib/better-auth.ts). On appelle directement l'API serveur (pas de round-trip HTTP) et on
  * récupère le cookie de session depuis les headers de la réponse plutôt que de rejouer nous-mêmes
- * le format/nommage du cookie - contrairement à l'ancien helper Supabase, on possède maintenant le
- * serveur d'auth donc plus besoin de le répliquer manuellement.
+ * son format et son nommage.
  *
  * Réutilisé par e2e/global-setup.ts (session interne) et les specs qui ont besoin de plusieurs
  * sessions distinctes (ex. e2e/client-portal-auth.spec.ts).

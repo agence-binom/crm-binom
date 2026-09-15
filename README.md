@@ -2,7 +2,7 @@
 
 CRM interne de binōm - gestion des clients, projets, tâches (kanban), contacts, devis, factures, paiements et documents.
 
-Stack : Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres auto-hébergé (image `supabase/postgres` sur Coolify), Better Auth, stockage S3-compatible (Garage).
+Stack : Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres 17 auto-hébergé (image `supabase/postgres`, sur Coolify), Better Auth (magic-link), Resend, stockage S3-compatible (Garage).
 
 ---
 
@@ -21,8 +21,9 @@ npm install
 cp .env.example .env
 ```
 
-Renseigner toutes les variables dans `.env` (voir section ci-dessous). Les valeurs par défaut de
-`DATABASE_URL` pointent déjà sur la base locale Docker. Ensuite :
+Renseigner les variables dans `.env` (voir section ci-dessous). `DATABASE_URL` pointe déjà sur la
+base locale Docker, et `RESEND_API_KEY` est inutile en local (le magic-link s'affiche dans le
+terminal). Ensuite :
 
 ```bash
 npm run db:up          # Démarre Postgres en local (première fois : pull de l'image, ~1 min)
@@ -44,10 +45,10 @@ disponible uniquement hors production) : `admin@crmbinom.test`, `employee@crmbin
 | `NUXT_S3_REGION` | Non | Région S3 (accepte une valeur arbitraire pour Garage, ex : `garage`) |
 | `NUXT_S3_ACCESS_KEY_ID` | Oui | Access key ID du storage - utilisée côté serveur uniquement |
 | `NUXT_S3_SECRET_ACCESS_KEY` | Oui | Secret access key du storage - utilisée côté serveur uniquement |
-| `DOCUMENTS_BUCKET` | Oui | Nom du bucket S3 pour les documents (ex : `documents`) |
+| `NUXT_DOCUMENTS_BUCKET` | Oui | Nom du bucket S3 pour les documents (ex : `documents`). |
 | `NUXT_PUBLIC_SITE_URL` | Oui | URL publique du site (ex : `http://localhost:3000`) |
 | `BETTER_AUTH_SECRET` | Oui | Secret Better Auth (≥32 caractères aléatoires) - `npx @better-auth/cli secret` ou `openssl rand -base64 32` |
-| `RESEND_API_KEY` | Oui | Clé API Resend pour l'envoi des emails magic-link |
+| `RESEND_API_KEY` | En prod | Clé API Resend pour l'envoi des emails magic-link. Inutile hors production : le lien est écrit dans le terminal, aucun mail n'est envoyé |
 | `REDIS_URL` | Non | URL Redis pour le rate limiting multi-instance en production (ex : `redis://localhost:6379`) |
 
 > **Note `DATABASE_URL`** : le rôle utilisé doit être **le même que celui qui joue les migrations** (`postgres`). Les tables ont RLS activé sans aucune policy (`.enableRLS()` dans `app/db/schema`) : seul leur propriétaire voit les lignes, un autre rôle obtiendrait des résultats vides sans aucune erreur. Voir `scripts/dev-db-init.sql`.
@@ -64,7 +65,8 @@ npm run preview      # Prévisualiser le build en local
 ```
 
 ```bash
-npm test             # Tests
+npm test             # Tests unitaires (node:test)
+npm run test:e2e     # Tests end-to-end (Playwright, démarre son propre serveur sur :3100)
 npm run lint         # ESLint
 npm run lint:fix     # ESLint avec auto-fix
 npm run typecheck    # TypeScript (vue-tsc)
@@ -76,6 +78,7 @@ npm run db:down       # L'arrête (le volume, donc les données, est conservé)
 npm run db:reset:local # Schéma à zéro puis migrations et seed - base locale uniquement
 npm run db:migrate    # Applique les migrations Drizzle sur la base
 npm run db:generate   # Génère les fichiers de migration depuis le schéma Drizzle
+npm run db:seed       # Insère le jeu de données de test
 npm run db:studio     # Lance Drizzle Studio (interface DB locale)
 ```
 
@@ -83,13 +86,21 @@ npm run db:studio     # Lance Drizzle Studio (interface DB locale)
 
 ## CI
 
-La CI tourne sur chaque push via `.github/workflows/quality.yml` et exécute dans l'ordre :
+`.github/workflows/ci.yml` tourne sur chaque PR et sur push vers `main`/`staging`. Quatre jobs en
+parallèle - **Lint**, **Typecheck**, **Unit tests**, **Build** - puis **Playwright E2E**, qui ne
+tourne que sur push, sur PR vers `main`/`staging`, ou si la PR porte le label `e2e`.
 
-1. `npm test`
-2. `npm run lint`
-3. `npm run typecheck`
+Avant d'ouvrir une PR :
 
-**Passer ces trois checks en local avant d'ouvrir une PR.**
+```bash
+npm test && npm run lint && npm run typecheck
+```
+
+Ces trois commandes tournent aussi en pre-commit hook (`.husky/pre-commit`).
+
+Deux workflows complètent la CI sur push vers `staging` : `staging-smoke-test.yml` (poll de
+`/api/health` jusqu'à ce que le déploiement réponde) et `staging-merge.yml` (déplace la carte
+GitHub Projects vers « À tester »).
 
 ---
 
@@ -111,7 +122,9 @@ Pour ajouter un utilisateur staff : l'insérer dans `public.users` avec les cham
 
 ## Documents (stockage S3-compatible)
 
-Les documents sont stockés dans le bucket défini par `DOCUMENTS_BUCKET`, sur l'endpoint S3-compatible défini par `NUXT_S3_ENDPOINT` (Garage en local/staging via Coolify). Le bucket doit exister avant le premier upload. Les URLs signées ont une durée de validité de 1 heure.
+Les documents sont stockés dans le bucket défini par `NUXT_DOCUMENTS_BUCKET`, sur l'endpoint S3-compatible défini par `NUXT_S3_ENDPOINT`. Le bucket doit exister avant le premier upload. Les URLs signées ont une durée de validité de 1 heure.
+
+Le code applicatif ne parle que S3 générique (`@aws-sdk/client-s3`, voir `server/utils/documents.ts`) : changer de backend ne demande que de changer les variables d'environnement. Garage (sur Coolify) en staging comme en production.
 
 ---
 
@@ -177,11 +190,45 @@ une migration cassée bloque donc le démarrage du service.
 
 ---
 
+## Hébergement
+
+Tout tourne sur Coolify, sur une infrastructure auto-hébergée :
+
+| | Production | Staging | Local / CI |
+|---|---|---|---|
+| Base de données | Postgres auto-hébergé sur Coolify, image `supabase/postgres:17.4.1.032` | même image, base dédiée isolée de la prod | même image, en Docker (`compose.dev.yml`) |
+| Storage documents | Garage (S3-compatible) | Garage | endpoint S3 au choix |
+| Auth | Better Auth (magic-link) | Better Auth | Better Auth |
+
+Le projet est né sur Supabase et en est entièrement sorti : plus aucun service managé Supabase, et
+plus aucun client `@supabase/*` dans les dépendances. L'auth passe par Better Auth, le storage par
+un client S3 générique (`server/utils/documents.ts`).
+
+> **Le nom `supabase/postgres` subsiste, et c'est voulu.** Cette image tourne partout, production
+> comprise, mais ce n'est pas une dépendance à la plateforme Supabase : c'est une image Postgres
+> nue, sans aucun service Supabase autour. L'utiliser à l'identique en local, en CI et sur Coolify
+> donne la même version majeure, les mêmes extensions et surtout la même collation ICU
+> `en_US.UTF-8` (imposée par `POSTGRES_INITDB_ARGS`), qu'un `postgres:17` standard ne reproduit pas
+> - les `order by` trieraient différemment. **Ne pas la remplacer** en croyant finir le ménage.
+
+Staging ayant désormais sa propre base, c'est un vrai environnement de test : les migrations et les
+opérations destructives peuvent y être validées sans toucher aux données de production.
+
+---
+
 ## Flux de contribution
 
-1. Créer une branche depuis `main` au format `<pseudo>/bin-<N>-<slug>`.
+1. Créer une branche avec un nom descriptif : `feat/xxx`, `fix/xxx`, `chore/xxx`. Référencer
+   l'issue GitHub dans la description de la PR, pas dans le nom de branche.
 2. Passer les checks locaux (`npm test && npm run lint && npm run typecheck`).
-3. Ouvrir une PR vers `main` - la CI vérifie les mêmes checks.
+3. Ouvrir une PR - la CI rejoue les mêmes checks.
+
+`main` et `staging` sont protégées par ruleset : pas de push direct, PR obligatoire, checks CI
+requis, conversations résolues avant merge. Une review Copilot automatique se déclenche à
+l'ouverture et à chaque push ; elle est consultative, pas bloquante (pas de review humaine requise,
+projet solo). Coolify déploie automatiquement en production sur push vers `main`.
+
+Le suivi se fait sur GitHub Projects v2 - ce repo n'est pas connecté à Linear.
 
 ---
 

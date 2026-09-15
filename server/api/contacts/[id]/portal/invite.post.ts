@@ -42,10 +42,9 @@ export default defineEventHandler(async (event) => {
   const callbackURL = config.public.siteUrl ? `${config.public.siteUrl}/confirm` : '/confirm'
   const normalizedEmail = normalizeEmailAddress(contact.email)
 
-  // Contrairement à Supabase (admin.inviteUserByEmail créait le compte auth ET envoyait le mail
-  // en un appel), Better Auth n'a pas de notion d'invitation distincte : on crée l'utilisateur
-  // nous-mêmes s'il n'existe pas encore (seul cas légitime de création admin, disableSignUp:true
-  // bloque toute auto-inscription via le flux normal), puis on déclenche l'envoi du lien.
+  // Better Auth n'a pas de notion d'invitation : on crée l'utilisateur nous-mêmes s'il n'existe
+  // pas encore (seul cas légitime de création admin - disableSignUp:true bloque toute
+  // auto-inscription via le flux normal), puis on déclenche l'envoi du lien.
   const [existingAuthUser] = await db
     .select({ id: authUserTable.id })
     .from(authUserTable)
