@@ -106,7 +106,11 @@ export function useBillingStepsEditor(options: {
     const nodes = billingSteps.value.map((step, index) => {
       const category = getBillingStepCategory(step, index, activeIndex.value, isMuted.value)
       const palette = isMuted.value
-        ? (category === 'completed' ? mutedBillingStepPalette.completed : mutedBillingStepPalette.other)
+        ? (category === 'completed'
+            ? mutedBillingStepPalette.completed
+            : category === 'refused'
+              ? mutedBillingStepPalette.refused
+              : mutedBillingStepPalette.other)
         : { ...billingStepPalettes[category], titleClass: emphasizedTitleClasses[category] ?? billingStepPalettes[category].titleClass }
 
       const document = step.documentId ? documentsById.value.get(step.documentId) ?? null : null
