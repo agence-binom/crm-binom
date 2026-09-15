@@ -3,8 +3,9 @@ import { db } from '~/db'
 import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { documentsTable } from '~/db/schema/documents'
 import { billingDocumentUploadMetadataSchema } from '~/validation/billing-documents'
+import { documentMaxSizeBytes } from '~/validation/documents'
 import { getBillingDocumentLabel } from '~/lib/documents'
-import { buildDocumentStoragePath, uploadDocumentFile, deleteUploadedDocumentIfExists, assertValidDocumentFile } from '~~/server/utils/documents'
+import { assertRequestWithinSizeLimit, buildDocumentStoragePath, uploadDocumentFile, deleteUploadedDocumentIfExists, assertValidDocumentFile } from '~~/server/utils/documents'
 import { logActivity } from '~~/server/utils/activity-log'
 import { getAppUser } from '~~/server/utils/auth'
 
@@ -13,6 +14,8 @@ import { getAppUser } from '~~/server/utils/auth'
 // to that same record - preserving whatever status/date/description was already set - instead of
 // creating a duplicate. Otherwise a fresh billing_documents record is created alongside the file.
 export default defineEventHandler(async (event) => {
+  assertRequestWithinSizeLimit(event, documentMaxSizeBytes)
+
   const formData = await readFormData(event)
   const fileEntry = formData.get('file')
 

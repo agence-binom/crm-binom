@@ -1,12 +1,14 @@
 import { db } from '~/db'
 import { documentsTable } from '~/db/schema/documents'
-import { documentUploadMetadataSchema } from '~/validation/documents'
-import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists, assertValidDocumentFile } from '~~/server/utils/documents'
+import { documentMaxSizeBytes, documentUploadMetadataSchema } from '~/validation/documents'
+import { assertRequestWithinSizeLimit, buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists, assertValidDocumentFile } from '~~/server/utils/documents'
 import { createDocumentInsertValues } from '~~/server/lib/documents-upload'
 import { logActivity } from '~~/server/utils/activity-log'
 import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
+  assertRequestWithinSizeLimit(event, documentMaxSizeBytes)
+
   const formData = await readFormData(event)
   const fileEntry = formData.get('file')
 

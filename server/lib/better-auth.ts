@@ -40,8 +40,9 @@ const isKnownAuthorizedEmail = async (email: string) => {
 
 // Deux populations distinctes se connectent avec le même flux magic-link (staff `public.users` et
 // contacts portail `public.contacts`) - le sendMagicLink ci-dessous est le seul point qui décide
-// si un email a le droit de recevoir un lien. Defense in depth : le check côté client
-// (authorize-email.post.ts) est une commodité d'UI, c'est celui-ci qui fait autorité.
+// si un email a le droit de recevoir un lien. Pas de pré-check d'autorisation côté client
+// (app/pages/login.vue) : un tel endpoint révélerait quelles adresses sont connues (agence ou
+// portail) même sans jamais recevoir de lien - voir l'historique de authorize-email.post.ts.
 export const auth = betterAuth({
   baseURL: process.env.NUXT_PUBLIC_SITE_URL,
   database: drizzleAdapter(db, {

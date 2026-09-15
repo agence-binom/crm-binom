@@ -1,13 +1,17 @@
 import { db } from '~/db'
 import { resourcesTable } from '~/db/schema/resources'
-import { resourceUploadMetadataSchema } from '~/validation/resources'
-import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
+import { resourceMaxSizeBytes, resourceUploadMetadataSchema } from '~/validation/resources'
+import { assertRequestWithinSizeLimit, buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
 import { assertValidResourceFile } from '~~/server/utils/resources'
 import { createResourceInsertValues } from '~~/server/lib/resources-upload'
 import { getPortalClient, getPortalContact, requirePortalProject } from '~~/server/utils/client-portal'
 import { logActivity } from '~~/server/utils/activity-log'
 
 export default defineEventHandler(async (event) => {
+  // Seule route d'upload accessible à la population externe (contacts portail) - le garde-fou
+  // sur la taille du corps compte particulièrement ici (voir assertRequestWithinSizeLimit).
+  assertRequestWithinSizeLimit(event, resourceMaxSizeBytes)
+
   const client = getPortalClient(event)
   const contact = getPortalContact(event)
   const formData = await readFormData(event)
