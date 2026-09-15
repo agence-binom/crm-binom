@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import type { LinkExistingSelection } from '~/components/LinkExistingModal.vue'
+import { isProspectStatus } from '~/constants/prospection'
+import type { Client } from '~/types'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
 
 const { data, refresh } = await useFetch(`/api/clients/${clientId.value}/dashboard`)
-const client = computed(() => data.value?.client)
+const client = computed(() => data.value?.client as Client | undefined)
 const contacts = computed(() => data.value?.contacts || [])
 const projects = computed(() => data.value?.projects || [])
+
+const isProspect = computed(() => isProspectStatus(client.value?.prospectionStatus))
+const backTo = computed(() => (isProspect.value ? '/prospection' : '/clients'))
+const backLabel = computed(() => (isProspect.value ? 'Retour aux prospects' : 'Retour aux clients'))
 
 const isClientInfoModalOpen = ref(false)
 const isPortalAccessModalOpen = ref(false)
@@ -25,20 +31,24 @@ const { showError } = useFeedbackToast()
 
 const onDeleteClient = async (clientId: number) => {
   await deleteResource('client', clientId, '/api/clients', async () => {
-    await navigateTo('/clients')
+    await navigateTo(backTo.value)
   })
+  await refreshNuxtData('sidebar-active-clients')
 }
 
 const onArchiveClient = async (clientId: number) => {
   await setArchived('client', clientId, '/api/clients', true, refresh)
+  await refreshNuxtData('sidebar-active-clients')
 }
 
 const onRestoreClient = async (clientId: number) => {
   await setArchived('client', clientId, '/api/clients', false, refresh)
+  await refreshNuxtData('sidebar-active-clients')
 }
 
 const handleClientChange = async () => {
   await refresh()
+  await refreshNuxtData('sidebar-active-clients')
 }
 
 const openCreateContact = () => {
@@ -164,8 +174,8 @@ const projectToEdit = computed(() => {
     class="container mx-auto p-6 overflow-scroll"
   >
     <AppBackButton
-      to="/clients"
-      label="Retour aux clients"
+      :to="backTo"
+      :label="backLabel"
     />
     <ClientsHeader
       :client="client"

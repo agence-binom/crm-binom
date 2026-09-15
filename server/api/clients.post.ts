@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     .values({ ...body, createdBy: getAppUser(event).id })
     .returning()
 
-  void logActivity(event, { entityType: 'client', entityId: newClient[0]!.id, action: 'create', metadata: { name: newClient[0]!.name } })
+  void logActivity(event, { entityType: 'client', entityId: newClient[0]!.id, action: 'create', metadata: { name: newClient[0]!.name, prospectionStatus: newClient[0]!.prospectionStatus } })
 
   return {
     message: 'Client créé',

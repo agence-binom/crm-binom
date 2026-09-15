@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { authClient } from '~/lib/auth-client'
+import logoBinom from '~/assets/images/logo-binom.svg?url'
+import type { Client } from '~/types'
 
 const { data: session } = await useAppSession()
 const isAdmin = computed(() => session.value?.user?.role === 'admin')
 
 const collapsed = ref(false)
+
+const { data: activeClientsData } = await useFetch('/api/clients/dashboard', {
+  key: 'sidebar-active-clients',
+  query: { archived: false, scope: 'clients' }
+})
+const activeClients = computed<Client[]>(() => (activeClientsData.value?.clients as Client[] | undefined) || [])
 
 const handleLogout = async () => {
   const { error } = await authClient.signOut()
@@ -40,6 +48,23 @@ const agencyMenuItems = computed(() => [
   ...(isAdmin.value ? [{ label: 'Journal d\'activité', icon: 'i-lucide-history', to: '/agence/journal' }] : []),
   { label: 'Administratif', icon: 'i-lucide-pen', to: '/clients', disabled: true }
 ])
+
+const mainMenuItems = computed(() => [
+  { label: 'Tableau de bord', icon: 'i-lucide-home', to: '/' },
+  { label: 'Prospection', icon: 'i-lucide-target', to: '/prospection' },
+  {
+    label: 'Clients',
+    icon: 'i-lucide-users',
+    to: '/clients',
+    defaultOpen: true,
+    children: activeClients.value.map(client => ({
+      label: client.name,
+      to: `/clients/${client.id}`
+    }))
+  },
+  { label: 'Contacts', icon: 'i-lucide-user-round', to: '/contacts' },
+  { label: 'Facturation', icon: 'i-lucide-receipt', to: '/facturation' }
+])
 </script>
 
 <template>
@@ -52,16 +77,21 @@ const agencyMenuItems = computed(() => [
       :ui="{ footer: 'border-t border-default' }"
       class="py-4"
     >
+      <template #header>
+        <div class="flex items-center gap-2 px-1.5">
+          <img
+            :src="logoBinom"
+            alt="binōm"
+            class="h-6 w-auto dark:invert shrink-0"
+          >
+        </div>
+      </template>
+
       <template #default="{ }">
         <UNavigationMenu
           :collapsed="collapsed"
           orientation="vertical"
-          :items="[
-            { label: 'Tableau de bord', icon: 'i-lucide-home', to: '/' },
-            { label: 'Clients', icon: 'i-lucide-users', to: '/clients' },
-            { label: 'Contacts', icon: 'i-lucide-user-round', to: '/contacts' },
-            { label: 'Facturation', icon: 'i-lucide-receipt', to: '/facturation' }
-          ]"
+          :items="mainMenuItems"
         />
 
         <UNavigationMenu

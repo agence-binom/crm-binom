@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     .where(eq(clientsTable.id, id))
     .returning()
 
-  void logActivity(event, { entityType: 'client', entityId: id, action: 'update', metadata: { name: clientUpdated[0]!.name } })
+  void logActivity(event, { entityType: 'client', entityId: id, action: 'update', metadata: { name: clientUpdated[0]!.name, prospectionStatus: clientUpdated[0]!.prospectionStatus } })
 
   return {
     message: 'Client modifié',

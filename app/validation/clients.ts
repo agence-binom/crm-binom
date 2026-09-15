@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { clientIconValues } from '../lib/client-icons'
+import { prospectionStatuses } from '../constants/prospection'
 
 const clientIconSchema = z.string()
   .regex(
@@ -27,7 +28,8 @@ export const clientCreateSchema = z.object({
   notes: z.string().optional().or(z.literal('')),
   icon: clientIconSchema,
   archived: z.boolean().default(false),
-  description: z.string().optional().or(z.literal(''))
+  description: z.string().optional().or(z.literal('')),
+  prospectionStatus: z.enum(prospectionStatuses).default('nouveau')
 })
 
 export const clientUpdateSchema = z.object({
@@ -43,7 +45,8 @@ export const clientUpdateSchema = z.object({
   notes: z.string().optional().or(z.literal('')),
   icon: clientIconSchema,
   archived: z.boolean().optional(),
-  description: z.string().optional().or(z.literal(''))
+  description: z.string().optional().or(z.literal('')),
+  prospectionStatus: z.enum(prospectionStatuses).optional()
 }).refine(
   data => Object.keys(data).length > 0,
   { message: 'Au moins un champ doit être fourni' }
@@ -54,7 +57,8 @@ export const clientIdSchema = z.object({
 })
 
 export const clientsDashboardQuerySchema = z.object({
-  archived: z.stringbool().default(false)
+  archived: z.stringbool().default(false),
+  scope: z.enum(['clients', 'prospects']).default('clients')
 })
 
 export type ClientCreate = z.infer<typeof clientCreateSchema>

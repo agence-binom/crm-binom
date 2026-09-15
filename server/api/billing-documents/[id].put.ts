@@ -5,6 +5,7 @@ import { billingDocumentIdSchema, billingDocumentUpdateSchema, documentStatusesB
 import { getBillingDocumentLabel } from '~/lib/documents'
 import { logActivity } from '~~/server/utils/activity-log'
 import { getAppUser } from '~~/server/utils/auth'
+import { promoteClientIfQuoteSigned } from '~~/server/utils/prospection'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, billingDocumentIdSchema.parse)
@@ -38,6 +39,8 @@ export default defineEventHandler(async (event) => {
     .returning()
 
   void logActivity(event, { entityType: 'billing_document', entityId: id, action: 'update', metadata: { name: getBillingDocumentLabel(billingDocument!) } })
+
+  await promoteClientIfQuoteSigned(event, billingDocument!)
 
   return billingDocument
 })

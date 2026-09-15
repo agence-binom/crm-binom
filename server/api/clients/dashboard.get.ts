@@ -1,6 +1,7 @@
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq, ne } from 'drizzle-orm'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
+import { finalClientStatus } from '~/constants/prospection'
 import { clientsDashboardQuerySchema } from '~/validation/clients'
 
 export default defineEventHandler(async (event) => {
@@ -21,11 +22,17 @@ export default defineEventHandler(async (event) => {
       notes: clientsTable.notes,
       icon: clientsTable.icon,
       archived: clientsTable.archived,
-      description: clientsTable.description
+      description: clientsTable.description,
+      prospectionStatus: clientsTable.prospectionStatus
     })
     .from(clientsTable)
     .orderBy(asc(clientsTable.name), asc(clientsTable.id))
-    .where(eq(clientsTable.archived, query.archived))
+    .where(and(
+      eq(clientsTable.archived, query.archived),
+      query.scope === 'prospects'
+        ? ne(clientsTable.prospectionStatus, finalClientStatus)
+        : eq(clientsTable.prospectionStatus, finalClientStatus)
+    ))
 
   return {
     clients

@@ -5,7 +5,11 @@ import {
 } from '~/lib/clients'
 import { clientIconOptions } from '~/lib/client-icons'
 import { clientCreateSchema, clientUpdateSchema } from '~/validation/clients'
+import { prospectionStatuses, type ProspectionStatus } from '~/constants/prospection'
+import { getProspectionStatusLabel } from '~/lib/prospection'
 import type { Client } from '~/types'
+
+const prospectionStatusOptions = prospectionStatuses.map(status => ({ value: status, label: getProspectionStatusLabel(status) }))
 
 const props = defineProps<{
   open: boolean
@@ -51,7 +55,8 @@ const createDefaultFormState = () => ({
   notes: '',
   icon: defaultClientIcon,
   archived: false,
-  description: ''
+  description: '',
+  prospectionStatus: 'nouveau' as ProspectionStatus
 })
 const createFormStateFromInitialValues = (initialValues?: Partial<Client> | null) => ({
   ...createDefaultFormState(),
@@ -67,7 +72,8 @@ const createFormStateFromInitialValues = (initialValues?: Partial<Client> | null
   notes: initialValues?.notes ?? '',
   icon: getClientIcon(initialValues?.icon),
   archived: initialValues?.archived ?? false,
-  description: initialValues?.description ?? ''
+  description: initialValues?.description ?? '',
+  prospectionStatus: initialValues?.prospectionStatus ?? 'nouveau'
 })
 const createFormStateFromClient = (client?: Client | null) => ({
   ...createFormStateFromInitialValues(props.initialValues),
@@ -83,7 +89,8 @@ const createFormStateFromClient = (client?: Client | null) => ({
   notes: client?.notes ?? createFormStateFromInitialValues(props.initialValues).notes,
   icon: getClientIcon(client?.icon ?? props.initialValues?.icon),
   archived: client?.archived ?? props.initialValues?.archived ?? false,
-  description: client?.description ?? createFormStateFromInitialValues(props.initialValues).description
+  description: client?.description ?? createFormStateFromInitialValues(props.initialValues).description,
+  prospectionStatus: client?.prospectionStatus ?? props.initialValues?.prospectionStatus ?? 'nouveau'
 })
 const formState = reactive(createDefaultFormState())
 
@@ -202,6 +209,19 @@ const onSubmit = async () => {
                 />
               </template>
             </USelect>
+          </UFormField>
+
+          <UFormField
+            label="Statut de prospection"
+            name="prospectionStatus"
+          >
+            <USelect
+              v-model="formState.prospectionStatus"
+              :items="prospectionStatusOptions"
+              value-attribute="value"
+              option-attribute="label"
+              class="w-full"
+            />
           </UFormField>
 
           <UFormField
