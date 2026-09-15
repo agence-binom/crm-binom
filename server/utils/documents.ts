@@ -151,7 +151,14 @@ export const buildDocumentStoragePath = async (
 ) => {
   const clientName = await getClientStorageSegment(entityType, entityId)
 
+  const effectiveType = documentType || entityType
+  const typeSegment = DOCUMENT_TYPE_FOLDERS[effectiveType] || sanitizeDocumentPathSegment(effectiveType)
+
   if (!clientName) {
+    if (entityType === 'task') {
+      return `${typeSegment}/${sanitizeDocumentFilename(filename, randomUUID())}`
+    }
+
     throw createError({
       statusCode: 404,
       statusMessage: 'Impossible de déterminer le client lié au document'
@@ -159,8 +166,6 @@ export const buildDocumentStoragePath = async (
   }
 
   const clientSegment = sanitizeDocumentPathSegment(clientName)
-  const effectiveType = documentType || entityType
-  const typeSegment = DOCUMENT_TYPE_FOLDERS[effectiveType] || sanitizeDocumentPathSegment(effectiveType)
 
   return `${clientSegment}/${typeSegment}/${sanitizeDocumentFilename(filename, randomUUID())}`
 }
