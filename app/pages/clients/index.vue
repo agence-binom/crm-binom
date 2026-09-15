@@ -4,9 +4,9 @@ import type { Client } from '~/types'
 const showArchived = ref(false)
 
 const { data, refresh } = await useFetch('/api/clients/dashboard', {
-  query: { archived: showArchived }
+  query: { archived: showArchived, scope: 'clients' }
 })
-const clients = computed(() => data.value?.clients || [])
+const clients = computed<Client[]>(() => (data.value?.clients as Client[] | undefined) || [])
 
 const toggleArchived = () => {
   showArchived.value = !showArchived.value
@@ -35,18 +35,22 @@ const openEditClient = (clientId: number) => {
 
 const onDeleteClient = async (clientId: number) => {
   await deleteResource('client', clientId, '/api/clients', refresh)
+  await refreshNuxtData('sidebar-active-clients')
 }
 
 const onArchiveClient = async (clientId: number) => {
   await setArchived('client', clientId, '/api/clients', true, refresh)
+  await refreshNuxtData('sidebar-active-clients')
 }
 
 const onRestoreClient = async (clientId: number) => {
   await setArchived('client', clientId, '/api/clients', false, refresh)
+  await refreshNuxtData('sidebar-active-clients')
 }
 
 const handleClientChange = async () => {
   await refresh()
+  await refreshNuxtData('sidebar-active-clients')
 }
 </script>
 
@@ -81,6 +85,7 @@ const handleClientChange = async () => {
       v-model:open="isClientModalOpen"
       :client-id="selectedClientId"
       :client="selectedClient"
+      :initial-values="{ prospectionStatus: 'client' }"
       @saved="handleClientChange"
     />
 

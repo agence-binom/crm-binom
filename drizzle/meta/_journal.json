@@ -288,6 +288,13 @@
       "when": 1788889259488,
       "tag": "0040_gigantic_ares",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1789500283482,
+      "tag": "0041_gray_celestials",
+      "breakpoints": true
     }
   ]
 }

@@ -34,7 +34,8 @@ export default defineEventHandler(async (event) => {
       clientName: clientsTable.name,
       clientEmail: clientsTable.email,
       clientPhone: clientsTable.phone,
-      clientWebsite: clientsTable.website
+      clientWebsite: clientsTable.website,
+      clientProspectionStatus: clientsTable.prospectionStatus
     })
     .from(projectsTable)
     .innerJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
@@ -126,7 +127,8 @@ export default defineEventHandler(async (event) => {
         name: projectRow.clientName,
         email: projectRow.clientEmail,
         phone: projectRow.clientPhone,
-        website: projectRow.clientWebsite
+        website: projectRow.clientWebsite,
+        prospectionStatus: projectRow.clientProspectionStatus
       }
     },
     tasks: tasksWithAssigneeIds,
