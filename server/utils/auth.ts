@@ -3,6 +3,7 @@ import { eq, sql } from 'drizzle-orm'
 import type { InferSelectModel } from 'drizzle-orm'
 import { db } from '~/db'
 import { usersTable } from '~/db/schema/users'
+import { authSessionTable, authUserTable } from '~/db/schema/auth'
 import { normalizeEmailAddress } from '../lib/auth-users'
 import { auth } from '../lib/better-auth'
 
@@ -90,4 +91,25 @@ export const requireAuthorizedAppUserByEmail = async (email?: string | null) => 
   }
 
   return appUser
+}
+
+// Une révocation/suppression d'accès (portail ou staff) ne coupe l'accès qu'à partir de la
+// prochaine vérification (middleware/01-auth.ts, /api/portal/session) - le cookie de session
+// Better Auth reste valide jusqu'à son expiration si on ne supprime pas la ligne ici. Appelé par
+// contacts/[id]/portal/revoke.post.ts et users/[id].delete.ts.
+export const revokeSessionsForAuthUserId = async (authUserId: string | null) => {
+  if (!authUserId) return
+
+  await db.delete(authSessionTable).where(eq(authSessionTable.userId, authUserId))
+}
+
+export const revokeSessionsForEmail = async (email: string) => {
+  const normalizedEmail = normalizeEmailAddress(email)
+  const [authUser] = await db
+    .select({ id: authUserTable.id })
+    .from(authUserTable)
+    .where(sql`lower(${authUserTable.email}) = ${normalizedEmail}`)
+    .limit(1)
+
+  await revokeSessionsForAuthUserId(authUser?.id ?? null)
 }

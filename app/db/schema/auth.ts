@@ -1,8 +1,7 @@
 import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
-// Tables Better Auth (remplace les tables auth.* gérées par Supabase). Noms de colonnes alignés
-// sur les champs internes de Better Auth (voir @better-auth/core/db/schema) pour que
-// drizzleAdapter les retrouve sans configuration de mapping supplémentaire.
+// Tables Better Auth. Noms de colonnes alignés sur les champs internes de Better Auth (voir
+// @better-auth/core/db/schema) pour que drizzleAdapter les retrouve sans mapping supplémentaire.
 
 export const authUserTable = pgTable('auth_user', {
   id: text().primaryKey(),

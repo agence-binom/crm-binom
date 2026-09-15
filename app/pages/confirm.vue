@@ -45,8 +45,8 @@ const validateAuthorizedSession = async () => {
 onMounted(async () => {
   try {
     // Le lien magic-link pointe vers l'endpoint de vérification de Better Auth
-    // (/api/auth/magic-link/verify), qui pose déjà le cookie de session et redirige ici -
-    // contrairement à Supabase, il n'y a plus d'échange de code à faire côté client.
+    // (/api/auth/magic-link/verify), qui pose déjà le cookie de session avant de rediriger ici :
+    // il n'y a aucun échange de code à faire côté client, juste à relire la session posée.
     const { data } = await authClient.getSession()
 
     if (!data) {

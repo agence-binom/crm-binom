@@ -16,17 +16,13 @@ const signInWithMagicLink = async ({ email }: { email: string }) => {
   authError.value = null
 
   try {
-    const response = await $fetch('/api/auth/authorize-email', {
-      method: 'POST',
-      body: { email }
-    })
+    // Pas de pré-check d'autorisation côté client (voir server/lib/better-auth.ts,
+    // sendMagicLink) : le message reste générique que l'email soit connu ou non, pour ne pas
+    // exposer qui a accès à l'application (agence ou portail).
+    const { error } = await authClient.signIn.magicLink({ email, callbackURL: '/confirm' })
 
-    if (response.authorized) {
-      const { error } = await authClient.signIn.magicLink({ email, callbackURL: '/confirm' })
-
-      if (error) {
-        throw error
-      }
+    if (error) {
+      throw error
     }
 
     showSuccess('Lien envoyé', successMessage)
