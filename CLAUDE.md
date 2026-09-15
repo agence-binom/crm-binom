@@ -4,7 +4,19 @@ Source de vérité versionnée des règles d'ingénierie de ce repo. À tenir à
 
 ## Stack
 
-Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres auto-hébergé (image `supabase/postgres:17.4.1.032` sur Coolify ; même image en local via `compose.dev.yml` et en CI), Better Auth (magic-link), Resend (envoi d'email), stockage S3-compatible pour les documents (Garage sur Coolify en staging, Supabase Storage encore en prod — bascule prod à faire séparément). Détails d'installation et de structure : [README.md](README.md).
+Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres 17 auto-hébergé (image `supabase/postgres:17.4.1.032`), Better Auth (magic-link), Resend (envoi d'email), stockage S3-compatible (Garage). Le tout sur Coolify. Détails d'installation et de structure : [README.md](README.md).
+
+**Où tourne quoi** :
+
+| | Production | Staging | Local / CI |
+|---|---|---|---|
+| Base de données | Postgres auto-hébergé sur Coolify, image `supabase/postgres:17.4.1.032` | même image, base dédiée isolée de la prod | même image, en Docker (`compose.dev.yml`) |
+| Storage documents | Garage (S3-compatible) | Garage | endpoint S3 au choix |
+| Auth | Better Auth | Better Auth | Better Auth |
+
+La sortie de Supabase est **terminée** : plus aucun service managé, plus aucun client `@supabase/*`.
+
+Un seul piège de vocabulaire subsiste, et il compte : l'image Docker `supabase/postgres` tourne **partout, production comprise**, mais ce n'est pas une dépendance à la plateforme Supabase — c'est une image Postgres nue, sans aucun service Supabase autour. Elle est utilisée de façon identique en local, en CI et sur Coolify, ce qui donne la même version majeure, les mêmes extensions et surtout la même collation ICU `en_US.UTF-8` (imposée par `POSTGRES_INITDB_ARGS`) qu'un `postgres:17` standard ne reproduit pas — les `order by` trieraient différemment. **Ne pas la remplacer** en croyant finir le ménage.
 
 ## Ce que le repo est (et n'est pas)
 
@@ -19,7 +31,7 @@ CRM interne à binōm : un seul organisme utilise l'app côté staff (`public.us
 - **Le portail client** (`/api/portal/*`) est résolu une seule fois dans le middleware (`requireActivePortalContactWithClient`) et exposé via `event.context.portalContact` / `event.context.portalClient`. Un nouvel endpoint sous `/api/portal/` hérite automatiquement de cette vérification — ne pas la dupliquer, ne pas la contourner.
 - Un utilisateur staff est résolu via `event.context.appUser` (`getAppUser`), jamais en interrogeant `usersTable` à nouveau dans un handler.
 - Rate limiting IP (120 req/min) sur `/api/*` avant l'auth (`00-rate-limit.ts`) — ne pas le désactiver pour un nouvel endpoint sans raison explicite.
-- `DATABASE_URL` doit utiliser **le rôle propriétaire des tables** (`postgres`, celui qui joue les migrations). Toutes les tables sont en RLS sans aucune policy (`.enableRLS()`) : un autre rôle lit zéro ligne sans lever la moindre erreur — symptôme « pages vides, aucun log ». Voir `scripts/dev-db-init.sql`. Le hint Session pooler/IPv6 dans `server/utils/database-errors.ts` est un reste de l'hébergement Supabase : à retirer une fois la prod entièrement migrée.
+- `DATABASE_URL` doit utiliser **le rôle propriétaire des tables** (`postgres`, celui qui joue les migrations). Toutes les tables sont en RLS sans aucune policy (`.enableRLS()`) : un autre rôle lit zéro ligne sans lever la moindre erreur — symptôme « pages vides, aucun log ». Voir `scripts/dev-db-init.sql`.
 - Ne jamais committer `.env` ou une valeur réelle de secret. Secret scanning + push protection sont actifs au niveau du repo (GitHub natif) — un push contenant un secret sera bloqué côté GitHub, ce n'est pas juste une convention.
 - `NUXT_S3_ACCESS_KEY_ID`/`NUXT_S3_SECRET_ACCESS_KEY` (storage documents), `BETTER_AUTH_SECRET` et `RESEND_API_KEY` sont côté serveur uniquement — ne jamais les exposer dans `runtimeConfig.public` ni dans une réponse API.
 
@@ -60,7 +72,7 @@ Ces trois commandes tournent aussi en pre-commit hook (`.husky/pre-commit`) — 
 - Pas de convention Linear : ce repo n'est **pas** connecté à Linear. Le suivi se fait sur GitHub Projects v2 natif (le board « À tester » est déplacé automatiquement par `.github/workflows/staging-merge.yml` sur push vers `staging`, via un PAT `PROJECT_TOKEN` dédié — pas le `GITHUB_TOKEN` du workflow). La convention de branche documentée historiquement dans le README (`<pseudo>/bin-<N>-<slug>`) n'est plus vraiment suivie dans les faits — préférer un nom descriptif type `feat/xxx`, `fix/xxx`, `chore/xxx`, en référençant l'issue GitHub dans la description de PR plutôt que dans le nom de branche.
 - `main` et `staging` sont protégées par ruleset GitHub : suppression et force-push bloqués, les 5 checks CI sont requis, passage par une PR obligatoire (pas de push direct), threads de conversation à résoudre avant merge, et une review Copilot automatique se déclenche à l'ouverture de PR et à chaque push. Pas de review humaine requise (`required_approving_review_count: 0`) — solo dev, la review Copilot + les checks CI font office de filet de sécurité avant merge. Si un deuxième dev rejoint le projet, remonter ce compteur à 1 (`dismiss_stale_reviews_on_push` est déjà actif dans le ruleset, prêt à s'appliquer).
 - **Le gate de production, c'est la CI verte obligatoire sur `main`** (pas de review humaine bloquante — solo dev, `required_approving_review_count: 0`) — décision explicite, pas un oubli. Coolify déploie automatiquement en prod sur push vers `main` (app GitHub, branch-watching) ; on a délibérément choisi de ne *pas* introduire de branche `production` séparée ni d'étape de promotion manuelle supplémentaire, faute de besoin réel identifié (pas de merges groupés, pas de fenêtre de déploiement à respecter). La review Copilot automatique reste active mais est consultative, pas bloquante. Si un deuxième dev rejoint le projet ou si ce niveau de protection s'avère insuffisant, remonter `required_approving_review_count` à 1 avant de considérer qu'un merge sur `main` équivaut à une review humaine.
-- Staging est protégée de la même façon que `main`, même si son utilité réelle est limitée aujourd'hui : **staging partage probablement le même projet Supabase que la prod** (limite du plan Supabase actuel) — ne pas considérer staging comme un environnement isolé pour des tests destructifs. Une migration vers un Postgres hébergé séparé est envisagée ; si elle se fait, revoir ici l'utilité de staging (base dédiée = tests réalistes possibles).
+- Staging est protégée de la même façon que `main`, et dispose désormais de **sa propre base**, isolée de la production : c'est un vrai environnement de test, où une migration ou une opération destructive peuvent être validées sans risque pour les données de prod.
 
 ## Ce qu'un agent IA peut faire seul vs ce qui nécessite une validation humaine explicite
 
@@ -76,13 +88,14 @@ Ces trois commandes tournent aussi en pre-commit hook (`.husky/pre-commit`) — 
 - Ouvrir une PR (conséquence directe du point précédent, puisque ça nécessite un commit et un push).
 - Toute modification de branch protection / ruleset GitHub, de secrets, de permissions de token CI/CD, de webhooks.
 - Toute action sur `staging`/`main` qui n'est pas un merge de PR review-approuvée (force-push, reset, suppression de branche).
-- Toute modification touchant Coolify, le déploiement, ou la configuration Supabase en environnement partagé (staging inclus, vu qu'il partage la base avec la prod).
+- Toute modification touchant Coolify, le déploiement, ou la configuration d'un environnement hébergé (staging inclus).
 - Ajout ou changement de dépendance avec des implications de licence ou de surface d'attaque significative (ex: nouveau package qui exécute du code au build).
 - Tout ce qui touche à l'authentification, au portail client, ou à ce qui distingue un accès staff d'un accès client — cette frontière est la seule vraie limite de sécurité du produit, elle ne se retouche pas « en passant ».
 
 ## Dette / TODO connus (pas urgents, mais à ne pas oublier)
 
-- Staging partage vraisemblablement la base Supabase de prod — à vérifier/confirmer avant de s'appuyer dessus pour des tests qui écrivent des données. Migration Auth → Better Auth déjà faite (staging, DB Supabase inchangée) ; Storage déjà basculé sur Garage (S3-compatible, Coolify) en staging (issue #138) ; reste DB (Postgres self-hosté sur VPS, cadré séparément). Prod reste sur Supabase Storage pour l'instant — le code applicatif est désormais backend-agnostique (client S3 générique), seule la bascule des env vars et la migration des fichiers existants restent à faire côté prod.
+- L'ancien projet Supabase (base + storage) n'est plus utilisé par l'application mais existe encore côté Supabase, avec les données d'avant bascule. À supprimer une fois la nouvelle prod jugée stable et les sauvegardes vérifiées — d'ici là, ne pas s'y reconnecter par erreur.
+- `users.authUserId` porte pour le staff des identifiants hérités de l'ancien Supabase Auth. Sans incidence tant que la reliaison automatique à l'identité Better Auth fonctionne (elle se fait à la première connexion réussie), mais c'est le premier endroit à regarder si un compte staff se retrouve sans accès après la migration.
 - Scope du PAT `PROJECT_TOKEN` (utilisé par `staging-merge.yml`) non audité dans le cadre de ce passage — à vérifier qu'il n'a que les droits GitHub Projects nécessaires, pas plus.
 - Scan de secrets fait uniquement sur l'état actuel des fichiers trackés, pas sur l'historique git complet — envisager un passage `gitleaks --log-opts="--all"` ou équivalent si un doute survient sur un secret ayant pu être commité puis retiré.
 - L'envoi réel du mail magic-link (via `invite.post.ts` pour le portail, et le flux de login normal) n'est couvert par aucun test e2e automatisé (seul le RBAC autour est testé) — à valider manuellement avec un vrai `RESEND_API_KEY` avant de considérer le flux portail fiable en staging. Vérifier aussi que le domaine d'envoi (`server/lib/mail.ts`, `MAIL_FROM`) est correctement vérifié côté Resend (SPF/DKIM), sinon les mails partent en spam ou échouent silencieusement.
