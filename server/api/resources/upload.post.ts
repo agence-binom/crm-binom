@@ -1,13 +1,15 @@
 import { db } from '~/db'
 import { resourcesTable } from '~/db/schema/resources'
-import { resourceUploadMetadataSchema } from '~/validation/resources'
-import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
+import { resourceMaxSizeBytes, resourceUploadMetadataSchema } from '~/validation/resources'
+import { assertRequestWithinSizeLimit, buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
 import { assertValidResourceFile } from '~~/server/utils/resources'
 import { createResourceInsertValues } from '~~/server/lib/resources-upload'
 import { logActivity } from '~~/server/utils/activity-log'
 import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
+  assertRequestWithinSizeLimit(event, resourceMaxSizeBytes)
+
   const formData = await readFormData(event)
   const fileEntry = formData.get('file')
 

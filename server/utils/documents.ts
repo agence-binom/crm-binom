@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { eq } from 'drizzle-orm'
-import { createError, type H3Event } from 'h3'
+import { createError, getRequestHeader, type H3Event } from 'h3'
 import { useRuntimeConfig } from '#imports'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
@@ -65,6 +65,35 @@ export const assertValidDocumentFile = (file: File) => {
     throw createError({
       statusCode: 400,
       statusMessage: errorMessage
+    })
+  }
+}
+
+// Overhead du multipart (boundary, en-têtes de chaque partie, autres champs du formulaire)
+// au-dessus du fichier lui-même - une marge large plutôt que d'exiger la valeur exacte.
+const MULTIPART_OVERHEAD_BYTES = 64 * 1024
+
+// À appeler avant tout readFormData/readMultipartFormData sur une route d'upload : sans ça, le
+// corps entier est chargé en mémoire (buffer du multipart) avant que la taille du fichier ne soit
+// contrôlée par assertValidDocumentFile/assertValidResourceFile - un client peut poster un corps
+// arbitrairement gros (jusqu'à épuisement mémoire du process) sans jamais dépasser la validation
+// qui n'intervient qu'après ce chargement. `content-length` est déclaré par le client, mais un
+// mensonge dans l'autre sens (une valeur plus petite que le corps réel) ne contourne rien : Node
+// tronque la lecture à la valeur annoncée, il ne lit jamais plus que ce qui est déclaré ici.
+export const assertRequestWithinSizeLimit = (event: H3Event, maxFileSizeBytes: number) => {
+  const contentLength = Number(getRequestHeader(event, 'content-length'))
+
+  if (!Number.isFinite(contentLength) || contentLength <= 0) {
+    throw createError({
+      statusCode: 411,
+      statusMessage: 'Longueur du contenu requise'
+    })
+  }
+
+  if (contentLength > maxFileSizeBytes + MULTIPART_OVERHEAD_BYTES) {
+    throw createError({
+      statusCode: 413,
+      statusMessage: 'Le fichier dépasse la taille maximale autorisée'
     })
   }
 }
