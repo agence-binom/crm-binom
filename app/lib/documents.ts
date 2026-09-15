@@ -264,7 +264,7 @@ export const computeProjectBillingSteps = <T extends BillingDocumentLike>(
 // should be painted and (in the drawer) whether it's still editable: "previous" outcomes
 // (completed/sent/skipped) already happened and stay editable, "pending" steps haven't been
 // reached yet and are locked until the cascade gets there.
-export type BillingStepCategory = 'completed' | 'sent' | 'negative' | 'active' | 'pending'
+export type BillingStepCategory = 'completed' | 'sent' | 'negative' | 'refused' | 'active' | 'pending'
 
 export const getBillingStepActiveIndex = (steps: BillingStep[]): number =>
   steps.findIndex(step => step.status === 'draft' || step.status === 'sent')
@@ -275,14 +275,18 @@ export const getBillingStepCategory = (
   activeIndex: number,
   isMuted: boolean
 ): BillingStepCategory => {
-  if (isMuted) return step.status === 'completed' ? 'completed' : 'negative'
+  if (isMuted) {
+    if (step.status === 'completed') return 'completed'
+    if (step.status === 'refused') return 'refused'
+    return 'negative'
+  }
 
   switch (step.status) {
     case 'completed': return 'completed'
     case 'sent': return 'sent'
     case 'non_applicable':
-    case 'cancelled':
-    case 'refused': return 'negative'
+    case 'cancelled': return 'negative'
+    case 'refused': return 'refused'
     default: return index === activeIndex ? 'active' : 'pending'
   }
 }
@@ -321,12 +325,14 @@ export const billingStepPalettes: Record<BillingStepCategory, StepPalette> = {
   completed: { icon: 'i-lucide-check', indicator: 'bg-success-500 text-white', line: 'bg-success-500', titleClass: 'font-semibold' },
   sent: { icon: 'i-lucide-hourglass', indicator: 'bg-warning-500 text-white', line: 'bg-warning-500', titleClass: 'font-semibold' },
   negative: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' },
+  refused: { icon: 'i-lucide-x', indicator: 'bg-error-500 text-white', line: 'bg-error-500', titleClass: 'font-semibold' },
   active: { icon: 'i-lucide-circle', indicator: 'bg-info-500 text-white', line: 'bg-info-500', titleClass: 'font-semibold' },
   pending: { indicator: 'bg-slate-100 text-slate-300', line: 'bg-slate-200', titleClass: 'text-slate-400' }
 }
 
-export const mutedBillingStepPalette: Record<'completed' | 'other', StepPalette> = {
+export const mutedBillingStepPalette: Record<'completed' | 'refused' | 'other', StepPalette> = {
   completed: { icon: 'i-lucide-check', indicator: 'bg-slate-200 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 font-semibold' },
+  refused: { icon: 'i-lucide-x', indicator: 'bg-error-100 text-error-600', line: 'bg-slate-200', titleClass: 'text-error-600 font-semibold' },
   other: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' }
 }
 

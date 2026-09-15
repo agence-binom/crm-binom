@@ -12,7 +12,11 @@ const isMuted = computed(() => props.project.billingStatus.tone === 'muted')
 const activeIndex = computed(() => getBillingStepActiveIndex(props.project.billingSteps))
 
 const paletteFor = (step: BillingStep, index: number): StepPalette => {
-  if (isMuted.value) return step.status === 'completed' ? mutedBillingStepPalette.completed : mutedBillingStepPalette.other
+  if (isMuted.value) {
+    if (step.status === 'completed') return mutedBillingStepPalette.completed
+    if (step.status === 'refused') return mutedBillingStepPalette.refused
+    return mutedBillingStepPalette.other
+  }
 
   return billingStepPalettes[getBillingStepCategory(step, index, activeIndex.value, false)]
 }
