@@ -1,7 +1,16 @@
 import { createError, getRequestHeader, getRequestURL } from 'h3'
 
 const WINDOW_MS = 60_000
-const MAX_REQUESTS = 120
+
+// Hors production, une seule IP (le runner CI, ou un poste de dev) simule à elle seule des
+// dizaines d'utilisateurs distincts sur des tests e2e qui tournent en quelques dizaines de
+// secondes - rien à voir avec le trafic d'un vrai visiteur, que la limite de prod vise à
+// contenir. Sans ce relèvement, la suite e2e épuise le budget avant la fin et échoue sur des 429
+// pris pour des bugs applicatifs (voir le commentaire dans .github/workflows/ci.yml), même en
+// isolant chaque navigateur dans sa propre invocation. Même pattern que emailAndPassword et le
+// log console du magic-link dans server/lib/{better-auth,mail}.ts : gardé strict uniquement en
+// production, jamais élargi pour un chemin/cas particulier.
+const MAX_REQUESTS = process.env.NODE_ENV === 'production' ? 120 : 10_000
 
 type Bucket = { count: number, resetAt: number }
 
