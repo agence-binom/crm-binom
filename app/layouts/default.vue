@@ -8,6 +8,7 @@ const { data: session } = await useAppSession()
 const isAdmin = computed(() => session.value?.user?.role === 'admin')
 
 const collapsed = ref(false)
+const isSettingsModalOpen = ref(false)
 
 const { data: activeClientsData } = await useFetch('/api/clients/dashboard', {
   key: 'sidebar-active-clients',
@@ -45,7 +46,6 @@ const items = ref<DropdownMenuItem[][]>([
 
 const agencyMenuItems = computed(() => [
   { label: 'Tâches', icon: 'i-lucide-list-checks', to: '/agence/taches' },
-  ...(isAdmin.value ? [{ label: 'Journal d\'activité', icon: 'i-lucide-history', to: '/agence/journal' }] : []),
   { label: 'Administratif', icon: 'i-lucide-pen', to: '/clients', disabled: true }
 ])
 
@@ -130,7 +130,8 @@ const mainMenuItems = computed(() => [
             icon="i-lucide-settings"
             color="neutral"
             variant="ghost"
-            disabled
+            :disabled="!isAdmin"
+            @click="isSettingsModalOpen = true"
           />
           <UDropdownMenu
             :items="items"
@@ -148,5 +149,7 @@ const mainMenuItems = computed(() => [
         <slot />
       </div>
     </UDashboardPanel>
+
+    <SettingsModal v-model:open="isSettingsModalOpen" />
   </UDashboardGroup>
 </template>
