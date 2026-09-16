@@ -21,11 +21,11 @@ export const activityLogTable = pgTable('activity_log', {
   metadata: json(), // snapshot optionnel (ex: nom de l'entité au moment de l'action, utile après suppression)
   createdAt: timestamp().notNull().defaultNow()
 }, table => [
-  // Seul chemin de lecture aujourd'hui (GET /api/activity-log, page /agence/journal) : tri par
+  // Seul chemin de lecture aujourd'hui (GET /api/activity-log, modale SettingsModal) : tri par
   // date, sans filtre - sans index, un tri décroissant force un scan complet dès que le journal
   // grossit. Le endpoint accepte déjà un filtre entityType (activityLogQuerySchema) pour une future
-  // UI de filtrage, mais tant qu'aucune page ne l'utilise, un index composite (entityType, createdAt)
+  // UI de filtrage, mais tant qu'aucune UI ne l'utilise, un index composite (entityType, createdAt)
   // n'apporterait aucun bénéfice de lecture réel - juste un coût d'écriture sur chacune des ~40
-  // routes qui journalisent. À ajouter si/quand ce filtre est exposé dans journal.vue.
+  // routes qui journalisent. À ajouter si/quand ce filtre est exposé dans SettingsModal.
   index('activity_log_created_at_idx').on(table.createdAt.desc())
 ]).enableRLS()
