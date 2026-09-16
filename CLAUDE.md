@@ -99,3 +99,13 @@ Ces trois commandes tournent aussi en pre-commit hook (`.husky/pre-commit`) — 
 - Scope du PAT `PROJECT_TOKEN` (utilisé par `staging-merge.yml`) non audité dans le cadre de ce passage — à vérifier qu'il n'a que les droits GitHub Projects nécessaires, pas plus.
 - Scan de secrets fait uniquement sur l'état actuel des fichiers trackés, pas sur l'historique git complet — envisager un passage `gitleaks --log-opts="--all"` ou équivalent si un doute survient sur un secret ayant pu être commité puis retiré.
 - L'envoi réel du mail magic-link (via `invite.post.ts` pour le portail, et le flux de login normal) n'est couvert par aucun test e2e automatisé (seul le RBAC autour est testé) — à valider manuellement avec un vrai `RESEND_API_KEY` avant de considérer le flux portail fiable en staging. Vérifier aussi que le domaine d'envoi (`server/lib/mail.ts`, `MAIL_FROM`) est correctement vérifié côté Resend (SPF/DKIM), sinon les mails partent en spam ou échouent silencieusement.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
