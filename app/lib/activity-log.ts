@@ -13,7 +13,7 @@ export const activityEntityLabels: Record<ActivityEntityType, string> = {
   deliverable: 'Livrable',
   task_attachment: 'Pièce jointe',
   user: 'Utilisateur',
-  timeEntry: 'Temps passé'
+  time_entry: 'Temps passé'
 }
 
 export const activityActionLabels: Record<ActivityAction, string> = {

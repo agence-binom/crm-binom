@@ -29,6 +29,14 @@ export const getFileTypeIcon = (mimetype?: string | null) => {
   return 'i-lucide-file'
 }
 
+export const formatDuration = (minutes: number) => {
+  const hours = Math.floor(minutes / 60)
+  const remaining = minutes % 60
+  if (hours === 0) return `${remaining}min`
+  if (remaining === 0) return `${hours}h`
+  return `${hours}h${String(remaining).padStart(2, '0')}`
+}
+
 export const formatDateOnly = (date: string | Date | null | undefined) => {
   if (!date) return '-'
 

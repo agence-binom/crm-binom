@@ -12,11 +12,11 @@ export default defineEventHandler(async (event) => {
   if (!deleted) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Temps passé non trouvée'
+      statusMessage: 'Temps passé non trouvé'
     })
   }
 
-  void logActivity(event, { entityType: 'timeEntry', entityId: id, action: 'delete', metadata: { name: deleted.notes } })
+  void logActivity(event, { entityType: 'time_entry', entityId: id, action: 'delete', metadata: { name: deleted.notes } })
 
   setResponseStatus(event, 204)
   return null

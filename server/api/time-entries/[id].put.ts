@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  void logActivity(event, { entityType: 'timeEntry', entityId: id, action: 'update', metadata: { name: updated.notes } })
+  void logActivity(event, { entityType: 'time_entry', entityId: id, action: 'update', metadata: { name: updated.notes } })
 
   return { ...updated }
 })
