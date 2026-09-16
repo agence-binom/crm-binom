@@ -37,12 +37,14 @@ const signInWithMagicLink = async ({ email }: { email: string }) => {
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
     <div class="max-w-md w-full">
-      <div class="text-center mb-8">
-        <img
-          :src="logoBinom"
-          alt="binōm"
-          class="mx-auto mb-4 h-10 w-auto dark:invert"
-        >
+      <div class="text-center mb-8 flex flex-col items-center gap-8">
+        <div class="w-fit rounded-lg overflow-hidden bg-default ring ring-default p-4 py-8">
+          <img
+            :src="logoBinom"
+            alt="binōm"
+            class="mx-auto h-10 w-auto dark:invert"
+          >
+        </div>
         <div class="space-y-2">
           <h1 class="text-3xl font-bold">
             Votre espace client
