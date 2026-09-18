@@ -39,7 +39,7 @@ const columnSettings: Record<ProspectionStatus, {
     badgeColor: 'warning',
     emptyIconClass: 'text-orange-300'
   },
-  devis_envoye: {
+  proposition_envoye: {
     bgClass: 'bg-indigo-50/90 ring-1 ring-indigo-200/80',
     badgeColor: 'primary',
     emptyIconClass: 'text-indigo-300'
