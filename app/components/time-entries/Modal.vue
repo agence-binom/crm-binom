@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { timeEntryCreateSchema, timeEntryUpdateSchema } from '~/validation/time-entries.ts'
+import { formatDuration } from '~/lib/utils'
 import type { TimeEntry } from '~/types'
 
 type TimeEntryAssignee = { id: number, name: string }
@@ -46,6 +47,10 @@ const formState = reactive({
   taskId: props.taskId,
   userId: defaultUserId.value
 })
+
+const durationHint = computed(() => (
+  formState.duration && formState.duration >= 60 ? formatDuration(formState.duration) : ''
+))
 
 const resetForm = () => {
   Object.assign(formState, {
@@ -152,11 +157,14 @@ const onSubmit = async () => {
           <UFormField
             label="Temps passé (en minutes)"
             name="duration"
+            :hint="durationHint"
             class="w-full"
           >
             <UInput
               v-model="formState.duration"
               type="number"
+              step="15"
+              min="15"
               placeholder="30"
               class="w-full"
             />
