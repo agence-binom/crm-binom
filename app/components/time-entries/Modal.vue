@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { timeEntryCreateSchema, timeEntryUpdateSchema } from '~/validation/time-entries.ts'
-import { formatDuration } from '~/lib/utils'
+import { formatDuration, parseDuration } from '~/lib/utils'
 import type { TimeEntry } from '~/types'
 
 type TimeEntryAssignee = { id: number, name: string }
@@ -41,9 +41,13 @@ const userOptions = computed(() => {
 
 const defaultUserId = computed(() => (props.assignees?.length === 1 ? props.assignees[0]!.id : undefined))
 
+// Champ libre affiché à l'utilisateur ("1h30", "5h", "15min"…) ; formState.duration
+// est dérivé, en minutes, pour le schéma de validation et l'API.
+const durationInput = ref('')
+
 const formState = reactive({
   notes: '',
-  duration: undefined,
+  duration: computed(() => parseDuration(durationInput.value)),
   taskId: props.taskId,
   userId: defaultUserId.value
 })
@@ -55,19 +59,19 @@ const durationHint = computed(() => (
 const resetForm = () => {
   Object.assign(formState, {
     notes: '',
-    duration: undefined,
     taskId: props.taskId,
     userId: defaultUserId.value
   })
+  durationInput.value = ''
 }
 
 const fillFromProject = (timeEntry: TimeEntry) => {
   Object.assign(formState, {
     notes: timeEntry.notes,
-    duration: timeEntry.duration,
     taskId: timeEntry.taskId,
     userId: timeEntry.userId
   })
+  durationInput.value = formatDuration(timeEntry.duration)
 }
 
 watch(
@@ -155,17 +159,14 @@ const onSubmit = async () => {
           </UFormField>
 
           <UFormField
-            label="Temps passé (en minutes)"
+            label="Temps passé"
             name="duration"
             :hint="durationHint"
             class="w-full"
           >
             <UInput
-              v-model="formState.duration"
-              type="number"
-              step="15"
-              min="15"
-              placeholder="30"
+              v-model="durationInput"
+              placeholder="1h30, 5h, 15min…"
               class="w-full"
             />
           </UFormField>
