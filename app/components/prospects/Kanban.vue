@@ -13,6 +13,8 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   prospectMoved: [clientId: number, newStatus: ProspectionStatus]
+  editProspect: [clientId: number]
+  archiveProspect: [clientId: number]
 }>()
 
 // Fond de colonne et couleur sémantique du badge (pilotés ici, spécifiques au tableau) - la teinte
@@ -39,7 +41,7 @@ const columnSettings: Record<ProspectionStatus, {
     badgeColor: 'warning',
     emptyIconClass: 'text-orange-300'
   },
-  devis_envoye: {
+  proposition_envoye: {
     bgClass: 'bg-indigo-50/90 ring-1 ring-indigo-200/80',
     badgeColor: 'primary',
     emptyIconClass: 'text-indigo-300'
@@ -125,6 +127,8 @@ watch(() => props.clients, (newClients) => {
           v-for="client in clientList"
           :key="client.id"
           :client="client"
+          @edit="emit('editProspect', $event)"
+          @archive="emit('archiveProspect', $event)"
         />
       </template>
       <div
