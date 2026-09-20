@@ -55,16 +55,23 @@ const onRestoreProspect = async (clientId: number) => {
     </div>
 
     <template v-else>
-      <div class="flex justify-end mb-4">
-        <UButton
-          :icon="showArchived ? 'i-lucide-kanban' : 'i-lucide-archive'"
-          variant="ghost"
-          color="neutral"
-          @click="toggleArchived"
-        >
-          {{ showArchived ? 'Retour au tableau de prospection' : 'Voir les prospects archivés' }}
-        </UButton>
-      </div>
+      <AppListHeader
+        title="Prospection"
+        level="h1"
+        :count="clients.length"
+        class="mb-6"
+      >
+        <template #actions>
+          <UButton
+            :icon="showArchived ? 'i-lucide-kanban' : 'i-lucide-archive'"
+            variant="ghost"
+            color="neutral"
+            @click="toggleArchived"
+          >
+            {{ showArchived ? 'Voir le tableau de prospection' : 'Voir les prospects archivés' }}
+          </UButton>
+        </template>
+      </AppListHeader>
 
       <ProspectsBoard
         v-if="!showArchived"
@@ -79,8 +86,10 @@ const onRestoreProspect = async (clientId: number) => {
           title="Aucun prospect archivé"
         />
 
-        <ul
+        <TransitionGroup
           v-else
+          name="list"
+          tag="ul"
           class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
         >
           <li
@@ -99,7 +108,7 @@ const onRestoreProspect = async (clientId: number) => {
               />
             </NuxtLink>
           </li>
-        </ul>
+        </TransitionGroup>
 
         <ClientsModal
           v-model:open="isClientModalOpen"
