@@ -13,21 +13,23 @@ export const documentStatusLabels: Record<BillingDocumentType, Partial<Record<Do
     sent: 'En attente de validation',
     refused: 'Refusée',
     completed: 'Validée',
+    expired: 'Expirée',
     cancelled: 'Annulée',
     non_applicable: 'Non applicable'
   },
   quote: {
     draft: 'À émettre',
     sent: 'En attente de validation',
-    refused: 'Refusée',
-    completed: 'Validée',
-    cancelled: 'Annulée',
+    refused: 'Refusé',
+    completed: 'Validé',
+    expired: 'Expirée',
+    cancelled: 'Annulé',
     non_applicable: 'Non applicable'
   },
   invoice: {
     draft: 'À émettre',
     sent: 'En attente de paiement',
-    completed: 'Validée',
+    completed: 'Payée',
     cancelled: 'Annulée',
     non_applicable: 'Non applicable'
   }
@@ -66,7 +68,7 @@ export const requiresFactureNetLink = (type: BillingDocumentType): boolean =>
 // completed, cancelled or refused, the date that happened should be recorded. Surfaces what's still
 // missing so it can replace the description in red instead of failing silently.
 const statusesRequiringFile: DocumentStatus[] = ['completed']
-const statusesRequiringDate: DocumentStatus[] = ['completed', 'refused']
+const statusesRequiringDate: DocumentStatus[] = ['completed', 'refused', 'expired']
 
 export const getDocumentWarning = (document: {
   type: BillingDocumentType
@@ -172,7 +174,7 @@ export const annotateDocumentLifecycle = <
 // commerciale → Devis → Facture d'acompte → Facture), per the Figma state-machine spec:
 // - a real document's own status always wins;
 // - a step with no document yet inherits "draft" (not reached) unless the previous step just
-//   got "completed" (which activates it) or ended negatively (refused/cancelled/non_applicable),
+//   got "completed" (which activates it) or ended negatively (refused/expired/cancelled/non_applicable),
 //   which cascades "non_applicable" onto it;
 // - a "non_applicable" Devis (real or cascaded) skips the Facture d'acompte step entirely, even
 //   when `requiresAcompte` is true - Facture then follows directly from the Devis.
@@ -199,7 +201,12 @@ export type BillingDocumentLike = {
 const deriveStepStatus = (previousEffectiveStatus: DocumentStatus | null, ownStatus: DocumentStatus | undefined): DocumentStatus => {
   if (ownStatus) return ownStatus
   if (previousEffectiveStatus === 'completed') return 'draft'
-  if (previousEffectiveStatus === 'refused' || previousEffectiveStatus === 'cancelled' || previousEffectiveStatus === 'non_applicable') {
+  if (
+    previousEffectiveStatus === 'refused'
+    || previousEffectiveStatus === 'expired'
+    || previousEffectiveStatus === 'cancelled'
+    || previousEffectiveStatus === 'non_applicable'
+  ) {
     return 'non_applicable'
   }
   return 'draft'
@@ -264,7 +271,7 @@ export const computeProjectBillingSteps = <T extends BillingDocumentLike>(
 // should be painted and (in the drawer) whether it's still editable: "previous" outcomes
 // (completed/sent/skipped) already happened and stay editable, "pending" steps haven't been
 // reached yet and are locked until the cascade gets there.
-export type BillingStepCategory = 'completed' | 'sent' | 'negative' | 'refused' | 'active' | 'pending'
+export type BillingStepCategory = 'completed' | 'sent' | 'negative' | 'refused' | 'cancelled' | 'expired' | 'active' | 'pending'
 
 export const getBillingStepActiveIndex = (steps: BillingStep[]): number =>
   steps.findIndex(step => step.status === 'draft' || step.status === 'sent')
@@ -278,15 +285,18 @@ export const getBillingStepCategory = (
   if (isMuted) {
     if (step.status === 'completed') return 'completed'
     if (step.status === 'refused') return 'refused'
+    if (step.status === 'cancelled') return 'cancelled'
+    if (step.status === 'expired') return 'expired'
     return 'negative'
   }
 
   switch (step.status) {
     case 'completed': return 'completed'
     case 'sent': return 'sent'
-    case 'non_applicable':
-    case 'cancelled': return 'negative'
+    case 'non_applicable': return 'negative'
+    case 'cancelled': return 'cancelled'
     case 'refused': return 'refused'
+    case 'expired': return 'expired'
     default: return index === activeIndex ? 'active' : 'pending'
   }
 }
@@ -325,21 +335,32 @@ export const billingStepPalettes: Record<BillingStepCategory, StepPalette> = {
   completed: { icon: 'i-lucide-check', indicator: 'bg-success-500 text-white', line: 'bg-success-500', titleClass: 'font-semibold' },
   sent: { icon: 'i-lucide-hourglass', indicator: 'bg-warning-500 text-white', line: 'bg-warning-500', titleClass: 'font-semibold' },
   negative: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' },
-  refused: { icon: 'i-lucide-x', indicator: 'bg-error-500 text-white', line: 'bg-error-500', titleClass: 'font-semibold' },
+  refused: { icon: 'i-lucide-user-round-x', indicator: 'bg-error-500 text-white', line: 'bg-error-500', titleClass: 'font-semibold' },
+  cancelled: { icon: 'i-lucide-x', indicator: 'bg-error-500 text-white', line: 'bg-error-500', titleClass: 'font-semibold' },
+  expired: { icon: 'i-lucide-clock-alert', indicator: 'bg-error-500 text-white', line: 'bg-error-500', titleClass: 'font-semibold' },
   active: { icon: 'i-lucide-circle', indicator: 'bg-info-500 text-white', line: 'bg-info-500', titleClass: 'font-semibold' },
   pending: { indicator: 'bg-slate-100 text-slate-300', line: 'bg-slate-200', titleClass: 'text-slate-400' }
 }
 
-export const mutedBillingStepPalette: Record<'completed' | 'refused' | 'other', StepPalette> = {
+// getBillingStepCategory(..., isMuted: true) only ever returns one of these five categories -
+// 'sent' / 'active' / 'pending' are gated behind its non-muted branch - so this map covers every
+// case a muted timeline can render, shared by both the drawer and row timelines.
+const mutedBillingStepPaletteByCategory: Record<'completed' | 'refused' | 'cancelled' | 'expired' | 'negative', StepPalette> = {
   completed: { icon: 'i-lucide-check', indicator: 'bg-slate-200 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 font-semibold' },
-  refused: { icon: 'i-lucide-x', indicator: 'bg-error-100 text-error-600', line: 'bg-slate-200', titleClass: 'text-error-600 font-semibold' },
-  other: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' }
+  refused: { icon: 'i-lucide-user-round-x', indicator: 'bg-error-100 text-error-600', line: 'bg-slate-200', titleClass: 'text-error-600 font-semibold' },
+  cancelled: { icon: 'i-lucide-x', indicator: 'bg-error-100 text-error-600', line: 'bg-slate-200', titleClass: 'text-error-600 font-semibold' },
+  expired: { icon: 'i-lucide-clock-alert', indicator: 'bg-error-100 text-error-600', line: 'bg-slate-200', titleClass: 'text-error-600 font-semibold' },
+  negative: { icon: 'i-lucide-x', indicator: 'bg-slate-100 text-slate-400', line: 'bg-slate-200', titleClass: 'text-slate-400 line-through' }
 }
+
+export const getMutedBillingStepPalette = (category: BillingStepCategory): StepPalette =>
+  mutedBillingStepPaletteByCategory[category as keyof typeof mutedBillingStepPaletteByCategory]
 
 export const documentStatusBadgeColors: Record<DocumentStatus, 'neutral' | 'warning' | 'success' | 'error'> = {
   draft: 'neutral',
   sent: 'warning',
   completed: 'success',
+  expired: 'error',
   cancelled: 'error',
   refused: 'error',
   non_applicable: 'neutral'
@@ -368,11 +389,11 @@ const billingStepToSentLabel: Record<BillingStepKey, string> = {
   invoice: 'En attente de règlement'
 }
 
-// A "Sans suite" project is one where a step's *own* (not cascaded) status is refused/cancelled -
+// A "Sans suite" project is one where a step's *own* (not cascaded) status is refused/expired/cancelled -
 // distinguishing that from a downstream step that merely inherited "non_applicable" by cascade.
 export const getBillingStatus = (steps: BillingStep[]): BillingStatus => {
   const hasRealTerminalFailure = steps.some(step =>
-    step.documentId !== null && (step.status === 'refused' || step.status === 'cancelled'))
+    step.documentId !== null && (step.status === 'refused' || step.status === 'expired' || step.status === 'cancelled'))
 
   if (hasRealTerminalFailure) return { label: 'Sans suite', tone: 'muted', step: null }
 
