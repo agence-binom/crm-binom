@@ -59,6 +59,17 @@ test('billingDocumentCreateSchema accepte un devis "à émettre" sans lien Factu
   assert.equal(result.success, true)
 })
 
+test('billingDocumentCreateSchema accepte une facture "annulée" sans lien Facture.net', () => {
+  const result = billingDocumentCreateSchema.safeParse({
+    projectId: 7,
+    documentType: 'invoice',
+    status: 'cancelled',
+    externalUrl: ''
+  })
+
+  assert.equal(result.success, true)
+})
+
 test('billingDocumentUploadMetadataSchema parse et normalise les métadonnées', () => {
   const result = billingDocumentUploadMetadataSchema.parse({
     projectId: '42',

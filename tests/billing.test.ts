@@ -110,3 +110,14 @@ test('un devis refusé cascade en non applicable et déclenche le CTA "Sans suit
   assert.equal(steps.find(step => step.key === 'invoice')?.status, 'non_applicable')
   assert.equal(getBillingStatus(steps).label, 'Sans suite')
 })
+
+test('un devis expiré cascade en non applicable et déclenche le CTA "Sans suite"', () => {
+  const steps = computeProjectBillingSteps([
+    doc({ id: 1, type: 'commercial_proposal', status: 'completed' }),
+    doc({ id: 2, type: 'quote', status: 'expired' })
+  ], true)
+
+  assert.equal(steps.find(step => step.key === 'acompte')?.status, 'non_applicable')
+  assert.equal(steps.find(step => step.key === 'invoice')?.status, 'non_applicable')
+  assert.equal(getBillingStatus(steps).label, 'Sans suite')
+})

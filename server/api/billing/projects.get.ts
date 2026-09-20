@@ -2,6 +2,7 @@ import { and, asc, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import { db } from '~/db'
 import { isActiveBillingTone } from '~/constants/billing'
 import { buildBillingProjectStatus, type BillingProjectDocument, type BillingProjectStatus } from '~/lib/billing'
+import type { DocumentStatus } from '~/lib/documents'
 import { billingDocumentsTable } from '~/db/schema/billing-documents'
 import { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
@@ -89,7 +90,7 @@ export default defineEventHandler(async (event) => {
       id: document.id,
       projectId: document.projectId,
       type: document.type as 'quote' | 'invoice' | 'commercial_proposal',
-      status: document.status as 'draft' | 'sent' | 'completed',
+      status: document.status as DocumentStatus,
       subtype: document.subtype,
       hasLink: Boolean(document.externalUrl?.trim()),
       hasFile: document.documentId !== null,
