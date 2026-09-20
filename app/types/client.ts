@@ -16,4 +16,6 @@ export type Client = {
   archived?: boolean | null
   description?: string | null
   prospectionStatus?: ProspectionStatus | null
+  contactedAt?: string | null
+  relancedAt?: string | null
 }

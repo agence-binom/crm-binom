@@ -2,6 +2,13 @@ import { z } from 'zod'
 import { clientIconValues } from '../lib/client-icons'
 import { prospectionStatuses } from '../constants/prospection'
 
+// Préserve null pour distinguer un champ omis (ne pas toucher) d'une date explicitement effacée -
+// même convention que nullableDateSchema dans validation/tasks.ts.
+const nullableDateSchema = z.preprocess(
+  value => (value === '' ? undefined : value),
+  z.coerce.date().nullable().optional()
+)
+
 const clientIconSchema = z.string()
   .regex(
     /^i-[a-z0-9-]+(?:-[a-z0-9-]+)+$/,
@@ -46,7 +53,9 @@ export const clientUpdateSchema = z.object({
   icon: clientIconSchema,
   archived: z.boolean().optional(),
   description: z.string().optional().or(z.literal('')),
-  prospectionStatus: z.enum(prospectionStatuses).optional()
+  prospectionStatus: z.enum(prospectionStatuses).optional(),
+  contactedAt: nullableDateSchema,
+  relancedAt: nullableDateSchema
 }).refine(
   data => Object.keys(data).length > 0,
   { message: 'Au moins un champ doit être fourni' }

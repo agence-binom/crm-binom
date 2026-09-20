@@ -302,6 +302,13 @@
       "when": 1789046040415,
       "tag": "0042_wild_franklin_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1789927099404,
+      "tag": "0043_motionless_gunslinger",
+      "breakpoints": true
     }
   ]
 }
