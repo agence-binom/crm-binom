@@ -105,8 +105,8 @@ const onSubmit = async () => {
       name: formState.name,
       description: formState.description,
       status: displayStatus.value,
-      startDate: formState.startDate || undefined,
-      endDate: formState.endDate || undefined,
+      startDate: formState.startDate || null,
+      endDate: formState.endDate || null,
       url: formState.url || undefined,
       clientId: formState.clientId
     }

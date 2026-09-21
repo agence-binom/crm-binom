@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+// Préserve null pour distinguer un champ omis (ne pas toucher) d'une date explicitement effacée -
+// même convention que nullableDateSchema dans validation/tasks.ts.
+const nullableDateSchema = z.preprocess(
+  value => (value === '' ? undefined : value),
+  z.coerce.date().nullable().optional()
+)
+
 export const projectCreateSchema = z.object({
   clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif'),
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
@@ -9,8 +16,8 @@ export const projectCreateSchema = z.object({
   }).default('en_cours'),
   archived: z.boolean().default(false),
   requiresAcompte: z.boolean().default(true),
-  startDate: z.preprocess(v => (v === '' ? undefined : v), z.coerce.date().optional()),
-  endDate: z.preprocess(v => (v === '' ? undefined : v), z.coerce.date().optional()),
+  startDate: nullableDateSchema,
+  endDate: nullableDateSchema,
   url: z.url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   links: z.array(z.string().url('URL invalide')).optional()
@@ -25,8 +32,8 @@ export const projectUpdateSchema = z.object({
   }).optional(),
   archived: z.boolean().optional(),
   requiresAcompte: z.boolean().optional(),
-  startDate: z.preprocess(v => (v === '' ? undefined : v), z.coerce.date().optional()),
-  endDate: z.preprocess(v => (v === '' ? undefined : v), z.coerce.date().optional()),
+  startDate: nullableDateSchema,
+  endDate: nullableDateSchema,
   url: z.url('URL invalide').max(255, 'URL trop longue').optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   links: z.array(z.url('URL invalide')).optional()
