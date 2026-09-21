@@ -11,7 +11,7 @@ export const projectCreateSchema = z.object({
   clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif'),
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
   description: z.string().optional().or(z.literal('')),
-  status: z.enum(['en_cours', 'termine', 'en_attente', 'annule'], {
+  status: z.enum(['en_cours', 'termine', 'en_attente', 'annule', 'sans_statut'], {
     message: 'Le statut doit être "en_cours", "termine", "en_attente" ou "annule"'
   }).default('en_cours'),
   archived: z.boolean().default(false),
@@ -27,7 +27,7 @@ export const projectUpdateSchema = z.object({
   clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif').optional(),
   name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional().or(z.literal('')),
   description: z.string().optional().or(z.literal('')),
-  status: z.enum(['en_cours', 'termine', 'en_attente', 'annule'], {
+  status: z.enum(['en_cours', 'termine', 'en_attente', 'annule', 'sans_statut'], {
     message: 'Le statut doit être "en_cours", "termine", "en_attente" ou "annule"'
   }).optional(),
   archived: z.boolean().optional(),

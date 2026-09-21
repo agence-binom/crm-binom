@@ -177,12 +177,14 @@ const headingClass = computed(() => {
 <template>
   <div>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-      <component
-        :is="titleHeading || 'h2'"
-        :class="headingClass"
-      >
-        {{ title }}
-      </component>
+      <slot name="title">
+        <component
+          :is="titleHeading || 'h2'"
+          :class="headingClass"
+        >
+          {{ title }}
+        </component>
+      </slot>
 
       <div class="flex flex-wrap items-center gap-3">
         <slot name="filters" />
