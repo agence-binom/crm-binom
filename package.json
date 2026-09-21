@@ -26,18 +26,18 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1128.0",
-    "@aws-sdk/s3-request-presigner": "^3.1128.0",
+    "@aws-sdk/client-s3": "^3.1135.0",
+    "@aws-sdk/s3-request-presigner": "^3.1135.0",
     "@formkit/drag-and-drop": "^0.6.1",
-    "@iconify-json/lucide": "^1.2.131",
+    "@iconify-json/lucide": "^1.2.134",
     "@iconify-json/simple-icons": "^1.2.95",
     "@nuxt/ui": "4.11.1",
-    "better-auth": "^1.7.3",
+    "better-auth": "^1.7.5",
     "dotenv": "^18.0.0",
     "drizzle-orm": "^0.45.1",
     "nuxt": "4.5.2",
     "postgres": "^3.4.7",
-    "resend": "^6.26.0",
+    "resend": "^6.28.1",
     "zod": "^4.6.2"
   },
   "devDependencies": {
@@ -46,11 +46,11 @@
     "@emnapi/wasi-threads": "2.1.0",
     "@nuxt/eslint": "^1.12.1",
     "@playwright/test": "^1.63.0",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.1",
     "drizzle-kit": "^0.31.8",
     "eslint": "^10.10.0",
     "husky": "^9.1.7",
-    "rolldown": "1.2.8",
+    "rolldown": "1.2.9",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.1"
