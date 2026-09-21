@@ -11,7 +11,7 @@ import {
   getTaskStatusIcon,
   getTaskStatusLabel
 } from '~/lib/tasks'
-import type { Project, Task, TaskAttachment, User } from '~/types'
+import type { Project, Task, TaskAttachment, TimeEntry, User } from '~/types'
 
 type TaskModalProjectOption = {
   id: number
@@ -137,6 +137,10 @@ const selectedAssignees = computed({
   set: options => selectAssignees((options ?? []).map(option => option.value))
 })
 
+const taskAssignees = computed(() => userOptions.value
+  .filter(user => formState.assigneeIds.includes(user.value))
+  .map(user => ({ id: user.value, name: user.label })))
+
 const taskAttachments = ref<TaskAttachment[]>([])
 const loadTaskAttachments = async () => {
   if (!effectiveTaskId.value) {
@@ -146,6 +150,17 @@ const loadTaskAttachments = async () => {
 
   const response = await $fetch('/api/task-attachments', { query: { taskId: effectiveTaskId.value } })
   taskAttachments.value = (response.attachments as TaskAttachment[] | undefined) || []
+}
+
+const timeEntries = ref<TimeEntry[]>([])
+const loadTimeEntries = async () => {
+  if (!effectiveTaskId.value) {
+    timeEntries.value = []
+    return
+  }
+
+  const response = await $fetch('/api/time-entries', { query: { taskId: effectiveTaskId.value } })
+  timeEntries.value = (response.timeEntries as TimeEntry[] | undefined) || []
 }
 
 const resetForm = () => {
@@ -223,7 +238,8 @@ watch(
     await Promise.all([
       props.projects === undefined && !projectData.value ? refreshProjects() : Promise.resolve(),
       props.users === undefined && !usersData.value ? refreshUsers() : Promise.resolve(),
-      loadTaskAttachments()
+      loadTaskAttachments(),
+      loadTimeEntries()
     ])
   },
   { immediate: true }
@@ -496,7 +512,19 @@ const statusChipUi = computed(() => ({
           />
         </div>
 
-        <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+        <div
+          v-if="effectiveTaskId"
+          class="border-t border-slate-100 pt-4"
+        >
+          <TimeEntriesList
+            :time-entries="timeEntries"
+            :task-id="effectiveTaskId"
+            :assignees="taskAssignees"
+            @refresh="loadTimeEntries"
+          />
+        </div>
+
+        <div class="flex items-center border-t border-slate-100 pt-4">
           <UButton
             variant="soft"
             color="error"
@@ -504,13 +532,6 @@ const statusChipUi = computed(() => ({
             @click="onDeleteTask"
           >
             Supprimer
-          </UButton>
-          <UButton
-            variant="soft"
-            color="neutral"
-            @click="isOpen = false"
-          >
-            Fermer
           </UButton>
         </div>
       </div>

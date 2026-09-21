@@ -1,4 +1,4 @@
-export type ProjectStatus = 'en_cours' | 'termine' | 'en_attente' | 'annule'
+export type ProjectStatus = 'en_cours' | 'termine' | 'en_attente' | 'annule' | 'sans_statut'
 type ProjectStatusInput = ProjectStatus | string | null | undefined
 type ProjectDateInput = string | Date | null | undefined
 
@@ -35,12 +35,11 @@ export const getProjectDisplayStatus = (
   const startDate = toValidDate(project.startDate)
   const endDate = toValidDate(project.endDate)
 
+  // en_cours/termine/en_attente ne sont que des dérivés des dates : sans date, il n'y a rien à
+  // dériver, donc pas de fallback sur un ancien statut (sinon un projet reste bloqué "en cours"
+  // après suppression de sa dernière date).
   if (!startDate && !endDate) {
-    if (project.status === 'termine' || project.status === 'en_attente') {
-      return project.status
-    }
-
-    return 'en_cours'
+    return 'sans_statut'
   }
 
   const todayStart = new Date(now)

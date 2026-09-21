@@ -9,6 +9,7 @@ import { tasksTable } from './tasks'
 import { resourcesTable } from './resources'
 import { taskAssigneesTable } from './task-assignees'
 import { taskAttachmentsTable } from './task-attachments'
+import { timeEntriesTable } from './time-entries'
 import { usersTable } from './users'
 
 export const clientsRelations = relations(clientsTable, ({ many }) => ({
@@ -51,7 +52,8 @@ export const tasksRelations = relations(tasksTable, ({ one, many }) => ({
     references: [projectsTable.id]
   }),
   assignees: many(taskAssigneesTable),
-  attachments: many(taskAttachmentsTable)
+  attachments: many(taskAttachmentsTable),
+  timeEntries: many(timeEntriesTable)
 }))
 
 export const taskAssigneesRelations = relations(taskAssigneesTable, ({ one }) => ({
@@ -83,5 +85,20 @@ export const taskAttachmentsRelations = relations(taskAttachmentsTable, ({ one }
   task: one(tasksTable, {
     fields: [taskAttachmentsTable.taskId],
     references: [tasksTable.id]
+  })
+}))
+
+export const timeEntriesRelations = relations(timeEntriesTable, ({ one }) => ({
+  task: one(tasksTable, {
+    fields: [timeEntriesTable.taskId],
+    references: [tasksTable.id]
+  }),
+  project: one(projectsTable, {
+    fields: [timeEntriesTable.projectId],
+    references: [projectsTable.id]
+  }),
+  user: one(usersTable, {
+    fields: [timeEntriesTable.userId],
+    references: [usersTable.id]
   })
 }))

@@ -1,0 +1,1 @@
+ALTER TABLE "clients" ADD COLUMN "prospectionStatus" varchar(30) DEFAULT 'client' NOT NULL;

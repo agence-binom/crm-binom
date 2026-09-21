@@ -12,7 +12,8 @@ export const activityEntityLabels: Record<ActivityEntityType, string> = {
   billing_document: 'Document de facturation',
   deliverable: 'Livrable',
   task_attachment: 'Pièce jointe',
-  user: 'Utilisateur'
+  user: 'Utilisateur',
+  time_entry: 'Temps passé'
 }
 
 export const activityActionLabels: Record<ActivityAction, string> = {

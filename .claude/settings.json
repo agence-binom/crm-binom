@@ -12,6 +12,26 @@
             "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/validate-bash.sh\""
           }
         ]
+      },
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/graphify hook-guard search",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/opt/homebrew/bin/graphify hook-guard read",
+            "timeout": 10
+          }
+        ]
       }
     ]
   }

@@ -20,6 +20,8 @@ const isOpen = computed({
   set: value => emit('update:open', value)
 })
 
+const projectStatus = computed(() => (props.project ? getProjectDisplayStatus(props.project.project) : null))
+
 const timelineRef = ref<{
   isDirty: boolean
   isSaving: boolean
@@ -42,12 +44,12 @@ const timelineRef = ref<{
       >
         <span class="truncate">{{ project?.project.name }}</span>
         <UBadge
-          v-if="project"
+          v-if="projectStatus && projectStatus !== 'sans_statut'"
           variant="soft"
-          :color="getStatusColor(getProjectDisplayStatus(project.project))"
+          :color="getStatusColor(projectStatus)"
           class="rounded-full align-middle whitespace-nowrap"
         >
-          {{ getStatusLabel(getProjectDisplayStatus(project.project)) }}
+          {{ getStatusLabel(projectStatus) }}
         </UBadge>
       </AppLink>
     </template>

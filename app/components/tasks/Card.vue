@@ -2,7 +2,8 @@
 import {
   getTaskPriorityClass,
   getTaskPriorityIcon,
-  getTaskPriorityLabel
+  getTaskPriorityLabel,
+  isTaskOverdue
 } from '~/lib/tasks'
 import { formatDateOnly } from '~/lib/utils'
 import type { Task } from '~/types'
@@ -23,13 +24,7 @@ const emit = defineEmits<{
   delete: [taskId: number]
 }>()
 
-const isOverdue = computed(() => {
-  if (!props.task.dueDate || props.task.status === 'done') {
-    return false
-  }
-
-  return new Date(props.task.dueDate).getTime() < Date.now()
-})
+const isOverdue = computed(() => isTaskOverdue(props.task))
 
 const projectLabel = computed(() => {
   if (!props.showProjectBadge || !props.projectName) {

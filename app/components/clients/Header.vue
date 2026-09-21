@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { getProspectionStatusClass, getProspectionStatusIcon, getProspectionStatusLabel } from '~/lib/prospection'
 import type { Client } from '~/types'
 
 const props = defineProps<{
   client: Client
 }>()
+
+const prospectionStatus = computed(() => props.client?.prospectionStatus ?? 'client')
 
 const emit = defineEmits<{
   openInfo: []
@@ -26,6 +29,16 @@ const infos = computed(() => [
     :subtitle="client.description"
     :infos="infos"
   >
+    <template #eyebrow>
+      <UBadge
+        variant="soft"
+        :icon="getProspectionStatusIcon(prospectionStatus)"
+        :class="['w-fit rounded-full font-medium ring-1 ring-inset', getProspectionStatusClass(prospectionStatus)]"
+      >
+        {{ getProspectionStatusLabel(prospectionStatus) }}
+      </UBadge>
+    </template>
+
     <template #actions>
       <div class="flex items-center gap-2">
         <UButton

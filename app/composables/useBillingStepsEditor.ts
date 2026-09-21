@@ -7,7 +7,7 @@ import {
   getBillingStepActiveIndex,
   getBillingStepCategory,
   getBillingStepLabel,
-  mutedBillingStepPalette,
+  getMutedBillingStepPalette,
   type BillingDocumentType,
   type BillingStepCategory,
   type BillingStepKey,
@@ -58,12 +58,23 @@ export function useBillingStepsEditor(options: {
   const isLoading = ref(false)
   const isSaving = ref(false)
   const requiresAcompte = ref(options.requiresAcompteSource())
+  // Tracks whether the current project's initial fetch has completed, so a later reload for that
+  // *same* project (e.g. right after saving or uploading a document on one step) never re-shows the
+  // loading state - that would unmount the whole timeline, including every BillingStepEditor still
+  // open, wiping their unsaved fields. Switching to a different project (the drawer reuses one
+  // instance across rows) still shows it, since there's nothing unsaved to protect there.
+  const hasLoadedOnce = ref(false)
+  let loadedProjectId: number | undefined
 
   const loadDocuments = async () => {
     const projectId = options.projectId()
     if (!projectId) return
 
-    isLoading.value = true
+    if (projectId !== loadedProjectId) {
+      hasLoadedOnce.value = false
+      loadedProjectId = projectId
+    }
+    if (!hasLoadedOnce.value) isLoading.value = true
     try {
       const response = await $fetch<{ documents: AnnotatedBillingDocument[] }>(`/api/billing-documents/project/${projectId}`)
       documents.value = response.documents
@@ -71,6 +82,7 @@ export function useBillingStepsEditor(options: {
       showError('Échec du chargement', error, 'Impossible de charger les documents de facturation.')
     } finally {
       isLoading.value = false
+      hasLoadedOnce.value = true
     }
   }
 
@@ -106,7 +118,7 @@ export function useBillingStepsEditor(options: {
     const nodes = billingSteps.value.map((step, index) => {
       const category = getBillingStepCategory(step, index, activeIndex.value, isMuted.value)
       const palette = isMuted.value
-        ? (category === 'completed' ? mutedBillingStepPalette.completed : mutedBillingStepPalette.other)
+        ? getMutedBillingStepPalette(category)
         : { ...billingStepPalettes[category], titleClass: emphasizedTitleClasses[category] ?? billingStepPalettes[category].titleClass }
 
       const document = step.documentId ? documentsById.value.get(step.documentId) ?? null : null
