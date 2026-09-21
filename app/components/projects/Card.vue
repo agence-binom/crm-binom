@@ -22,8 +22,9 @@ const formatDate = (date: string | Date | null | undefined) => {
 }
 
 const badge = computed(() => {
-  if (!props.project.status && !props.project.startDate && !props.project.endDate) return undefined
   const status = getProjectDisplayStatus(props.project)
+  if (status === 'sans_statut') return undefined
+
   return {
     label: getStatusLabel(status),
     color: getStatusColor(status) as 'neutral' | 'primary' | 'success' | 'warning' | 'error'

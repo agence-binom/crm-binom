@@ -159,6 +159,7 @@ defineExpose({ isDirty, save, reset: resetDraft })
       <UTextarea
         v-model="description"
         :rows="2"
+        placeholder="Précisions sur cette étape..."
       />
     </UFormField>
 

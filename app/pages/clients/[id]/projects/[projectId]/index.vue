@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isClientStatus } from '~/constants/prospection'
 import type { ProjectDeliverable, ProjectResource, Task, User } from '~/types'
 
 const route = useRoute()
@@ -106,7 +107,10 @@ const handleDocumentsChange = async () => {
       </TasksToDoList>
     </div>
 
-    <div class="mt-8">
+    <div
+      v-if="isClientStatus(project.client.prospectionStatus)"
+      class="mt-8"
+    >
       <DeliverablesList
         :deliverables="projectDeliverables"
         :project-id="projectId"

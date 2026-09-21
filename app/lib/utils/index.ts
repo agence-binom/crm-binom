@@ -29,6 +29,34 @@ export const getFileTypeIcon = (mimetype?: string | null) => {
   return 'i-lucide-file'
 }
 
+export const formatDuration = (minutes: number) => {
+  const hours = Math.floor(minutes / 60)
+  const remaining = minutes % 60
+  if (hours === 0) return `${remaining}min`
+  if (remaining === 0) return `${hours}h`
+  return `${hours}h${String(remaining).padStart(2, '0')}`
+}
+
+// Accepte "1h30", "1h", "5h", "15min", "90" (minutes brutes)… l'inverse de formatDuration.
+export const parseDuration = (input: string): number | undefined => {
+  const trimmed = input.trim().toLowerCase().replace(',', '.')
+  if (!trimmed) return undefined
+
+  if (/^\d+$/.test(trimmed)) return parseInt(trimmed, 10)
+
+  const hoursMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*h\s*(\d{1,2})?$/)
+  if (hoursMatch) {
+    const hours = parseFloat(hoursMatch[1]!)
+    const minutes = hoursMatch[2] ? parseInt(hoursMatch[2], 10) : 0
+    return Math.round(hours * 60) + minutes
+  }
+
+  const minutesMatch = trimmed.match(/^(\d+)\s*min$/)
+  if (minutesMatch) return parseInt(minutesMatch[1]!, 10)
+
+  return undefined
+}
+
 export const formatDateOnly = (date: string | Date | null | undefined) => {
   if (!date) return '-'
 

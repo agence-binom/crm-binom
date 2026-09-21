@@ -59,6 +59,8 @@ const fillFromProject = (project: Project) => {
   })
 }
 
+const { getStatusLabel } = useStatusHelpers()
+
 const displayStatus = computed(() => {
   return getProjectDisplayStatus({
     startDate: formState.startDate || null,
@@ -67,18 +69,7 @@ const displayStatus = computed(() => {
   })
 })
 
-const displayStatusLabel = computed(() => {
-  switch (displayStatus.value) {
-    case 'termine':
-      return 'Terminé'
-    case 'en_attente':
-      return 'En attente'
-    case 'annule':
-      return 'Annulé'
-    default:
-      return 'En cours'
-  }
-})
+const displayStatusLabel = computed(() => getStatusLabel(displayStatus.value))
 
 watch(
   () => props.open,
@@ -105,8 +96,8 @@ const onSubmit = async () => {
       name: formState.name,
       description: formState.description,
       status: displayStatus.value,
-      startDate: formState.startDate || undefined,
-      endDate: formState.endDate || undefined,
+      startDate: formState.startDate || null,
+      endDate: formState.endDate || null,
       url: formState.url || undefined,
       clientId: formState.clientId
     }

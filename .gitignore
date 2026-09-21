@@ -31,3 +31,6 @@ logs
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# graphify (generated knowledge graph, rebuilt on demand / post-commit hook)
+graphify-out/

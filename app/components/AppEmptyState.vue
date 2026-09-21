@@ -64,7 +64,7 @@ const titleClass = computed(() => {
     </div>
     <div
       v-if="$slots.actions"
-      class="mt-4"
+      class="mt-4 space-x-2"
     >
       <slot name="actions" />
     </div>
