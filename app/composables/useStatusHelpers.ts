@@ -15,7 +15,7 @@ export function useStatusHelpers() {
       case 'termine': return 'Terminé'
       case 'en_attente': return 'En attente'
       case 'annule': return 'Annulé'
-      default: return status
+      default: return 'Sans statut'
     }
   }
 

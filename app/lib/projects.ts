@@ -1,4 +1,4 @@
-export type ProjectStatus = 'en_cours' | 'termine' | 'en_attente' | 'annule'
+export type ProjectStatus = 'en_cours' | 'termine' | 'en_attente' | 'annule' | 'sans_statut'
 type ProjectStatusInput = ProjectStatus | string | null | undefined
 type ProjectDateInput = string | Date | null | undefined
 
@@ -36,11 +36,11 @@ export const getProjectDisplayStatus = (
   const endDate = toValidDate(project.endDate)
 
   if (!startDate && !endDate) {
-    if (project.status === 'termine' || project.status === 'en_attente') {
+    if (project.status === 'termine' || project.status === 'en_attente' || project.status === 'en_cours') {
       return project.status
     }
 
-    return 'en_cours'
+    return 'sans_statut'
   }
 
   const todayStart = new Date(now)
