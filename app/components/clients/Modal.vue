@@ -5,7 +5,12 @@ import {
 } from '~/lib/clients'
 import { clientIconOptions } from '~/lib/client-icons'
 import { clientCreateSchema, clientUpdateSchema } from '~/validation/clients'
+import { prospectionStatuses, type ProspectionStatus } from '~/constants/prospection'
+import { getProspectionStatusLabel } from '~/lib/prospection'
+import { toProjectInputDate } from '~/lib/projects'
 import type { Client } from '~/types'
+
+const prospectionStatusOptions = prospectionStatuses.map(status => ({ value: status, label: getProspectionStatusLabel(status) }))
 
 const props = defineProps<{
   open: boolean
@@ -51,7 +56,10 @@ const createDefaultFormState = () => ({
   notes: '',
   icon: defaultClientIcon,
   archived: false,
-  description: ''
+  description: '',
+  prospectionStatus: 'nouveau' as ProspectionStatus,
+  contactedAt: '',
+  relancedAt: ''
 })
 const createFormStateFromInitialValues = (initialValues?: Partial<Client> | null) => ({
   ...createDefaultFormState(),
@@ -67,7 +75,10 @@ const createFormStateFromInitialValues = (initialValues?: Partial<Client> | null
   notes: initialValues?.notes ?? '',
   icon: getClientIcon(initialValues?.icon),
   archived: initialValues?.archived ?? false,
-  description: initialValues?.description ?? ''
+  description: initialValues?.description ?? '',
+  prospectionStatus: initialValues?.prospectionStatus ?? 'nouveau',
+  contactedAt: toProjectInputDate(initialValues?.contactedAt),
+  relancedAt: toProjectInputDate(initialValues?.relancedAt)
 })
 const createFormStateFromClient = (client?: Client | null) => ({
   ...createFormStateFromInitialValues(props.initialValues),
@@ -83,7 +94,10 @@ const createFormStateFromClient = (client?: Client | null) => ({
   notes: client?.notes ?? createFormStateFromInitialValues(props.initialValues).notes,
   icon: getClientIcon(client?.icon ?? props.initialValues?.icon),
   archived: client?.archived ?? props.initialValues?.archived ?? false,
-  description: client?.description ?? createFormStateFromInitialValues(props.initialValues).description
+  description: client?.description ?? createFormStateFromInitialValues(props.initialValues).description,
+  prospectionStatus: client?.prospectionStatus ?? props.initialValues?.prospectionStatus ?? 'nouveau',
+  contactedAt: client?.contactedAt ? toProjectInputDate(client.contactedAt) : createFormStateFromInitialValues(props.initialValues).contactedAt,
+  relancedAt: client?.relancedAt ? toProjectInputDate(client.relancedAt) : createFormStateFromInitialValues(props.initialValues).relancedAt
 })
 const formState = reactive(createDefaultFormState())
 
@@ -117,7 +131,11 @@ watch(
 const onSubmit = async () => {
   isSaving.value = true
   try {
-    const body = { ...formState }
+    const body = {
+      ...formState,
+      contactedAt: formState.contactedAt || null,
+      relancedAt: formState.relancedAt || null
+    }
     let savedClient: Client | undefined
 
     if (isEditing.value) {
@@ -205,6 +223,46 @@ const onSubmit = async () => {
           </UFormField>
 
           <UFormField
+            label="Statut de prospection"
+            name="prospectionStatus"
+          >
+            <USelect
+              v-model="formState.prospectionStatus"
+              :items="prospectionStatusOptions"
+              value-attribute="value"
+              option-attribute="label"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div
+            v-if="isEditing"
+            class="grid gap-4 sm:grid-cols-2"
+          >
+            <UFormField
+              label="Date de contact"
+              name="contactedAt"
+              description="Renseigner cette date fait passer le dossier en 'Contacté' si ce n'est pas déjà fait."
+            >
+              <UInput
+                v-model="formState.contactedAt"
+                type="date"
+              />
+            </UFormField>
+
+            <UFormField
+              label="Date de relance"
+              name="relancedAt"
+              description="Renseigner cette date fait passer le dossier en 'Relancé' si ce n'est pas déjà fait."
+            >
+              <UInput
+                v-model="formState.relancedAt"
+                type="date"
+              />
+            </UFormField>
+          </div>
+
+          <UFormField
             label="Description"
             name="description"
           >
@@ -222,6 +280,7 @@ const onSubmit = async () => {
             >
               <UInput
                 v-model="formState.email"
+                placeholder="email@example.com"
               />
             </UFormField>
 
@@ -232,6 +291,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.phone"
                 type="tel"
+                placeholder="01 23 45 67 89"
               />
             </UFormField>
           </div>
@@ -243,6 +303,7 @@ const onSubmit = async () => {
             <UInput
               v-model="formState.address"
               type="text"
+              placeholder="12 rue de la Paix"
             />
           </UFormField>
 
@@ -254,6 +315,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.postalCode"
                 type="text"
+                placeholder="75001"
               />
             </UFormField>
 
@@ -264,6 +326,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.city"
                 type="text"
+                placeholder="Paris"
               />
             </UFormField>
           </div>
@@ -276,6 +339,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.country"
                 type="text"
+                placeholder="France"
               />
             </UFormField>
 
@@ -286,6 +350,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.website"
                 type="url"
+                placeholder="https://example.com"
               />
             </UFormField>
           </div>
@@ -309,6 +374,7 @@ const onSubmit = async () => {
               <UTextarea
                 v-model="formState.notes"
                 :rows="3"
+                placeholder="Notes internes sur ce client..."
               />
             </UFormField>
           </div>

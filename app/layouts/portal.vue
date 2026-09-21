@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
 import { authClient } from '~/lib/auth-client'
+import logoBinom from '~/assets/images/logo-binom.svg?url'
 
 const { data: sessionData } = usePortalSession()
 const { data: projectsData } = usePortalProjects()
@@ -57,10 +58,11 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [
     >
       <template #header>
         <div class="flex items-center gap-2 px-1.5 font-semibold text-slate-900">
-          <UIcon
-            name="i-lucide-building-2"
-            class="size-5 shrink-0 text-primary"
-          />
+          <img
+            :src="logoBinom"
+            alt="binōm"
+            class="h-5 w-auto dark:invert shrink-0"
+          >
           <span
             v-if="!collapsed"
             class="truncate"

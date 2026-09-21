@@ -1,3 +1,5 @@
+import type { ProspectionStatus } from '../constants/prospection'
+
 export type Client = {
   id: number
   name: string
@@ -13,4 +15,7 @@ export type Client = {
   icon?: string | null
   archived?: boolean | null
   description?: string | null
+  prospectionStatus?: ProspectionStatus | null
+  contactedAt?: string | null
+  relancedAt?: string | null
 }

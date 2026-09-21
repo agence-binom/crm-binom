@@ -2,14 +2,14 @@ import { z } from 'zod'
 import { billingDocumentTypesRequiringFactureNetLink } from '../lib/documents'
 
 export const billingDocumentTypes = ['quote', 'invoice', 'commercial_proposal'] as const
-export const documentStatuses = ['draft', 'sent', 'completed', 'cancelled', 'refused', 'non_applicable'] as const
+export const documentStatuses = ['draft', 'sent', 'completed', 'expired', 'cancelled', 'refused', 'non_applicable'] as const
 export const invoiceSubtypes = ['acompte', 'solde', 'unique', 'avoir'] as const
 
 // Valid states per document type, per the Figma state-machine spec. `invoice` covers both the
 // 'acompte' and 'unique'/'solde' subtypes - they share the exact same set of valid states.
 export const documentStatusesByType: Record<typeof billingDocumentTypes[number], readonly typeof documentStatuses[number][]> = {
-  commercial_proposal: ['draft', 'sent', 'refused', 'completed', 'cancelled', 'non_applicable'],
-  quote: ['draft', 'sent', 'refused', 'completed', 'cancelled', 'non_applicable'],
+  commercial_proposal: ['draft', 'sent', 'refused', 'expired', 'completed', 'cancelled', 'non_applicable'],
+  quote: ['draft', 'sent', 'refused', 'completed', 'expired', 'cancelled', 'non_applicable'],
   invoice: ['draft', 'sent', 'completed', 'cancelled', 'non_applicable']
 }
 
@@ -60,8 +60,11 @@ const refineBillingDocument = (
 
   // A step that's still "à émettre" or has been marked "Non applicable" has no Facture.net
   // document to link to yet (or ever, in the "Non applicable" case) - only require the link once
-  // the step actually represents a real quote/invoice being worked (sent, completed, cancelled...).
-  if (data.status === 'draft' || data.status === 'non_applicable') {
+  // the step actually represents a real quote/invoice being worked (sent, completed...). "Annulé"
+  // is excluded too: it covers both a real document being abandoned and a step that never existed
+  // at all (quote signed, but the invoice never gets made and the project stops) - since the two
+  // can't be told apart, the link isn't forced rather than blocking the common latter case.
+  if (data.status === 'draft' || data.status === 'non_applicable' || data.status === 'cancelled') {
     return
   }
 

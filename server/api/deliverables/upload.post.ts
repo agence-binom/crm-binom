@@ -1,13 +1,15 @@
 import { db } from '~/db'
 import { deliverablesTable } from '~/db/schema/deliverables'
-import { deliverableUploadMetadataSchema } from '~/validation/deliverables'
-import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
+import { deliverableMaxSizeBytes, deliverableUploadMetadataSchema } from '~/validation/deliverables'
+import { assertRequestWithinSizeLimit, buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
 import { assertValidDeliverableFile } from '~~/server/utils/deliverables'
 import { createDeliverableInsertValues } from '~~/server/lib/deliverables-upload'
 import { logActivity } from '~~/server/utils/activity-log'
 import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
+  assertRequestWithinSizeLimit(event, deliverableMaxSizeBytes)
+
   const formData = await readFormData(event)
   const fileEntry = formData.get('file')
 

@@ -40,10 +40,9 @@ const isKnownAuthorizedEmail = async (email: string) => {
 
 // Deux populations distinctes se connectent avec le même flux magic-link (staff `public.users` et
 // contacts portail `public.contacts`) - le sendMagicLink ci-dessous est le seul point qui décide
-// si un email a le droit de recevoir un lien. Defense in depth : Supabase bloquait déjà les emails
-// inconnus au niveau de l'envoi réel (shouldCreateUser: false), pas seulement côté client
-// (authorize-email.post.ts) - on reproduit cette garantie ici plutôt que de faire confiance au seul
-// check client.
+// si un email a le droit de recevoir un lien. Pas de pré-check d'autorisation côté client
+// (app/pages/login.vue) : un tel endpoint révélerait quelles adresses sont connues (agence ou
+// portail) même sans jamais recevoir de lien - voir l'historique de authorize-email.post.ts.
 export const auth = betterAuth({
   baseURL: process.env.NUXT_PUBLIC_SITE_URL,
   database: drizzleAdapter(db, {
@@ -57,16 +56,15 @@ export const auth = betterAuth({
   }),
   // Jamais exposé dans l'UI réelle (magic-link uniquement, voir app/pages/login.vue) - sert
   // uniquement de raccourci pour créer/authentifier les comptes de test (scripts/seed.ts,
-  // e2e/helpers/better-auth-session.ts) sans dépendre du magic-link en local/CI. Même principe que
-  // le mot de passe Supabase de test qu'on avait avant, désactivé en production par prudence même
-  // si rien ne l'expose côté UI.
+  // e2e/helpers/better-auth-session.ts) sans dépendre du magic-link en local/CI. Désactivé en
+  // production par prudence, même si rien ne l'expose côté UI.
   emailAndPassword: {
     enabled: process.env.NODE_ENV !== 'production'
   },
   plugins: [
     magicLink({
-      disableSignUp: true, // jamais d'auto-inscription - équivalent exact de shouldCreateUser: false
-      expiresIn: 60 * 60, // aligné sur le comportement OTP Supabase actuel
+      disableSignUp: true, // jamais d'auto-inscription : les comptes sont créés par l'app, pas par le flux de login
+      expiresIn: 60 * 60,
       sendMagicLink: async ({ email, url }) => {
         if (!(await isKnownAuthorizedEmail(email))) return // réponse générique renvoyée quand même côté client, pas de fuite d'existence
 

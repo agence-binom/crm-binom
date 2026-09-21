@@ -13,7 +13,7 @@ export const billingDocumentsTable = pgTable('billing_documents', {
   projectId: integer().notNull().references(() => projectsTable.id, { onDelete: 'cascade' }),
   documentType: varchar({ length: 50 }).notNull(), // 'commercial_proposal' | 'quote' | 'invoice'
   subtype: varchar({ length: 20 }), // 'acompte' | 'solde' | 'unique' | 'avoir' (invoice only)
-  status: varchar({ length: 20 }).notNull().default('draft'), // 'draft' | 'sent' | 'completed' | 'cancelled' | 'refused' | 'non_applicable'
+  status: varchar({ length: 20 }).notNull().default('draft'), // 'draft' | 'sent' | 'completed' | 'expired' | 'cancelled' | 'refused' | 'non_applicable'
   statusDate: timestamp(), // Business date tied to the current status (signature/paiement/règlement - label depends on documentType)
   externalUrl: varchar({ length: 2048 }), // Source page URL on Facture.net
   description: text(),

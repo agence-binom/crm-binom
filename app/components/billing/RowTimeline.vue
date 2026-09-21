@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BillingProjectStatus } from '~/lib/billing'
-import { applyStepSeparators, billingStepPalettes, getBillingStepActiveIndex, getBillingStepCategory, getBillingStepLabel, getDocumentWarning, mutedBillingStepPalette, type BillingStep, type StepPalette } from '~/lib/documents'
+import { applyStepSeparators, billingStepPalettes, getBillingStepActiveIndex, getBillingStepCategory, getBillingStepLabel, getDocumentWarning, getMutedBillingStepPalette, type BillingStep, type StepPalette } from '~/lib/documents'
 import { formatDateOnly } from '~/lib/utils'
 
 const props = defineProps<{
@@ -12,9 +12,8 @@ const isMuted = computed(() => props.project.billingStatus.tone === 'muted')
 const activeIndex = computed(() => getBillingStepActiveIndex(props.project.billingSteps))
 
 const paletteFor = (step: BillingStep, index: number): StepPalette => {
-  if (isMuted.value) return step.status === 'completed' ? mutedBillingStepPalette.completed : mutedBillingStepPalette.other
-
-  return billingStepPalettes[getBillingStepCategory(step, index, activeIndex.value, false)]
+  const category = getBillingStepCategory(step, index, activeIndex.value, isMuted.value)
+  return isMuted.value ? getMutedBillingStepPalette(category) : billingStepPalettes[category]
 }
 
 const timelineItems = computed(() => {
@@ -36,7 +35,7 @@ const timelineItems = computed(() => {
 
     const isSkipped = isMuted.value
       ? step.status !== 'completed'
-      : step.status === 'non_applicable' || step.status === 'cancelled' || step.status === 'refused'
+      : step.status === 'non_applicable'
 
     return {
       value: step.documentId ?? step.key,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { billingDocumentTypeIcons, getBillingDocumentTitle, type BillingDocumentType } from '~/lib/documents'
+import { billingDocumentTypeIcons, getBillingDocumentTitle } from '~/lib/documents'
 import { sortByCreatedAtDesc } from '~/lib/utils'
 import type { BillingDocumentRecord } from '~/types'
 
@@ -9,8 +9,6 @@ const props = defineProps<{
 }>()
 
 const sortedDocuments = computed(() => sortByCreatedAtDesc(props.documents))
-
-const getTitle = getBillingDocumentTitle
 
 const selectedDocument = ref<BillingDocumentRecord | null>(null)
 
@@ -35,15 +33,15 @@ const getMenuItems = (document: BillingDocumentRecord): DropdownMenuItem[][] => 
     >
       <div class="flex items-center gap-2 text-sm font-medium text-slate-900">
         <UIcon
-          :name="billingDocumentTypeIcons[document.documentType as BillingDocumentType]"
+          :name="billingDocumentTypeIcons[document.documentType]"
           class="size-4 shrink-0 text-slate-500"
         />
-        {{ getTitle(document) }}
+        {{ getBillingDocumentTitle(document) }}
       </div>
 
       <BillingDocumentFileCard
         :document="document"
-        :document-type="document.documentType as BillingDocumentType"
+        :document-type="document.documentType"
         :warn-on-missing-link="false"
       >
         <template #extra-actions>
@@ -70,8 +68,8 @@ const getMenuItems = (document: BillingDocumentRecord): DropdownMenuItem[][] => 
 
   <BillingDocumentDetailsModal
     :open="selectedDocument !== null"
-    :title="selectedDocument ? getTitle(selectedDocument) : ''"
-    :document-type="(selectedDocument?.documentType as BillingDocumentType) ?? 'invoice'"
+    :title="selectedDocument ? getBillingDocumentTitle(selectedDocument) : ''"
+    :document-type="selectedDocument?.documentType ?? 'invoice'"
     :document="selectedDocument"
     @update:open="(value) => { if (!value) selectedDocument = null }"
   />

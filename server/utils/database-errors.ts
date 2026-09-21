@@ -2,10 +2,12 @@ import { createError } from 'h3'
 
 type DatabaseErrorLike = {
   code?: string
-  hostname?: string
 }
 
-const SUPABASE_DIRECT_HOST_PATTERN = /^db\.[a-z0-9-]+\.supabase\.co$/i
+// Une base injoignable remonte sinon en 500 opaque, impossible à distinguer d'un bug applicatif.
+// Le message reste volontairement générique : il ne doit jamais contenir l'hôte, le port ou le rôle
+// réels, qui sont des détails d'infra à ne pas exposer dans une réponse HTTP.
+const UNREACHABLE_DATABASE_CODES = new Set(['ENOTFOUND', 'ECONNREFUSED'])
 
 const isDatabaseErrorLike = (error: unknown): error is DatabaseErrorLike => (
   typeof error === 'object'
@@ -17,14 +19,10 @@ export const toPublicDatabaseError = (error: unknown) => {
     return error
   }
 
-  if (
-    error.code === 'ENOTFOUND'
-    && typeof error.hostname === 'string'
-    && SUPABASE_DIRECT_HOST_PATTERN.test(error.hostname)
-  ) {
+  if (typeof error.code === 'string' && UNREACHABLE_DATABASE_CODES.has(error.code)) {
     return createError({
       statusCode: 503,
-      statusMessage: 'Connexion a la base indisponible. DATABASE_URL utilise probablement l hote direct Supabase, qui requiert IPv6. Remplacez-la par l URL Session pooler depuis Supabase > Connect.'
+      statusMessage: 'Base de données injoignable. Vérifiez que la base est démarrée et que DATABASE_URL est correcte.'
     })
   }
 

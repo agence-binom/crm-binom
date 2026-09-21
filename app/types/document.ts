@@ -19,7 +19,7 @@ export type BillingDocumentRecord = {
   projectId: number
   documentType: 'commercial_proposal' | 'quote' | 'invoice'
   subtype?: string | null
-  status: 'draft' | 'sent' | 'completed' | 'cancelled' | 'refused' | 'non_applicable'
+  status: 'draft' | 'sent' | 'completed' | 'expired' | 'cancelled' | 'refused' | 'non_applicable'
   statusDate?: string | Date | null
   externalUrl?: string | null
   description?: string | null

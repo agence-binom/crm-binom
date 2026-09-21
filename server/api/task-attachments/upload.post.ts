@@ -1,13 +1,15 @@
 import { db } from '~/db'
 import { taskAttachmentsTable } from '~/db/schema/task-attachments'
-import { taskAttachmentUploadMetadataSchema } from '~/validation/task-attachments'
-import { buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
+import { taskAttachmentMaxSizeBytes, taskAttachmentUploadMetadataSchema } from '~/validation/task-attachments'
+import { assertRequestWithinSizeLimit, buildDocumentStoragePath, uploadDocumentFile, withDocumentDownloadUrl, deleteUploadedDocumentIfExists } from '~~/server/utils/documents'
 import { assertValidTaskAttachmentFile } from '~~/server/utils/task-attachments'
 import { createTaskAttachmentInsertValues } from '~~/server/lib/task-attachments-upload'
 import { logActivity } from '~~/server/utils/activity-log'
 import { getAppUser } from '~~/server/utils/auth'
 
 export default defineEventHandler(async (event) => {
+  assertRequestWithinSizeLimit(event, taskAttachmentMaxSizeBytes)
+
   const formData = await readFormData(event)
   const fileEntry = formData.get('file')
 
