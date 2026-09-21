@@ -46,7 +46,7 @@ export const taskIdSchema = z.object({
 })
 
 export const taskDashboardQuerySchema = z.object({
-  workspace: taskWorkspaceSchema.default('externe')
+  workspace: taskWorkspaceSchema.optional()
 })
 
 export type TaskCreate = z.infer<typeof taskCreateSchema>

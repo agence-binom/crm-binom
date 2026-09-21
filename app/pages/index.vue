@@ -1,17 +1,60 @@
 <script setup lang="ts">
+import type { TaskWorkspace } from '~/constants/tasks'
+import { taskWorkspaces } from '~/constants/tasks'
+import { getTaskWorkspaceSeverity, getTaskWorkspaceSeverityDotClass } from '~/lib/tasks'
 import type { Task, User } from '~/types'
+
+const route = useRoute()
 
 const { data, refresh, status } = await useFetch('/api/tasks/dashboard')
 const allTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
-
-const { selectedUser, userOptions, filteredTasks } = useUserFilter(allTasks, availableUsers)
 const isLoading = computed(() => status.value === 'pending' && !data.value)
+
+const interneTasks = computed(() => allTasks.value.filter(task => task.workspace === 'interne'))
+const externeTasks = computed(() => allTasks.value.filter(task => task.workspace === 'externe'))
+
+const {
+  selectedUser: selectedInterneUser,
+  userOptions: interneUserOptions,
+  filteredTasks: filteredInterneTasks
+} = useUserFilter(interneTasks, availableUsers)
+
+const {
+  selectedUser: selectedExterneUser,
+  userOptions: externeUserOptions,
+  filteredTasks: filteredExterneTasks
+} = useUserFilter(externeTasks, availableUsers)
+
+function isValidWorkspace(value: unknown): value is TaskWorkspace {
+  return taskWorkspaces.includes(value as TaskWorkspace)
+}
+
+const activeTab = computed<TaskWorkspace>({
+  get: () => (isValidWorkspace(route.query.tab) ? route.query.tab : 'externe'),
+  set: (value) => {
+    navigateTo({ query: { ...route.query, tab: value } }, { replace: true })
+  }
+})
+
+const severityByWorkspace = computed<Record<TaskWorkspace, ReturnType<typeof getTaskWorkspaceSeverity>>>(() => ({
+  interne: getTaskWorkspaceSeverity(interneTasks.value),
+  externe: getTaskWorkspaceSeverity(externeTasks.value)
+}))
+
+const tabItems = [
+  { label: 'Agence', value: 'interne' as const, slot: 'interne' as const },
+  { label: 'Clients', value: 'externe' as const, slot: 'externe' as const }
+]
 </script>
 
 <template>
   <div class="container mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-6">
+      Tableau de bord
+    </h1>
+
     <div
       v-if="isLoading"
       class="space-y-4"
@@ -25,29 +68,72 @@ const isLoading = computed(() => status.value === 'pending' && !data.value)
         />
       </div>
     </div>
-    <TasksToDoList
+
+    <UTabs
       v-else
-      :tasks="filteredTasks"
-      :available-users="availableUsers"
-      :available-projects="projectOptions"
-      title="Tableau de bord"
-      title-heading="h1"
-      @refresh="refresh"
+      v-model="activeTab"
+      :items="tabItems"
     >
-      <template #filters>
-        <USelectMenu
-          v-model="selectedUser"
-          :items="userOptions"
-          placeholder="Filtrer par utilisateur"
-          value-attribute="value"
-          option-attribute="label"
-          class="w-64"
-        >
-          <template #leading>
-            <UIcon name="i-lucide-filter" />
-          </template>
-        </USelectMenu>
+      <template #trailing="{ item }">
+        <span
+          v-if="severityByWorkspace[item.value as TaskWorkspace] !== 'none'"
+          class="h-2 w-2 rounded-full"
+          :class="getTaskWorkspaceSeverityDotClass(severityByWorkspace[item.value as TaskWorkspace])"
+        />
       </template>
-    </TasksToDoList>
+
+      <template #interne>
+        <TasksToDoList
+          :tasks="filteredInterneTasks"
+          :available-users="availableUsers"
+          :available-projects="projectOptions"
+          workspace="interne"
+          title="Agence"
+          title-heading="h2"
+          @refresh="refresh"
+        >
+          <template #filters>
+            <USelectMenu
+              v-model="selectedInterneUser"
+              :items="interneUserOptions"
+              placeholder="Filtrer par utilisateur"
+              value-attribute="value"
+              option-attribute="label"
+              class="w-64"
+            >
+              <template #leading>
+                <UIcon name="i-lucide-filter" />
+              </template>
+            </USelectMenu>
+          </template>
+        </TasksToDoList>
+      </template>
+
+      <template #externe>
+        <TasksToDoList
+          :tasks="filteredExterneTasks"
+          :available-users="availableUsers"
+          :available-projects="projectOptions"
+          title="Clients"
+          title-heading="h2"
+          @refresh="refresh"
+        >
+          <template #filters>
+            <USelectMenu
+              v-model="selectedExterneUser"
+              :items="externeUserOptions"
+              placeholder="Filtrer par utilisateur"
+              value-attribute="value"
+              option-attribute="label"
+              class="w-64"
+            >
+              <template #leading>
+                <UIcon name="i-lucide-filter" />
+              </template>
+            </USelectMenu>
+          </template>
+        </TasksToDoList>
+      </template>
+    </UTabs>
   </div>
 </template>

@@ -43,6 +43,42 @@ export function sortTasksByCompletedAtDesc<T extends TaskWithCompletedAt>(tasks:
   return [...tasks].sort(compareTasksByCompletedAtDesc)
 }
 
+export type TaskOverdueCheckInput = {
+  dueDate: string | null
+  status: TaskStatus
+}
+
+export function isTaskOverdue(task: TaskOverdueCheckInput, now: Date = new Date()) {
+  if (!task.dueDate || task.status === 'done') {
+    return false
+  }
+
+  return new Date(task.dueDate).getTime() < now.getTime()
+}
+
+export type TaskWorkspaceSeverity = 'none' | 'pending' | 'overdue'
+
+export function getTaskWorkspaceSeverity(tasks: TaskOverdueCheckInput[]): TaskWorkspaceSeverity {
+  const pendingTasks = tasks.filter(task => task.status !== 'done')
+
+  if (pendingTasks.length === 0) {
+    return 'none'
+  }
+
+  return pendingTasks.some(task => isTaskOverdue(task)) ? 'overdue' : 'pending'
+}
+
+export function getTaskWorkspaceSeverityDotClass(severity: TaskWorkspaceSeverity) {
+  switch (severity) {
+    case 'overdue':
+      return 'bg-rose-500'
+    case 'pending':
+      return 'bg-amber-500'
+    default:
+      return ''
+  }
+}
+
 export function getTaskStatusLabel(status: TaskStatus) {
   switch (status) {
     case 'in_progress':
