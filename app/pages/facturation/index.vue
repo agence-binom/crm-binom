@@ -272,6 +272,7 @@ const getBillingStatusIcon = (status: BillingStatus) => {
                     {{ row.original.project.name }}
                   </p>
                   <UBadge
+                    v-if="getProjectDisplayStatus(row.original.project) !== 'sans_statut'"
                     size="sm"
                     variant="soft"
                     :color="getStatusColor(getProjectDisplayStatus(row.original.project))"
