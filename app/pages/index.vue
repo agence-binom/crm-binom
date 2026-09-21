@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { TaskWorkspace } from '~/constants/tasks'
 import { taskWorkspaces } from '~/constants/tasks'
-import { getTaskWorkspaceSeverity, getTaskWorkspaceSeverityDotClass } from '~/lib/tasks'
+import { getTaskWorkspaceSeverity, getTaskWorkspaceColor } from '~/lib/tasks'
 import type { Task, User } from '~/types'
 
 const route = useRoute()
+
+const { data: session } = await useAppSession()
+const currentUserId = computed(() => session.value?.user?.id ?? null)
 
 const { data, refresh, status } = await useFetch('/api/tasks/dashboard')
 const allTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
@@ -38,14 +41,17 @@ const activeTab = computed<TaskWorkspace>({
   }
 })
 
+const myInterneTasks = computed(() => interneTasks.value.filter(task => task.assigneeIds.includes(currentUserId.value as number)))
+const myExterneTasks = computed(() => externeTasks.value.filter(task => task.assigneeIds.includes(currentUserId.value as number)))
+
 const severityByWorkspace = computed<Record<TaskWorkspace, ReturnType<typeof getTaskWorkspaceSeverity>>>(() => ({
-  interne: getTaskWorkspaceSeverity(interneTasks.value),
-  externe: getTaskWorkspaceSeverity(externeTasks.value)
+  interne: getTaskWorkspaceSeverity(myInterneTasks.value),
+  externe: getTaskWorkspaceSeverity(myExterneTasks.value)
 }))
 
 const tabItems = [
-  { label: 'Agence', value: 'interne' as const, slot: 'interne' as const },
-  { label: 'Clients', value: 'externe' as const, slot: 'externe' as const }
+  { label: 'Clients', value: 'externe' as const },
+  { label: 'Agence', value: 'interne' as const }
 ]
 </script>
 
@@ -69,71 +75,89 @@ const tabItems = [
       </div>
     </div>
 
-    <UTabs
-      v-else
-      v-model="activeTab"
-      :items="tabItems"
-    >
-      <template #trailing="{ item }">
-        <span
-          v-if="severityByWorkspace[item.value as TaskWorkspace] !== 'none'"
-          class="h-2 w-2 rounded-full"
-          :class="getTaskWorkspaceSeverityDotClass(severityByWorkspace[item.value as TaskWorkspace])"
-        />
-      </template>
+    <template v-else>
+      <TasksToDoList
+        v-if="activeTab === 'interne'"
+        :tasks="filteredInterneTasks"
+        :available-users="availableUsers"
+        :available-projects="projectOptions"
+        workspace="interne"
+        @refresh="refresh"
+      >
+        <template #title>
+          <UTabs
+            v-model="activeTab"
+            variant="link"
+            :items="tabItems"
+            :content="false"
+          >
+            <template #trailing="{ item }">
+              <UChip
+                v-if="severityByWorkspace[item.value as TaskWorkspace] !== 'none'"
+                :color="getTaskWorkspaceColor(severityByWorkspace[item.value as TaskWorkspace])"
+                size="sm"
+                class="ml-2"
+              />
+            </template>
+          </UTabs>
+        </template>
 
-      <template #interne>
-        <TasksToDoList
-          :tasks="filteredInterneTasks"
-          :available-users="availableUsers"
-          :available-projects="projectOptions"
-          workspace="interne"
-          title="Agence"
-          title-heading="h2"
-          @refresh="refresh"
-        >
-          <template #filters>
-            <USelectMenu
-              v-model="selectedInterneUser"
-              :items="interneUserOptions"
-              placeholder="Filtrer par utilisateur"
-              value-attribute="value"
-              option-attribute="label"
-              class="w-64"
-            >
-              <template #leading>
-                <UIcon name="i-lucide-filter" />
-              </template>
-            </USelectMenu>
-          </template>
-        </TasksToDoList>
-      </template>
+        <template #filters>
+          <USelectMenu
+            v-model="selectedInterneUser"
+            :items="interneUserOptions"
+            placeholder="Filtrer par utilisateur"
+            value-attribute="value"
+            option-attribute="label"
+            class="w-64"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-filter" />
+            </template>
+          </USelectMenu>
+        </template>
+      </TasksToDoList>
 
-      <template #externe>
-        <TasksToDoList
-          :tasks="filteredExterneTasks"
-          :available-users="availableUsers"
-          :available-projects="projectOptions"
-          title="Clients"
-          title-heading="h2"
-          @refresh="refresh"
-        >
-          <template #filters>
-            <USelectMenu
-              v-model="selectedExterneUser"
-              :items="externeUserOptions"
-              placeholder="Filtrer par utilisateur"
-              value-attribute="value"
-              option-attribute="label"
-              class="w-64"
-            >
-              <template #leading>
-                <UIcon name="i-lucide-filter" />
-              </template>
-            </USelectMenu>
-          </template>
-        </TasksToDoList>
-      </template>
-    </UTabs>
+      <TasksToDoList
+        v-else
+        :tasks="filteredExterneTasks"
+        :available-users="availableUsers"
+        :available-projects="projectOptions"
+        @refresh="refresh"
+      >
+        <template #title>
+          <UTabs
+            v-model="activeTab"
+            variant="link"
+            :items="tabItems"
+            :content="false"
+          >
+            <template #trailing="{ item }">
+              <UChip
+                v-if="severityByWorkspace[item.value as TaskWorkspace] !== 'none'"
+                :color="getTaskWorkspaceColor(severityByWorkspace[item.value as TaskWorkspace])"
+                size="sm"
+                class="ml-2"
+              />
+            </template>
+          </UTabs>
+        </template>
+
+        <template #filters>
+          <USelectMenu
+            v-model="selectedExterneUser"
+            :items="externeUserOptions"
+            placeholder="Filtrer par utilisateur"
+            value-attribute="value"
+            option-attribute="label"
+            class="w-64"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-filter" />
+            </template>
+          </USelectMenu>
+        </template>
+      </TasksToDoList>
+    </template>
   </div>
 </template>

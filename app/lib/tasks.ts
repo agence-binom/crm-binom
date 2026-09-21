@@ -68,14 +68,14 @@ export function getTaskWorkspaceSeverity(tasks: TaskOverdueCheckInput[]): TaskWo
   return pendingTasks.some(task => isTaskOverdue(task)) ? 'overdue' : 'pending'
 }
 
-export function getTaskWorkspaceSeverityDotClass(severity: TaskWorkspaceSeverity) {
+export function getTaskWorkspaceColor(severity: TaskWorkspaceSeverity) {
   switch (severity) {
     case 'overdue':
-      return 'bg-rose-500'
+      return 'warning'
     case 'pending':
-      return 'bg-amber-500'
+      return 'info'
     default:
-      return ''
+      return undefined
   }
 }
 
