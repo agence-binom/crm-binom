@@ -37,6 +37,17 @@ test('getProjectDisplayStatus marque un projet comme en attente si le debut est 
   )
 })
 
+test('getProjectDisplayStatus repasse a sans_statut quand la derniere date est supprimee', () => {
+  assert.equal(
+    getProjectDisplayStatus({
+      status: 'en_cours',
+      startDate: null,
+      endDate: null
+    }),
+    'sans_statut'
+  )
+})
+
 test('getProjectDisplayStatus preserve le statut annule', () => {
   assert.equal(
     getProjectDisplayStatus(
