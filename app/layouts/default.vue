@@ -44,11 +44,6 @@ const items = ref<DropdownMenuItem[][]>([
   ]
 ])
 
-const agencyMenuItems = computed(() => [
-  { label: 'Tâches', icon: 'i-lucide-list-checks', to: '/agence/taches' },
-  { label: 'Administratif', icon: 'i-lucide-pen', to: '/clients', disabled: true }
-])
-
 const mainMenuItems = computed(() => [
   { label: 'Tableau de bord', icon: 'i-lucide-home', to: '/' },
   { label: 'Prospection', icon: 'i-lucide-target', to: '/prospection' },
@@ -100,8 +95,7 @@ const mainMenuItems = computed(() => [
             {
               label: 'Agence',
               icon: 'i-lucide-building',
-              children: agencyMenuItems
-            }
+              to: '/?tab=interne' }
           ]"
           orientation="vertical"
           class="mt-auto"

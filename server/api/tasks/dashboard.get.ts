@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     db
       .select()
       .from(tasksTable)
-      .where(eq(tasksTable.workspace, query.workspace))
+      .where(query.workspace ? eq(tasksTable.workspace, query.workspace) : undefined)
       .orderBy(asc(tasksTable.createdAt), asc(tasksTable.id)),
     db
       .select({
