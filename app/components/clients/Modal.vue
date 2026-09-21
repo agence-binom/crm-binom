@@ -280,6 +280,7 @@ const onSubmit = async () => {
             >
               <UInput
                 v-model="formState.email"
+                placeholder="email@example.com"
               />
             </UFormField>
 
@@ -290,6 +291,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.phone"
                 type="tel"
+                placeholder="01 23 45 67 89"
               />
             </UFormField>
           </div>
@@ -301,6 +303,7 @@ const onSubmit = async () => {
             <UInput
               v-model="formState.address"
               type="text"
+              placeholder="12 rue de la Paix"
             />
           </UFormField>
 
@@ -312,6 +315,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.postalCode"
                 type="text"
+                placeholder="75001"
               />
             </UFormField>
 
@@ -322,6 +326,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.city"
                 type="text"
+                placeholder="Paris"
               />
             </UFormField>
           </div>
@@ -334,6 +339,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.country"
                 type="text"
+                placeholder="France"
               />
             </UFormField>
 
@@ -344,6 +350,7 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.website"
                 type="url"
+                placeholder="https://example.com"
               />
             </UFormField>
           </div>
@@ -367,6 +374,7 @@ const onSubmit = async () => {
               <UTextarea
                 v-model="formState.notes"
                 :rows="3"
+                placeholder="Notes internes sur ce client..."
               />
             </UFormField>
           </div>
