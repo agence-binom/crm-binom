@@ -16,7 +16,7 @@ const infos = computed(() => [
   props.client.email ? { icon: 'i-lucide-mail', label: props.client.email } : null,
   props.client.phone ? { icon: 'i-lucide-phone', label: props.client.phone } : null,
   props.client.city ? { icon: 'i-lucide-map-pin', label: props.client.city } : null,
-  props.client.website ? { icon: 'i-lucide-globe', label: 'Site web' } : null,
+  props.client.website ? { icon: 'i-lucide-globe', label: props.client.website } : null,
   props.client.contactedAt ? { icon: 'i-lucide-phone-call', label: `${formatDateOnly(props.client.contactedAt)}` } : null,
   props.client.relancedAt ? { icon: 'i-lucide-bell-ring', label: `${formatDateOnly(props.client.relancedAt)}` } : null
 ].filter(i => i !== null))
