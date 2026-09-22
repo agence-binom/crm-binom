@@ -10,26 +10,35 @@ type Info = {
   label: string
 }
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   badge?: Badge
-  title: string
+  title?: string
   subtitle?: string
   infos?: Info[]
   hoverable?: boolean
+  clickable?: boolean
 }>(), {
-  hoverable: false
+  hoverable: false,
+  clickable: false
 })
+
+const slots = useSlots()
+const hasHeader = computed(() => Boolean(props.badge || slots.badge || props.title || props.subtitle || slots.actions))
 </script>
 
 <template>
   <UCard
     :class="[
       'group relative h-full rounded-[1.35rem] border-0 bg-white/90 shadow-sm ring-1 ring-gray-200/80 backdrop-blur',
-      hoverable && 'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md'
+      hoverable && 'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
+      clickable && 'cursor-pointer hover:shadow-md focus-within:shadow-md focus-within:ring-gray-300/80'
     ]"
   >
     <div class="space-y-3">
-      <div class="flex items-start justify-between gap-3">
+      <div
+        v-if="hasHeader"
+        class="flex items-start justify-between gap-3"
+      >
         <div class="min-w-0 space-y-2">
           <UBadge
             v-if="badge"
@@ -40,7 +49,11 @@ withDefaults(defineProps<{
           >
             {{ badge.label }}
           </UBadge>
-          <h3 class="truncate text-lg font-semibold tracking-tight text-slate-900">
+          <slot name="badge" />
+          <h3
+            v-if="title"
+            class="line-clamp-2 text-base font-semibold text-slate-900"
+          >
             {{ title }}
           </h3>
           <p
@@ -50,7 +63,9 @@ withDefaults(defineProps<{
             {{ subtitle }}
           </p>
         </div>
-        <slot name="actions" />
+        <div class="absolute right-4 top-4 ">
+          <slot name="actions" />
+        </div>
       </div>
 
       <slot />
