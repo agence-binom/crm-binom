@@ -8,6 +8,7 @@ type Badge = {
 type Info = {
   icon: string
   label: string
+  title?: string
 }
 
 const props = withDefaults(defineProps<{
@@ -80,6 +81,8 @@ const hasHeader = computed(() => Boolean(props.badge || slots.badge || props.tit
           variant="soft"
           color="neutral"
           :icon="info.icon"
+          :title="info.title"
+          :aria-label="info.title ? `${info.title} : ${info.label}` : undefined"
           class="rounded-full"
         >
           {{ info.label }}

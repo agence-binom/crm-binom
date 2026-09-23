@@ -163,6 +163,12 @@ const loadTimeEntries = async () => {
   timeEntries.value = (response.timeEntries as TimeEntry[] | undefined) || []
 }
 
+// Le cumul affiché sur la card vient de la liste parente : la prévenir pour qu'elle se recharge.
+const onTimeEntriesChange = async () => {
+  await loadTimeEntries()
+  emit('saved')
+}
+
 const resetForm = () => {
   Object.assign(formState, {
     title: '',
@@ -505,10 +511,11 @@ const statusChipUi = computed(() => ({
           v-if="effectiveTaskId"
           class="border-t border-slate-100 pt-4"
         >
-          <TaskAttachmentsList
-            :attachments="taskAttachments"
+          <TimeEntriesList
+            :time-entries="timeEntries"
             :task-id="effectiveTaskId"
-            @refresh="loadTaskAttachments"
+            :assignees="taskAssignees"
+            @refresh="onTimeEntriesChange"
           />
         </div>
 
@@ -516,11 +523,10 @@ const statusChipUi = computed(() => ({
           v-if="effectiveTaskId"
           class="border-t border-slate-100 pt-4"
         >
-          <TimeEntriesList
-            :time-entries="timeEntries"
+          <TaskAttachmentsList
+            :attachments="taskAttachments"
             :task-id="effectiveTaskId"
-            :assignees="taskAssignees"
-            @refresh="loadTimeEntries"
+            @refresh="loadTaskAttachments"
           />
         </div>
 

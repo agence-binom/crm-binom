@@ -3,13 +3,18 @@ import { timeEntriesTable } from '~/db/schema/time-entries'
 import { timeEntryCreateSchema } from '~/validation/time-entries'
 import { logActivity } from '~~/server/utils/activity-log'
 import { getAppUser } from '~~/server/utils/auth'
+import { resolveTimeEntryProjectId } from '~~/server/utils/time-entries'
 
 export default defineEventHandler(async (event) => {
-  const { ...body } = await readValidatedBody(event, timeEntryCreateSchema.parse)
+  const body = await readValidatedBody(event, timeEntryCreateSchema.parse)
+  // Recopie le projet de la tâche pour que la saisie reste comptée sur le projet si la tâche est
+  // supprimée un jour (taskId passe alors à null).
+  const projectId = body.taskId ? await resolveTimeEntryProjectId(body.taskId) : body.projectId
 
   const timeEntry = await db.transaction(async (tx) => {
     const [created] = await tx.insert(timeEntriesTable).values({
       ...body,
+      projectId,
       createdBy: getAppUser(event).id
     }).returning()
 

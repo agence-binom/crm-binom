@@ -12,7 +12,8 @@ import { projectIdSchema } from '~/validation/projects'
 import { withDocumentsDownloadUrls } from '~~/server/utils/documents'
 import { getProjectDeliverables } from '~~/server/utils/deliverables'
 import { withResourcesDownloadUrls } from '~~/server/utils/resources'
-import { withTaskAssigneeIds } from '~~/server/utils/tasks'
+import { annotateTasks } from '~~/server/utils/tasks'
+import { getProjectTimeEntries } from '~~/server/utils/time-entries'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, projectIdSchema.parse)
@@ -48,7 +49,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const [tasks, users, projectOptions, documents, resources] = await Promise.all([
+  const [tasks, users, projectOptions, documents, resources, timeEntries] = await Promise.all([
     db
       .select()
       .from(tasksTable)
@@ -96,17 +97,18 @@ export default defineEventHandler(async (event) => {
       .select()
       .from(resourcesTable)
       .where(eq(resourcesTable.projectId, id))
-      .orderBy(desc(resourcesTable.createdAt))
+      .orderBy(desc(resourcesTable.createdAt)),
+    getProjectTimeEntries(id)
   ])
 
   // Annotated here so the project detail page reads `lifecycle` straight off the response
   // instead of recomputing it client-side.
   const annotatedDocuments = annotateDocumentLifecycle(documents.map(document => ({ ...document, type: document.documentType as BillingDocumentType })))
-  const [documentsWithUrls, resourcesWithUrls, deliverablesWithUrls, tasksWithAssigneeIds] = await Promise.all([
+  const [documentsWithUrls, resourcesWithUrls, deliverablesWithUrls, annotatedTasks] = await Promise.all([
     withDocumentsDownloadUrls(event, annotatedDocuments),
     withResourcesDownloadUrls(event, resources),
     getProjectDeliverables(event, id),
-    withTaskAssigneeIds(tasks)
+    annotateTasks(tasks)
   ])
 
   return {
@@ -131,7 +133,7 @@ export default defineEventHandler(async (event) => {
         prospectionStatus: projectRow.clientProspectionStatus
       }
     },
-    tasks: tasksWithAssigneeIds,
+    tasks: annotatedTasks,
     users,
     projectOptions,
     documents: {
@@ -140,6 +142,7 @@ export default defineEventHandler(async (event) => {
       commercial_proposal: documentsWithUrls.filter(document => document.documentType === 'commercial_proposal')
     },
     resources: resourcesWithUrls,
-    deliverables: deliverablesWithUrls
+    deliverables: deliverablesWithUrls,
+    timeEntries
   }
 })

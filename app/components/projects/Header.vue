@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Project } from '~/types'
+import { getClientContactInfos } from '~/lib/clients'
 
 type ProjectHeaderClient = {
   id?: number | null
@@ -21,11 +22,7 @@ const emit = defineEmits<{
   restore: [projectId: number]
 }>()
 
-const infos = computed(() => [
-  { value: props.client?.email, icon: 'i-lucide-mail' },
-  { value: props.client?.phone, icon: 'i-lucide-phone' },
-  { value: props.client?.website, icon: 'i-lucide-globe' }
-])
+const infos = computed(() => getClientContactInfos(props.client))
 </script>
 
 <template>
@@ -49,6 +46,7 @@ const infos = computed(() => [
 
     <template #actions>
       <div class="flex items-center gap-2">
+        <slot name="actions" />
         <UButton
           size="sm"
           variant="soft"

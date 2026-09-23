@@ -4,6 +4,7 @@ export type Task = {
   id: number
   projectId: number | null
   assigneeIds: number[]
+  timeSpent: number
   title: string
   notes: string | null
   status: TaskStatus

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Client } from '~/types'
+import { formatPhone } from '~/lib/phone'
 
 const props = defineProps<{
   client: Client
@@ -14,7 +15,7 @@ const emit = defineEmits<{
 
 const infos = computed(() => [
   props.client.email ? { icon: 'i-lucide-mail', label: props.client.email } : null,
-  props.client.phone ? { icon: 'i-lucide-phone', label: props.client.phone } : null,
+  props.client.phone ? { icon: 'i-lucide-phone', label: formatPhone(props.client.phone) } : null,
   props.client.website ? { icon: 'i-lucide-globe', label: props.client.website } : null
 ].filter(i => i !== null))
 </script>

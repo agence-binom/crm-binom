@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { isClientStatus } from '~/constants/prospection'
-import type { ProjectDeliverable, ProjectResource, Task, User } from '~/types'
+import type { ProjectDeliverable, ProjectResource, ProjectTimeEntry, Task, User } from '~/types'
 
 const route = useRoute()
 const clientId = computed(() => Number(route.params.id))
@@ -11,6 +10,7 @@ const project = computed(() => data.value?.project)
 const projectTasks = computed<Task[]>(() => (data.value?.tasks as Task[] | undefined) || [])
 const projectResources = computed<ProjectResource[]>(() => (data.value?.resources as ProjectResource[] | undefined) || [])
 const projectDeliverables = computed<ProjectDeliverable[]>(() => (data.value?.deliverables as ProjectDeliverable[] | undefined) || [])
+const projectTimeEntries = computed<ProjectTimeEntry[]>(() => (data.value?.timeEntries as ProjectTimeEntry[] | undefined) || [])
 const availableUsers = computed<User[]>(() => data.value?.users || [])
 const projectOptions = computed(() => data.value?.projectOptions || [])
 
@@ -62,7 +62,17 @@ const handleDocumentsChange = async () => {
       @delete="onDeleteProject"
       @archive="onArchiveProject"
       @restore="onRestoreProject"
-    />
+    >
+      <template #actions>
+        <TimeEntriesProjectSummary
+          :project-id="project.id"
+          :time-entries="projectTimeEntries"
+          :tasks="projectTasks"
+          :users="availableUsers"
+          @refresh="refresh"
+        />
+      </template>
+    </ProjectsHeader>
 
     <ProjectsModal
       v-model:open="isProjectModalOpen"
@@ -107,10 +117,7 @@ const handleDocumentsChange = async () => {
       </TasksToDoList>
     </div>
 
-    <div
-      v-if="isClientStatus(project.client.prospectionStatus)"
-      class="mt-8"
-    >
+    <div class="mt-8">
       <DeliverablesList
         :deliverables="projectDeliverables"
         :project-id="projectId"
