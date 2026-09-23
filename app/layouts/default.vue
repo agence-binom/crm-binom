@@ -31,7 +31,7 @@ const items = ref<DropdownMenuItem[][]>([
     }
   ], [
     {
-      label: 'Profile',
+      label: 'Profil',
       icon: 'i-lucide-user',
       disabled: true
     },
@@ -87,18 +87,6 @@ const mainMenuItems = computed(() => [
           :collapsed="collapsed"
           orientation="vertical"
           :items="mainMenuItems"
-        />
-
-        <UNavigationMenu
-          :collapsed="collapsed"
-          :items="[
-            {
-              label: 'Agence',
-              icon: 'i-lucide-building',
-              to: '/?tab=interne' }
-          ]"
-          orientation="vertical"
-          class="mt-auto"
         />
       </template>
     </UDashboardSidebar>

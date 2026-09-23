@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { timeEntryCreateSchema, timeEntryUpdateSchema } from '~/validation/time-entries.ts'
 import { formatDuration, parseDuration } from '~/lib/utils'
-import type { TimeEntry } from '~/types'
+import type { Task, TimeEntry } from '~/types'
 
 type TimeEntryAssignee = { id: number, name: string }
 
@@ -9,7 +9,10 @@ const props = defineProps<{
   open: boolean
   timeEntryId?: number | null
   timeEntry?: TimeEntry | null
-  taskId: number
+  taskId?: number | null
+  projectId?: number | null
+  // Fourni uniquement pour une saisie depuis le projet : affiche le choix (facultatif) de la tâche.
+  tasks?: Pick<Task, 'id' | 'title'>[]
   assignees?: TimeEntryAssignee[]
 }>()
 
@@ -39,7 +42,15 @@ const userOptions = computed(() => {
   return source.map(user => ({ label: user.name, value: user.id }))
 })
 
-const defaultUserId = computed(() => (props.assignees?.length === 1 ? props.assignees[0]!.id : undefined))
+const { data: session } = useCachedAppSession()
+
+// Priorité à l'utilisateur connecté s'il fait partie des choix proposés (assignés de la tâche,
+// ou tous les utilisateurs à défaut) ; sinon l'assigné unique de la tâche s'il n'y en a qu'un.
+const defaultUserId = computed(() => {
+  const currentUserId = session.value?.user?.id
+  if (currentUserId && userOptions.value.some(option => option.value === currentUserId)) return currentUserId
+  return props.assignees?.length === 1 ? props.assignees[0]!.id : undefined
+})
 
 // Champ libre affiché à l'utilisateur ("1h30", "5h", "15min"…) ; formState.duration
 // est dérivé, en minutes, pour le schéma de validation et l'API.
@@ -48,8 +59,19 @@ const durationInput = ref('')
 const formState = reactive({
   notes: '',
   duration: computed(() => parseDuration(durationInput.value)),
-  taskId: props.taskId,
+  taskId: props.taskId ?? null,
+  projectId: props.projectId ?? null,
   userId: defaultUserId.value
+})
+
+const taskOptions = computed(() => [
+  { label: 'Aucune tâche', value: null as number | null },
+  ...(props.tasks ?? []).map(task => ({ label: task.title, value: task.id as number | null }))
+])
+
+const selectedTask = computed({
+  get: () => taskOptions.value.find(option => option.value === formState.taskId),
+  set: (option) => { formState.taskId = option?.value ?? null }
 })
 
 const durationHint = computed(() => (
@@ -59,7 +81,8 @@ const durationHint = computed(() => (
 const resetForm = () => {
   Object.assign(formState, {
     notes: '',
-    taskId: props.taskId,
+    taskId: props.taskId ?? null,
+    projectId: props.projectId ?? null,
     userId: defaultUserId.value
   })
   durationInput.value = ''
@@ -69,6 +92,7 @@ const fillFromProject = (timeEntry: TimeEntry) => {
   Object.assign(formState, {
     notes: timeEntry.notes,
     taskId: timeEntry.taskId,
+    projectId: timeEntry.projectId ?? props.projectId ?? null,
     userId: timeEntry.userId
   })
   durationInput.value = formatDuration(timeEntry.duration)
@@ -76,11 +100,11 @@ const fillFromProject = (timeEntry: TimeEntry) => {
 
 watch(
   () => props.open,
-  (open) => {
+  async (open) => {
     if (!open) return
+    if (!props.assignees?.length && !usersData.value) await refreshUsers()
     if (isEditing.value && props.timeEntry) fillFromProject(props.timeEntry)
     else resetForm()
-    if (!props.assignees?.length && !usersData.value) refreshUsers()
   },
   { immediate: true }
 )
@@ -100,6 +124,7 @@ const onSubmit = async () => {
       notes: formState.notes,
       duration: formState.duration,
       taskId: formState.taskId,
+      projectId: formState.projectId,
       userId: formState.userId
     }
 
@@ -154,6 +179,19 @@ const onSubmit = async () => {
             <UInput
               v-model="formState.notes"
               placeholder="Ex: Réunion avec le client"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField
+            v-if="tasks"
+            label="Tâche"
+            name="taskId"
+            class="w-full"
+          >
+            <USelectMenu
+              v-model="selectedTask"
+              :items="taskOptions"
               class="w-full"
             />
           </UFormField>

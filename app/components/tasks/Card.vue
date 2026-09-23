@@ -5,7 +5,7 @@ import {
   getTaskPriorityLabel,
   isTaskOverdue
 } from '~/lib/tasks'
-import { formatDateOnly } from '~/lib/utils'
+import { formatDateOnly, formatDuration } from '~/lib/utils'
 import type { Task } from '~/types'
 
 const props = withDefaults(defineProps<{
@@ -137,6 +137,22 @@ const projectLink = computed(() => {
             />
             {{ formatDateOnly(props.task.dueDate) }}
           </UBadge>
+
+          <UTooltip
+            v-if="props.task.timeSpent"
+            text="Temps passé"
+          >
+            <UBadge
+              variant="soft"
+              color="neutral"
+              size="md"
+              class="rounded-full tabular-nums"
+              :aria-label="`Temps passé : ${formatDuration(props.task.timeSpent)}`"
+            >
+              <UIcon name="i-lucide-timer" />
+              {{ formatDuration(props.task.timeSpent) }}
+            </UBadge>
+          </UTooltip>
         </div>
       </div>
     </AppCard>

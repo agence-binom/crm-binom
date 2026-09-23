@@ -4,6 +4,7 @@ import { clientsTable } from '~/db/schema/clients'
 import { contactsTable } from '~/db/schema/contacts'
 import { projectsTable } from '~/db/schema/projects'
 import { clientIdSchema } from '~/validation/clients'
+import { withProjectTimeSpent } from '~~/server/utils/time-entries'
 
 export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, clientIdSchema.parse)
@@ -36,6 +37,6 @@ export default defineEventHandler(async (event) => {
   return {
     client,
     contacts,
-    projects
+    projects: await withProjectTimeSpent(projects)
   }
 })

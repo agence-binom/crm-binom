@@ -29,7 +29,10 @@ export const getFileTypeIcon = (mimetype?: string | null) => {
   return 'i-lucide-file'
 }
 
+export const sumDurations = (entries: { duration: number }[]) => entries.reduce((sum, entry) => sum + entry.duration, 0)
+
 export const formatDuration = (minutes: number) => {
+  if (minutes === 0) return '0h'
   const hours = Math.floor(minutes / 60)
   const remaining = minutes % 60
   if (hours === 0) return `${remaining}min`

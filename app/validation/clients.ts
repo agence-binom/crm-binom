@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { clientIconValues } from '../lib/client-icons'
 import { prospectionStatuses } from '../constants/prospection'
+import { phoneSchema } from './phone'
 
 // Préserve null pour distinguer un champ omis (ne pas toucher) d'une date explicitement effacée -
 // même convention que nullableDateSchema dans validation/tasks.ts.
@@ -25,7 +26,7 @@ const clientIconSchema = z.string()
 export const clientCreateSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(255, 'Le nom est trop long'),
   email: z.email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
-  phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
+  phone: phoneSchema,
   address: z.string().optional().or(z.literal('')),
   city: z.string().max(100, 'Ville trop longue').optional().or(z.literal('')),
   postalCode: z.string().regex(/^\d*$/, 'Le code postal doit contenir uniquement des chiffres').max(5, 'Code postal trop long').optional().or(z.literal('')),
@@ -42,7 +43,7 @@ export const clientCreateSchema = z.object({
 export const clientUpdateSchema = z.object({
   name: z.string().min(1, 'Le nom ne peut pas être vide').max(255, 'Le nom est trop long').optional().or(z.literal('')),
   email: z.email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
-  phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
+  phone: phoneSchema,
   address: z.string().optional().or(z.literal('')),
   city: z.string().max(100, 'Ville trop longue').optional().or(z.literal('')),
   postalCode: z.string().regex(/^\d*$/, 'Le code postal doit contenir uniquement des chiffres').max(5, 'Code postal trop long').optional().or(z.literal('')),

@@ -4,7 +4,7 @@ import { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
 import { tasksTable } from '~/db/schema/tasks'
 import { usersTable } from '~/db/schema/users'
-import { withTaskAssigneeIds } from '~~/server/utils/tasks'
+import { annotateTasks } from '~~/server/utils/tasks'
 import { taskDashboardQuerySchema } from '~/validation/tasks'
 
 export default defineEventHandler(async (event) => {
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
   ])
 
   return {
-    tasks: await withTaskAssigneeIds(tasks),
+    tasks: await annotateTasks(tasks),
     users,
     projectOptions
   }
