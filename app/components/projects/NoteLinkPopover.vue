@@ -44,10 +44,22 @@ const onEditorClick = (event: MouseEvent) => {
   open.value = true
 }
 
-watchEffect((onCleanup) => {
-  const dom = props.editor.view.dom
-  dom.addEventListener('click', onEditorClick)
-  onCleanup(() => dom.removeEventListener('click', onEditorClick))
+// La vue de l'éditeur peut ne pas être encore montée au setup de ce composant : y accéder lèverait
+// une erreur Tiptap.
+let editorDom: HTMLElement | undefined
+const listenToLinkClicks = () => {
+  editorDom = props.editor.view.dom
+  editorDom.addEventListener('click', onEditorClick)
+}
+
+onMounted(() => {
+  if (props.editor.isInitialized) listenToLinkClicks()
+  else props.editor.on('create', listenToLinkClicks)
+})
+
+onBeforeUnmount(() => {
+  props.editor.off('create', listenToLinkClicks)
+  editorDom?.removeEventListener('click', onEditorClick)
 })
 
 const ALLOWED_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:']

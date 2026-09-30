@@ -59,8 +59,12 @@ test('un projet sans note propose de créer la première, qui s\'ouvre et incré
   await expect(page.getByRole('textbox', { name: 'Contenu de la note' })).toBeFocused()
 
   // La note ouverte masque le reste de la page (modale) : on la referme pour vérifier le badge.
-  await page.keyboard.press('Escape')
-  await expect(page).not.toHaveURL(/[?&]note=/)
+  // Un Échap envoyé dès que l'éditeur a le focus peut arriver avant que la modale soit prête à le
+  // traiter (vu en e2e, jamais à la main) : on le renvoie tant que la note n'est pas fermée.
+  await expect(async () => {
+    await page.keyboard.press('Escape')
+    await expect(page).not.toHaveURL(/[?&]note=/, { timeout: 1000 })
+  }).toPass()
   await expect(page.getByRole('button', { name: 'Notes du projet (1)' })).toBeVisible()
   await page.getByRole('button', { name: 'Notes du projet (1)' }).click()
   await expect(page.getByRole('list', { name: 'Notes du projet' }).getByText('Sans titre')).toBeVisible()
