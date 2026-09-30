@@ -17,7 +17,7 @@
     "db:migrate": "tsx app/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
-    "db:up": "docker compose -f compose.dev.yml up -d --wait",
+    "db:up": "docker compose -f compose.dev.yml up -d --wait && tsx scripts/dev-s3-init.ts",
     "db:down": "docker compose -f compose.dev.yml down",
     "db:reset:local": "tsx scripts/reset-local-db.ts && npm run db:migrate && npm run db:seed",
     "prepare": "husky"
@@ -32,6 +32,7 @@
     "@iconify-json/lucide": "^1.2.134",
     "@iconify-json/simple-icons": "^1.2.95",
     "@nuxt/ui": "4.11.1",
+    "@tiptap/extension-list": "3.31.3",
     "better-auth": "^1.7.5",
     "dotenv": "^18.0.0",
     "drizzle-orm": "^0.45.1",

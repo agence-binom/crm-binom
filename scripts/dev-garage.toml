@@ -1,0 +1,16 @@
+# Garage de développement (compose.dev.yml) : un seul nœud, sans réplication. Le secret RPC est
+# fourni par GARAGE_RPC_SECRET dans compose.dev.yml. Rien ici ne doit servir hors de la machine
+# de dev.
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "sqlite"
+
+replication_factor = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+# Doit correspondre à NUXT_S3_REGION, sinon les signatures S3 sont refusées.
+s3_region = "garage"
+api_bind_addr = "[::]:3900"

@@ -71,8 +71,14 @@ const handleDocumentsChange = async () => {
           :users="availableUsers"
           @refresh="refresh"
         />
+        <ProjectsNotesPopover :project-id="project.id" />
       </template>
     </ProjectsHeader>
+
+    <ProjectsNoteEditorHost
+      :project-id="project.id"
+      :project-name="project.name"
+    />
 
     <ProjectsModal
       v-model:open="isProjectModalOpen"

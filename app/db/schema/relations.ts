@@ -4,6 +4,7 @@ import { clientsTable } from './clients'
 import { contactsTable } from './contacts'
 import { deliverablesTable } from './deliverables'
 import { documentsTable } from './documents'
+import { projectNotesTable } from './project-notes'
 import { projectsTable } from './projects'
 import { tasksTable } from './tasks'
 import { resourcesTable } from './resources'
@@ -32,7 +33,19 @@ export const projectsRelations = relations(projectsTable, ({ one, many }) => ({
   tasks: many(tasksTable),
   resources: many(resourcesTable),
   deliverables: many(deliverablesTable),
-  billingDocuments: many(billingDocumentsTable)
+  billingDocuments: many(billingDocumentsTable),
+  notes: many(projectNotesTable)
+}))
+
+export const projectNotesRelations = relations(projectNotesTable, ({ one }) => ({
+  project: one(projectsTable, {
+    fields: [projectNotesTable.projectId],
+    references: [projectsTable.id]
+  }),
+  author: one(usersTable, {
+    fields: [projectNotesTable.createdBy],
+    references: [usersTable.id]
+  })
 }))
 
 export const billingDocumentsRelations = relations(billingDocumentsTable, ({ one }) => ({

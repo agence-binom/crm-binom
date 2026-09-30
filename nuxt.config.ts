@@ -51,6 +51,15 @@ export default defineNuxtConfig({
     }
   },
 
+  vite: {
+    optimizeDeps: {
+      // Le reste de TipTap est importé par le runtime de Nuxt UI et servi tel quel en dev. Pré-bundlé,
+      // ce paquet embarquerait sa propre copie de @tiptap/core et ProseMirror : l'éditeur plante alors
+      // au montage ("Adding different instances of a keyed plugin").
+      exclude: ['@tiptap/extension-list']
+    }
+  },
+
   eslint: {
     config: {
       stylistic: {
