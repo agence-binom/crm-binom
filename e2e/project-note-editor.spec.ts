@@ -98,6 +98,40 @@ test('ouvrir puis fermer une note sans la modifier ne la marque pas comme modifi
   expect((await findNote(note.id))?.updatedAt.toISOString()).toBe('2026-01-01T10:00:00.000Z')
 })
 
+test('le bouton Lien suit la sélection : ajout puis retrait d\'un lien', async ({ page }) => {
+  const { projectId, note } = await createProjectWithNote({
+    content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Voir le site' }] }] },
+    contentText: 'Voir le site'
+  })
+  const editor = await openNotePage(page, projectId, note.id)
+  const selectLine = async () => {
+    await editor.click()
+    await page.keyboard.press('End')
+    await page.keyboard.press('Shift+Home')
+  }
+
+  // L'éditeur s'ouvre sans sélection : le bouton doit se réactiver quand on sélectionne ensuite.
+  await selectLine()
+  const linkButton = page.getByRole('button', { name: 'Lien', exact: true })
+  await linkButton.waitFor()
+  // Lu une seule fois, sans réessai : l'état doit être juste dès que la barre apparaît.
+  expect(await linkButton.isEnabled()).toBe(true)
+
+  await linkButton.click()
+  await page.getByRole('textbox', { name: 'Adresse du lien' }).fill('exemple.fr')
+  await page.keyboard.press('Enter')
+  const link = editor.getByRole('link', { name: 'Voir le site' })
+  await expect(link).toHaveAttribute('href', 'https://exemple.fr')
+
+  await selectLine()
+  await linkButton.click()
+  const removeButton = page.getByRole('button', { name: 'Retirer le lien' })
+  await expect(removeButton).toBeEnabled()
+  await removeButton.click()
+  await expect(link).toBeHidden()
+  await expect(editor).toHaveText('Voir le site')
+})
+
 test('les raccourcis markdown produisent titres, listes et cases à cocher', async ({ page }) => {
   const { projectId, note } = await createProjectWithNote()
   const editor = await openNotePage(page, projectId, note.id)
@@ -150,7 +184,7 @@ test('une note ouverte depuis le popover puis supprimée disparaît du badge', a
   await page.waitForLoadState('networkidle')
 
   await page.getByRole('button', { name: 'Notes du projet (1)' }).click()
-  await page.getByRole('list', { name: 'Notes du projet' }).getByRole('button', { name: /À supprimer/ }).click()
+  await page.getByRole('list', { name: 'Notes du projet' }).getByRole('button', { name: /^À supprimer/ }).click()
   await expect(page).toHaveURL(new RegExp(`[?&]note=${note.id}(&|$)`))
   await expect(page.getByRole('textbox', { name: 'Contenu de la note' })).toBeVisible()
 

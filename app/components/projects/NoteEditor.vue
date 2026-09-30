@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DropdownMenuItem, EditorHandler, EditorToolbarItem } from '@nuxt/ui'
+import type { DropdownMenuItem, EditorToolbarItem } from '@nuxt/ui'
 import { TaskItem, TaskList } from '@tiptap/extension-list'
 import { getProjectNoteSaveStatusLabel } from '~/lib/project-note-autosave'
 import type { ProjectNoteContent } from '~/types'
@@ -25,24 +25,6 @@ const STARTER_KIT_OPTIONS = {
   underline: false as const
 }
 
-// Remplace le gestionnaire de lien par défaut de Nuxt UI, dont l'invite est en anglais.
-const linkHandler: EditorHandler = {
-  canExecute: editor => editor.can().setLink({ href: '' }) || editor.can().unsetLink(),
-  execute: (editor) => {
-    if (editor.isActive('link')) return editor.chain().focus().unsetLink()
-
-    const href = window.prompt('Adresse du lien :')?.trim()
-    if (!href) return editor.chain().focus()
-
-    const absoluteHref = /^[a-z][a-z\d+.-]*:/i.test(href) ? href : `https://${href}`
-    return editor.chain().focus().extendMarkRange('link').setLink({ href: absoluteHref })
-  },
-  isActive: editor => editor.isActive('link'),
-  isDisabled: editor => editor.state.selection.empty && !editor.isActive('link')
-}
-
-const EDITOR_HANDLERS = { link: linkHandler }
-
 const TOOLBAR_ITEMS: EditorToolbarItem[][] = [
   [
     { 'kind': 'heading', 'level': 2, 'icon': 'i-lucide-heading-2', 'aria-label': 'Titre de section', 'tooltip': { text: 'Titre de section' } },
@@ -51,7 +33,8 @@ const TOOLBAR_ITEMS: EditorToolbarItem[][] = [
   [
     { 'kind': 'mark', 'mark': 'bold', 'icon': 'i-lucide-bold', 'aria-label': 'Gras', 'tooltip': { text: 'Gras', kbds: ['meta', 'B'] } },
     { 'kind': 'mark', 'mark': 'italic', 'icon': 'i-lucide-italic', 'aria-label': 'Italique', 'tooltip': { text: 'Italique', kbds: ['meta', 'I'] } },
-    { 'kind': 'link', 'icon': 'i-lucide-link', 'aria-label': 'Lien', 'tooltip': { text: 'Lien' } }
+    // Le lien passe par un popover (slot) plutôt que par l'invite navigateur du handler par défaut.
+    { slot: 'link' as const }
   ],
   [
     { 'kind': 'bulletList', 'icon': 'i-lucide-list', 'aria-label': 'Liste à puces', 'tooltip': { text: 'Liste à puces' } },
@@ -61,13 +44,14 @@ const TOOLBAR_ITEMS: EditorToolbarItem[][] = [
 ]
 
 // Le thème de UEditor ne prévoit rien pour les listes de tâches : sans ces règles elles héritent
-// des puces des listes classiques.
+// des puces des listes classiques. Les <li> sont ciblés via leur <ul> parent : le rendu interactif de
+// TaskItem (nodeView) ne pose pas data-type="taskItem" sur le <li>, seulement sur le <ul>.
 const EDITOR_UI = {
   base: [
     'sm:px-0 *:my-3',
     '[&_ul[data-type=taskList]]:list-none [&_ul[data-type=taskList]]:ps-0.5',
-    '[&_li[data-type=taskItem]]:flex [&_li[data-type=taskItem]]:items-start [&_li[data-type=taskItem]]:gap-2',
-    '[&_li[data-type=taskItem]>label]:mt-[0.3em] [&_li[data-type=taskItem]>div]:flex-1',
+    '[&_ul[data-type=taskList]>li]:flex [&_ul[data-type=taskList]>li]:items-start [&_ul[data-type=taskList]>li]:gap-2',
+    '[&_ul[data-type=taskList]>li>label]:mt-[0.3em] [&_ul[data-type=taskList]>li>div]:flex-1',
     '[&_li[data-checked=true]>div]:text-muted [&_li[data-checked=true]>div]:line-through'
   ].join(' ')
 }
@@ -304,7 +288,6 @@ const onEditorUpdate = (content: unknown) => {
               :image="false"
               :mention="false"
               :extensions="EDITOR_EXTENSIONS"
-              :handlers="EDITOR_HANDLERS"
               placeholder="Écrivez ici… « ## » pour un titre, « - » pour une liste, « [ ] » pour une case à cocher."
               autofocus="end"
               role="textbox"
@@ -319,7 +302,11 @@ const onEditorUpdate = (content: unknown) => {
                 :editor="editor"
                 :items="TOOLBAR_ITEMS"
                 layout="bubble"
-              />
+              >
+                <template #link>
+                  <ProjectsNoteLinkPopover :editor="editor" />
+                </template>
+              </UEditorToolbar>
             </UEditor>
           </div>
         </div>

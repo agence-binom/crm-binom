@@ -10,7 +10,7 @@ type LoadState = 'loading' | 'ready' | 'not-found' | 'error'
 const EMPTY_DOCUMENT: ProjectNoteContent = { type: 'doc', content: [{ type: 'paragraph' }] }
 
 export function useProjectNoteEditor(noteId: number, projectId: number) {
-  const { showError, showSuccess } = useFeedbackToast()
+  const { showError } = useFeedbackToast()
 
   const loadState = ref<LoadState>('loading')
   const title = ref('')
@@ -100,16 +100,12 @@ export function useProjectNoteEditor(noteId: number, projectId: number) {
     }
   }
 
+  const deleteProjectNote = useDeleteProjectNote()
+
   const deleteNote = async () => {
-    try {
-      await $fetch(`/api/notes/${noteId}`, { method: 'DELETE' })
-      autosave?.dispose()
-      showSuccess('Note supprimée', 'La note a été supprimée.')
-      return true
-    } catch (error) {
-      showError('Suppression impossible', error, 'La note n\'a pas pu être supprimée.')
-      return false
-    }
+    const isDeleted = await deleteProjectNote(noteId)
+    if (isDeleted) autosave?.dispose()
+    return isDeleted
   }
 
   const discardAndDispose = () => autosave?.dispose()
