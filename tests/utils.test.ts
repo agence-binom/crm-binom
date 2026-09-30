@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getErrorMessage } from '../app/lib/utils'
+import { formatRelativeTime, getErrorMessage } from '../app/lib/utils'
 
 test('getErrorMessage retourne statusMessage à la racine', () => {
   assert.equal(
@@ -54,4 +54,26 @@ test('getErrorMessage retourne le fallback si aucun message exploitable', () => 
     getErrorMessage({ foo: 'bar' }, 'Erreur inconnue'),
     'Erreur inconnue'
   )
+})
+
+test('formatRelativeTime utilise la forme courte pour les minutes et les heures', () => {
+  const now = new Date('2026-09-30T12:00:00Z')
+
+  assert.equal(formatRelativeTime('2026-09-30T11:59:30Z', now), 'à l\'instant')
+  assert.equal(formatRelativeTime('2026-09-30T11:55:00Z', now), 'il y a 5 min')
+  assert.equal(formatRelativeTime('2026-09-30T10:00:00Z', now), 'il y a 2 h')
+})
+
+test('formatRelativeTime tronque au lieu d\'arrondir', () => {
+  const now = new Date('2026-09-30T12:00:00Z')
+
+  assert.equal(formatRelativeTime('2026-09-30T11:00:20Z', now), 'il y a 59 min')
+})
+
+test('formatRelativeTime passe à la forme longue au-delà d\'un jour', () => {
+  const now = new Date('2026-09-30T12:00:00Z')
+
+  assert.equal(formatRelativeTime('2026-09-29T12:00:00Z', now), 'hier')
+  assert.equal(formatRelativeTime('2026-09-27T12:00:00Z', now), 'il y a 3 jours')
+  assert.equal(formatRelativeTime('2024-09-01T12:00:00Z', now), 'il y a 2 ans')
 })
