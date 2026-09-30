@@ -19,7 +19,7 @@ export const clientsTable = pgTable('clients', {
   // Défaut 'client' au niveau DB uniquement pour backfiller les lignes existantes lors de la
   // migration (rien ne doit disparaître de /clients au déploiement) - les créations applicatives
   // passent toujours une valeur explicite (cf. clientCreateSchema, défaut 'nouveau').
-  prospectionStatus: varchar({ length: 30 }).notNull().default('client'), // 'nouveau' | 'contacte' | 'a_relancer' | 'proposition_envoye' | 'negociation' | 'client' | 'perdu'
+  prospectionStatus: varchar({ length: 30 }).notNull().default('client'), // 'nouveau' | 'contacte' | 'a_relancer' | 'en_discussion' |'proposition_envoye' | 'negociation' | 'client' | 'perdu'
   // Renseignés automatiquement quand un prospect entre dans la colonne correspondante du kanban
   // (cf. getProspectionStatusSideEffects, server/utils/prospection.ts) - jamais saisis à la main.
   contactedAt: timestamp(),

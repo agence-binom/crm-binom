@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { contactCreateSchema, contactUpdateSchema } from '~/validation/contacts'
+import { normalizePhone } from '~/lib/phone'
 import type { Client, Contact } from '~/types'
 
 type ContactModalClientOption = Pick<Client, 'id' | 'name'>
@@ -221,7 +222,9 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.phone"
                 type="tel"
-                placeholder="01 23 45 67 89"
+                autocomplete="tel"
+                placeholder="0123456789"
+                @blur="formState.phone = normalizePhone(formState.phone)"
               />
             </UFormField>
 
@@ -232,7 +235,9 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.mobile"
                 type="tel"
-                placeholder="06 12 34 56 78"
+                autocomplete="tel"
+                placeholder="0612345678"
+                @blur="formState.mobile = normalizePhone(formState.mobile)"
               />
             </UFormField>
           </div>

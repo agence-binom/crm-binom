@@ -41,6 +41,11 @@ const columnSettings: Record<ProspectionStatus, {
     badgeColor: 'warning',
     emptyIconClass: 'text-orange-300'
   },
+  en_discussion: {
+    bgClass: 'bg-cyan-50/90 ring-1 ring-cyan-200/80',
+    badgeColor: 'primary',
+    emptyIconClass: 'text-cyan-300'
+  },
   proposition_envoye: {
     bgClass: 'bg-indigo-50/90 ring-1 ring-indigo-200/80',
     badgeColor: 'primary',

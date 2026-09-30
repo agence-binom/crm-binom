@@ -12,3 +12,7 @@ type AppSession = {
 // (layout + page montés avant que le premier fetch ne résolve) attende la requête déjà en vol
 // plutôt que de l'annuler pour en relancer une identique.
 export const useAppSession = () => useFetch<AppSession>('/api/auth/session', { key: 'app-session', dedupe: 'defer' })
+
+// Lecture seule de la session déjà chargée par le layout : un useFetch par composant relancerait
+// /api/auth/session à chaque montage côté client (pas de cache hors hydratation).
+export const useCachedAppSession = () => useNuxtData<AppSession>('app-session')
