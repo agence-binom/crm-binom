@@ -8,6 +8,7 @@ import { clientCreateSchema, clientUpdateSchema } from '~/validation/clients'
 import { prospectionStatuses, type ProspectionStatus } from '~/constants/prospection'
 import { getProspectionStatusLabel } from '~/lib/prospection'
 import { toProjectInputDate } from '~/lib/projects'
+import { normalizePhone } from '~/lib/phone'
 import type { Client } from '~/types'
 
 const prospectionStatusOptions = prospectionStatuses.map(status => ({ value: status, label: getProspectionStatusLabel(status) }))
@@ -291,7 +292,9 @@ const onSubmit = async () => {
               <UInput
                 v-model="formState.phone"
                 type="tel"
-                placeholder="01 23 45 67 89"
+                autocomplete="tel"
+                placeholder="0123456789"
+                @blur="formState.phone = normalizePhone(formState.phone)"
               />
             </UFormField>
           </div>

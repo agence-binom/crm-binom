@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getProjectDisplayStatus } from '~/lib/projects'
+import { formatDuration } from '~/lib/utils'
 import type { Project } from '~/types'
 
 const props = defineProps<{
@@ -33,7 +34,8 @@ const badge = computed(() => {
 
 const infos = computed(() => [
   props.project.startDate ? { icon: 'i-lucide-calendar-range', label: formatDate(props.project.startDate)! } : null,
-  props.project.endDate ? { icon: 'i-lucide-flag', label: formatDate(props.project.endDate)! } : null
+  props.project.endDate ? { icon: 'i-lucide-flag', label: formatDate(props.project.endDate)! } : null,
+  props.project.timeSpent ? { icon: 'i-lucide-timer', label: formatDuration(props.project.timeSpent), title: 'Temps passé' } : null
 ].filter(i => i !== null))
 </script>
 

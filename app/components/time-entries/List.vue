@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatDuration } from '~/lib/utils'
+import { formatDuration, sumDurations } from '~/lib/utils'
 import type { TimeEntry } from '~/types'
 
 type TimeEntryAssignee = { id: number, name: string }
@@ -17,7 +17,7 @@ const emit = defineEmits<{
 const isCreateModalOpen = ref(false)
 const isHistoryModalOpen = ref(false)
 
-const totalDuration = computed(() => props.timeEntries.reduce((sum, entry) => sum + entry.duration, 0))
+const totalDuration = computed(() => sumDurations(props.timeEntries))
 
 const onSaved = () => emit('refresh')
 </script>
@@ -25,7 +25,7 @@ const onSaved = () => emit('refresh')
 <template>
   <div class="flex items-center justify-between gap-4">
     <div>
-      <p class="text-sm font-medium text-slate-900">
+      <p class="text-sm font-medium text-slate-900 tabular-nums">
         Temps passé : {{ formatDuration(totalDuration) }}
       </p>
       <button

@@ -43,6 +43,8 @@ export function getProspectionStatusLabel(status: ProspectionStatus) {
       return 'Contacté'
     case 'a_relancer':
       return 'Relancé'
+    case 'en_discussion':
+      return 'En discussion'
     case 'proposition_envoye':
       return 'Proposition envoyée'
     case 'negociation':
@@ -62,6 +64,8 @@ export function getProspectionStatusIcon(status: ProspectionStatus) {
       return 'i-lucide-phone'
     case 'a_relancer':
       return 'i-lucide-bell'
+    case 'en_discussion':
+      return 'i-lucide-message-circle'
     case 'proposition_envoye':
       return 'i-lucide-file-text'
     case 'negociation':
@@ -86,6 +90,8 @@ export function getProspectionStatusClass(status: ProspectionStatus) {
       return 'bg-teal-100 text-teal-700 ring-teal-200'
     case 'a_relancer':
       return 'bg-orange-100 text-orange-700 ring-orange-200'
+    case 'en_discussion':
+      return 'bg-cyan-100 text-cyan-700 ring-cyan-200'
     case 'proposition_envoye':
       return 'bg-indigo-100 text-indigo-700 ring-indigo-200'
     case 'negociation':

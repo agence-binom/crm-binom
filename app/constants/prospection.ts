@@ -2,6 +2,7 @@ export const prospectionStatuses = [
   'nouveau',
   'contacte',
   'a_relancer',
+  'en_discussion',
   'proposition_envoye',
   'negociation',
   'client',

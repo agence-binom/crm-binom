@@ -1,13 +1,14 @@
 import { z } from 'zod'
+import { phoneSchema } from './phone'
 
 export const contactCreateSchema = z.object({
   clientId: z.number().int('L\'ID client doit être un entier').positive('L\'ID client doit être positif').optional().nullable(),
   firstName: z.string().min(1, 'Le prénom est requis').max(100, 'Le prénom est trop long'),
   lastName: z.string().min(1, 'Le nom est requis').max(100, 'Le nom est trop long'),
   email: z.email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
-  phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
+  phone: phoneSchema,
   position: z.string().max(100, 'Poste trop long').optional().or(z.literal('')),
-  mobile: z.string().max(50, 'Mobile trop long').optional().or(z.literal('')),
+  mobile: phoneSchema,
   notes: z.string().optional().or(z.literal('')),
   archived: z.boolean().default(false)
 })
@@ -17,9 +18,9 @@ export const contactUpdateSchema = z.object({
   firstName: z.string().min(1, 'Le prénom ne peut pas être vide').max(100, 'Le prénom est trop long').optional().or(z.literal('')),
   lastName: z.string().min(1, 'Le nom ne peut pas être vide').max(100, 'Le nom est trop long').optional().or(z.literal('')),
   email: z.email('Email invalide').max(255, 'Email trop long').optional().or(z.literal('')),
-  phone: z.string().max(50, 'Téléphone trop long').optional().or(z.literal('')),
+  phone: phoneSchema,
   position: z.string().max(100, 'Poste trop long').optional().or(z.literal('')),
-  mobile: z.string().max(50, 'Mobile trop long').optional().or(z.literal('')),
+  mobile: phoneSchema,
   notes: z.string().optional().or(z.literal('')),
   archived: z.boolean().optional()
 }).refine(

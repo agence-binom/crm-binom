@@ -12,7 +12,8 @@ useHead({
   }
 })
 
-const title = 'CRM binōm'
+const titlePrefix = isStaging ? '[STAGING] ' : import.meta.dev ? '[DEV] ' : ''
+const title = `${titlePrefix}CRM binōm`
 const description = 'Gérez vos clients et contacts efficacement'
 
 useSeoMeta({

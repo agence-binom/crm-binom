@@ -10,3 +10,7 @@ export type TimeEntry = {
   createdAt: string
   updatedAt: string
 }
+
+export type ProjectTimeEntry = TimeEntry & {
+  taskTitle: string | null
+}

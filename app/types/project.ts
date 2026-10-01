@@ -10,4 +10,5 @@ export type Project = {
   startDate?: string | null
   endDate?: string | null
   links?: string[] | null
+  timeSpent?: number
 }

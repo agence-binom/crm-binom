@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getClientContactInfos } from '~/lib/clients'
 import { getProspectionStatusClass, getProspectionStatusIcon, getProspectionStatusLabel } from '~/lib/prospection'
 import type { Client } from '~/types'
 
@@ -16,11 +17,7 @@ const emit = defineEmits<{
   restore: [clientId: number]
 }>()
 
-const infos = computed(() => [
-  { value: props.client?.email, icon: 'i-lucide-mail' },
-  { value: props.client?.phone, icon: 'i-lucide-phone' },
-  { value: props.client?.website, icon: 'i-lucide-globe' }
-])
+const infos = computed(() => getClientContactInfos(props.client))
 </script>
 
 <template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
 import type { Contact } from '~/types'
+import { formatPhone, getPhoneHref } from '~/lib/phone'
 
 const props = defineProps<{
   contacts: Contact[]
@@ -193,17 +194,24 @@ const columns: TableColumn<Contact>[] = [
         </template>
 
         <template #phone-cell="{ row }">
-          <div v-if="row.original.phone || row.original.mobile">
-            <p
+          <div
+            v-if="row.original.phone || row.original.mobile"
+            class="flex flex-col"
+          >
+            <AppLink
               v-if="row.original.phone"
+              :to="getPhoneHref(row.original.phone)"
+              variant="tertiary"
             >
-              {{ row.original.phone }}
-            </p>
-            <p
+              {{ formatPhone(row.original.phone) }}
+            </AppLink>
+            <AppLink
               v-if="row.original.mobile"
+              :to="getPhoneHref(row.original.mobile)"
+              variant="tertiary"
             >
-              {{ row.original.mobile }}
-            </p>
+              {{ formatPhone(row.original.mobile) }}
+            </AppLink>
           </div>
           <span v-else>-</span>
         </template>

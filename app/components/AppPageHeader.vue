@@ -2,6 +2,8 @@
 type Info = {
   icon: string
   value?: string | null
+  href?: string
+  label?: string
 }
 
 defineProps<{
@@ -34,9 +36,12 @@ defineProps<{
         >
           <UBadge
             v-if="info.value"
+            :as="info.href ? 'a' : 'span'"
+            :href="info.href"
+            :aria-label="info.label ? `${info.label} : ${info.value}` : undefined"
             variant="soft"
             color="neutral"
-            class="rounded-full font-medium"
+            :class="['rounded-full font-medium', info.href && 'transition-colors hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-primary-500']"
             :icon="info.icon"
           >
             {{ info.value }}
