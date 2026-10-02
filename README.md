@@ -9,8 +9,7 @@ Stack : Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres 17 auto-hébergé (image `supa
 ## Prérequis
 
 - Node.js 22+
-- Docker (base Postgres de développement, voir `compose.dev.yml`)
-- Un bucket sur un stockage S3-compatible (Garage, ou tout autre) pour les documents
+- Docker (Postgres et stockage Garage de développement, voir `compose.dev.yml`)
 
 ---
 
@@ -22,11 +21,11 @@ cp .env.example .env
 ```
 
 Renseigner les variables dans `.env` (voir section ci-dessous). `DATABASE_URL` pointe déjà sur la
-base locale Docker, et `RESEND_API_KEY` est inutile en local (le magic-link s'affiche dans le
-terminal). Ensuite :
+base locale Docker, les clés S3 sont écrites par `npm run db:up`, et `RESEND_API_KEY` est inutile
+en local (le magic-link s'affiche dans le terminal). Ensuite :
 
 ```bash
-npm run db:up          # Démarre Postgres en local (première fois : pull de l'image, ~1 min)
+npm run db:up          # Démarre Postgres et Garage en local, crée bucket et clé S3 (première fois : pull des images, ~1 min)
 npm run db:reset:local # Schéma à zéro, migrations Drizzle, jeu de données de test
 npm run dev
 ```
@@ -41,10 +40,10 @@ disponible uniquement hors production) : `admin@crmbinom.test`, `employee@crmbin
 | Variable | Obligatoire | Description |
 |---|---|---|
 | `DATABASE_URL` | Oui | Connection string Postgres (base locale Docker en dev - voir note ci-dessous) |
-| `NUXT_S3_ENDPOINT` | Oui | URL de l'endpoint S3-compatible (ex : Garage sur Coolify, ou tout autre) |
+| `NUXT_S3_ENDPOINT` | Oui | URL de l'endpoint S3-compatible (Garage local `http://localhost:3900` en dev, Garage sur Coolify ailleurs) |
 | `NUXT_S3_REGION` | Non | Région S3 (accepte une valeur arbitraire pour Garage, ex : `garage`) |
-| `NUXT_S3_ACCESS_KEY_ID` | Oui | Access key ID du storage - utilisée côté serveur uniquement |
-| `NUXT_S3_SECRET_ACCESS_KEY` | Oui | Secret access key du storage - utilisée côté serveur uniquement |
+| `NUXT_S3_ACCESS_KEY_ID` | Oui | Access key ID du storage - utilisée côté serveur uniquement. En dev, écrite dans `.env` par `npm run db:up` |
+| `NUXT_S3_SECRET_ACCESS_KEY` | Oui | Secret access key du storage - utilisée côté serveur uniquement. En dev, écrite dans `.env` par `npm run db:up` |
 | `NUXT_DOCUMENTS_BUCKET` | Oui | Nom du bucket S3 pour les documents (ex : `documents`). |
 | `NUXT_PUBLIC_SITE_URL` | Oui | URL publique du site (ex : `http://localhost:3000`) |
 | `BETTER_AUTH_SECRET` | Oui | Secret Better Auth (≥32 caractères aléatoires) - `npx @better-auth/cli secret` ou `openssl rand -base64 32` |
@@ -73,8 +72,8 @@ npm run typecheck    # TypeScript (vue-tsc)
 ```
 
 ```bash
-npm run db:up         # Démarre la base Postgres locale (Docker)
-npm run db:down       # L'arrête (le volume, donc les données, est conservé)
+npm run db:up         # Démarre Postgres et Garage en local (Docker), prépare bucket et clé S3
+npm run db:down       # Les arrête (les volumes, donc les données et fichiers, sont conservés)
 npm run db:reset:local # Schéma à zéro puis migrations et seed - base locale uniquement
 npm run db:migrate    # Applique les migrations Drizzle sur la base
 npm run db:generate   # Génère les fichiers de migration depuis le schéma Drizzle
@@ -125,6 +124,8 @@ Pour ajouter un utilisateur staff : l'insérer dans `public.users` avec les cham
 Les documents sont stockés dans le bucket défini par `NUXT_DOCUMENTS_BUCKET`, sur l'endpoint S3-compatible défini par `NUXT_S3_ENDPOINT`. Le bucket doit exister avant le premier upload. Les URLs signées ont une durée de validité de 1 heure.
 
 Le code applicatif ne parle que S3 générique (`@aws-sdk/client-s3`, voir `server/utils/documents.ts`) : changer de backend ne demande que de changer les variables d'environnement. Garage (sur Coolify) en staging comme en production.
+
+En local, `compose.dev.yml` lance un Garage mono-nœud sur `http://localhost:3900`. Garage démarre vide : `scripts/dev-s3-init.ts` (lancé par `npm run db:up`, idempotent) lui attribue son rôle, crée le bucket et une clé d'accès, puis écrit cette clé dans `.env`. La clé étant générée par Garage, elle change si le volume Garage est supprimé : `npm run db:up` remet alors `.env` à jour tant que `NUXT_S3_ENDPOINT` pointe sur le Garage local (une autre valeur, par exemple un bucket distant, n'est jamais écrasée).
 
 ---
 
@@ -197,7 +198,7 @@ Tout tourne sur Coolify, sur une infrastructure auto-hébergée :
 | | Production | Staging | Local / CI |
 |---|---|---|---|
 | Base de données | Postgres auto-hébergé sur Coolify, image `supabase/postgres:17.4.1.032` | même image, base dédiée isolée de la prod | même image, en Docker (`compose.dev.yml`) |
-| Storage documents | Garage (S3-compatible) | Garage | endpoint S3 au choix |
+| Storage documents | Garage (S3-compatible) | Garage | Garage en Docker (`compose.dev.yml`) |
 | Auth | Better Auth (magic-link) | Better Auth | Better Auth |
 
 Le projet est né sur Supabase et en est entièrement sorti : plus aucun service managé Supabase, et

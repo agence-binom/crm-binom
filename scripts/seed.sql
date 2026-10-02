@@ -50,6 +50,21 @@ insert into public.tasks ("projectId", "assignedTo", title, notes, status, prior
   ((select id from public.projects where name = 'Plateforme de réservation'), (select id from public.users where email = 'employee@crmbinom.test'), 'Tests paiement Stripe', null, 'waiting', 'medium', '2026-08-10', null, null),
   ((select id from public.projects where name = 'Catalogue produits en ligne'), (select id from public.users where email = 'employee@crmbinom.test'), 'Import des photos produits', 'En attente des visuels du client.', 'todo', 'medium', '2026-07-28', null, null);
 
+-- La note sans titre exerce le cas "titre dérivé de la première ligne de contentText".
+insert into public.project_notes ("projectId", title, content, "contentText", "createdBy", "updatedBy", "createdAt", "updatedAt") values
+  ((select id from public.projects where name = 'Refonte site vitrine'), 'Compte rendu kick-off',
+    '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Le client veut garder la palette actuelle."}]},{"type":"bulletList","content":[{"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","text":"Formulaire de contact avec pièce jointe"}]}]},{"type":"listItem","content":[{"type":"paragraph","content":[{"type":"text","text":"Mise en ligne visée fin juillet"}]}]}]}]}',
+    E'Le client veut garder la palette actuelle.\nFormulaire de contact avec pièce jointe\nMise en ligne visée fin juillet',
+    (select id from public.users where email = 'admin@crmbinom.test'), (select id from public.users where email = 'admin@crmbinom.test'), '2026-05-02 10:00', '2026-05-02 10:00'),
+  ((select id from public.projects where name = 'Refonte site vitrine'), null,
+    '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Accès FTP de l''hébergeur reçus par mail"}]},{"type":"paragraph","content":[{"type":"text","text":"À stocker dans le coffre avant la mise en prod."}]}]}',
+    E'Accès FTP de l''hébergeur reçus par mail\nÀ stocker dans le coffre avant la mise en prod.',
+    (select id from public.users where email = 'employee@crmbinom.test'), (select id from public.users where email = 'admin@crmbinom.test'), '2026-06-20 14:30', '2026-07-01 09:15'),
+  ((select id from public.projects where name = 'Plateforme de réservation'), 'Choix du prestataire de paiement',
+    '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Stripe retenu : frais plus bas que PayPal sur les petits montants."}]}]}',
+    'Stripe retenu : frais plus bas que PayPal sur les petits montants.',
+    (select id from public.users where email = 'admin@crmbinom.test'), (select id from public.users where email = 'admin@crmbinom.test'), '2026-06-05 16:00', '2026-06-05 16:00');
+
 -- The "Devis"/"Factures"/"Paiements" tables (public.quotes/invoices/payments) were removed by the
 -- billing refactor (see drizzle/0027+) in favor of public.billing_documents. Seeding used to fail
 -- silently on them: `sql.file` runs the whole file as one implicit transaction, so any error
