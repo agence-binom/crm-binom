@@ -34,3 +34,6 @@ logs
 
 # graphify (generated knowledge graph, rebuilt on demand / post-commit hook)
 graphify-out/
+
+
+.claude/worktrees/

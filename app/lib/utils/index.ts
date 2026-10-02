@@ -20,6 +20,30 @@ export const formatDate = (date: string | Date) => {
   })
 }
 
+const RELATIVE_TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ['year', 365 * 24 * 3600],
+  ['month', 30 * 24 * 3600],
+  ['week', 7 * 24 * 3600],
+  ['day', 24 * 3600],
+  ['hour', 3600],
+  ['minute', 60]
+]
+
+// Forme courte seulement pour les minutes et les heures : au-delà, elle donne "il y a 2 a" ou
+// "il y a 2 sem.", moins lisibles que la forme longue.
+const shortRelativeTimeFormatter = new Intl.RelativeTimeFormat('fr', { numeric: 'auto', style: 'short' })
+const longRelativeTimeFormatter = new Intl.RelativeTimeFormat('fr', { numeric: 'auto', style: 'long' })
+
+// Tronque plutôt qu'arrondir : 59 min 40 s doit rester "il y a 59 min", pas devenir "il y a 60 min".
+export const formatRelativeTime = (date: string | Date, now: Date = new Date()) => {
+  const seconds = Math.trunc((new Date(date).getTime() - now.getTime()) / 1000)
+  if (Math.abs(seconds) < 60) return 'à l\'instant'
+
+  const [unit, unitSeconds] = RELATIVE_TIME_UNITS.find(([, unitSeconds]) => Math.abs(seconds) >= unitSeconds)!
+  const formatter = unit === 'minute' || unit === 'hour' ? shortRelativeTimeFormatter : longRelativeTimeFormatter
+  return formatter.format(Math.trunc(seconds / unitSeconds), unit)
+}
+
 export const getFileTypeIcon = (mimetype?: string | null) => {
   if (!mimetype) return 'i-lucide-file'
   if (mimetype.includes('pdf')) return 'i-lucide-file-text'

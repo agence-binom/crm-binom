@@ -11,7 +11,7 @@ Nuxt 4, Nuxt UI v4, Drizzle ORM, Postgres 17 auto-hébergé (image `supabase/pos
 | | Production | Staging | Local / CI |
 |---|---|---|---|
 | Base de données | Postgres auto-hébergé sur Coolify, image `supabase/postgres:17.4.1.032` | même image, base dédiée isolée de la prod | même image, en Docker (`compose.dev.yml`) |
-| Storage documents | Garage (S3-compatible) | Garage | endpoint S3 au choix |
+| Storage documents | Garage (S3-compatible) | Garage | Garage en Docker (`compose.dev.yml`, bucket et clé créés par `npm run db:up`) |
 | Auth | Better Auth | Better Auth | Better Auth |
 
 La sortie de Supabase est **terminée** : plus aucun service managé, plus aucun client `@supabase/*`.
