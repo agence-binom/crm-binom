@@ -26,19 +26,19 @@
     "node": ">=22.19.0"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1140.0",
-    "@aws-sdk/s3-request-presigner": "^3.1140.0",
+    "@aws-sdk/client-s3": "^3.1145.0",
+    "@aws-sdk/s3-request-presigner": "^3.1145.0",
     "@formkit/drag-and-drop": "^0.6.1",
-    "@iconify-json/lucide": "^1.2.136",
-    "@iconify-json/simple-icons": "^1.2.97",
-    "@nuxt/ui": "4.11.2",
-    "@tiptap/extension-list": "3.31.3",
-    "better-auth": "^1.7.6",
-    "dotenv": "^18.0.3",
+    "@iconify-json/lucide": "^1.2.138",
+    "@iconify-json/simple-icons": "^1.2.98",
+    "@nuxt/ui": "4.11.3",
+    "@tiptap/extension-list": "3.31.4",
+    "better-auth": "^1.7.7",
+    "dotenv": "^18.0.5",
     "drizzle-orm": "^0.45.3",
     "nuxt": "4.5.2",
     "postgres": "^3.4.7",
-    "resend": "^6.29.0",
+    "resend": "^6.32.0",
     "zod": "^4.6.2"
   },
   "devDependencies": {
@@ -47,14 +47,14 @@
     "@emnapi/wasi-threads": "2.1.0",
     "@nuxt/eslint": "^1.12.1",
     "@playwright/test": "^1.63.0",
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.4",
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.11.0",
     "husky": "^9.1.7",
-    "rolldown": "1.2.11",
+    "rolldown": "1.2.12",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vue-tsc": "^3.2.1"
+    "vue-tsc": "^3.3.12"
   },
   "packageManager": "npm@11.6.0",
   "overrides": {
