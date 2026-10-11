@@ -2,7 +2,10 @@ import { asc, eq } from 'drizzle-orm'
 import { db } from '~/db'
 import { clientsTable } from '~/db/schema/clients'
 import { contactsTable } from '~/db/schema/contacts'
+import { projectBriefsTable } from '~/db/schema/project-briefs'
 import { projectsTable } from '~/db/schema/projects'
+import type { BriefStatus } from '~/constants/briefs'
+import { getBriefDisplayStatus } from '~/lib/briefs'
 import { clientIdSchema } from '~/validation/clients'
 import { withProjectTimeSpent } from '~~/server/utils/time-entries'
 
@@ -28,15 +31,24 @@ export default defineEventHandler(async (event) => {
       .where(eq(contactsTable.clientId, id))
       .orderBy(asc(contactsTable.lastName), asc(contactsTable.firstName), asc(contactsTable.id)),
     db
-      .select()
+      .select({ project: projectsTable, briefId: projectBriefsTable.id, briefStatus: projectBriefsTable.status, briefExpiresAt: projectBriefsTable.expiresAt })
       .from(projectsTable)
+      .leftJoin(projectBriefsTable, eq(projectBriefsTable.projectId, projectsTable.id))
       .where(eq(projectsTable.clientId, id))
       .orderBy(asc(projectsTable.name), asc(projectsTable.id))
   ])
 
+  const now = new Date()
+  const projectsWithBrief = projects.map(({ project, briefId, briefStatus, briefExpiresAt }) => ({
+    ...project,
+    brief: briefId && briefStatus && briefExpiresAt
+      ? { id: briefId, status: getBriefDisplayStatus({ status: briefStatus as BriefStatus, expiresAt: briefExpiresAt }, now) }
+      : null
+  }))
+
   return {
     client,
     contacts,
-    projects: await withProjectTimeSpent(projects)
+    projects: await withProjectTimeSpent(projectsWithBrief)
   }
 })

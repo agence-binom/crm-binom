@@ -97,6 +97,10 @@ const handleDocumentsChange = async () => {
     />
 
     <div class="mt-8">
+      <ProjectsBrief :project="project" />
+    </div>
+
+    <div class="mt-8">
       <TasksToDoList
         :tasks="filteredTasks"
         title="Tâches du projet"

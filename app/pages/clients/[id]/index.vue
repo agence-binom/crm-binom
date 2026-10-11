@@ -244,6 +244,15 @@ const projectToEdit = computed(() => {
         @archive="onArchiveContact"
         @restore="onRestoreContact"
       />
+
+      <!-- Avant le premier rendez-vous, le brief est ce qu'on vient chercher sur la fiche d'un prospect. -->
+      <ClientsBriefs
+        :class="isProspect ? 'order-first' : ''"
+        :client-id="clientId"
+        :contacts="contacts"
+        :projects="projects"
+        @changed="refresh"
+      />
     </div>
 
     <ConfirmModal

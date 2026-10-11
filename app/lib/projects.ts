@@ -1,4 +1,9 @@
-export type ProjectStatus = 'en_cours' | 'termine' | 'en_attente' | 'annule' | 'sans_statut'
+export type ProjectStatus = 'en_cours' | 'termine' | 'en_attente' | 'annule' | 'sans_statut' | 'avant_vente'
+
+// Posé par la réception d'un brief (server/utils/brief-reception.ts) et levé à la signature du devis
+// (server/utils/prospection.ts) ou à la main : il prime sur les dates, qu'un brief peut avoir remplies
+// (échéance) bien avant que le projet ne démarre.
+export const presaleProjectStatus = 'avant_vente' satisfies ProjectStatus
 type ProjectStatusInput = ProjectStatus | string | null | undefined
 type ProjectDateInput = string | Date | null | undefined
 
@@ -28,8 +33,8 @@ export const getProjectDisplayStatus = (
   },
   now = new Date()
 ): ProjectStatus => {
-  if (project.status === 'annule') {
-    return 'annule'
+  if (project.status === 'annule' || project.status === presaleProjectStatus) {
+    return project.status
   }
 
   const startDate = toValidDate(project.startDate)

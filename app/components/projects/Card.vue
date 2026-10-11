@@ -47,6 +47,15 @@ const infos = computed(() => [
     :infos="infos"
     hoverable
   >
+    <template
+      v-if="project.brief"
+      #badge
+    >
+      <BriefsStatusBadge
+        :status="project.brief.status"
+        prefix="Brief"
+      />
+    </template>
     <template #actions>
       <div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
         <UButton

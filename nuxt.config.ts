@@ -19,6 +19,8 @@ export default defineNuxtConfig({
     s3Region: process.env.NUXT_S3_REGION,
     s3AccessKeyId: process.env.NUXT_S3_ACCESS_KEY_ID,
     s3SecretAccessKey: process.env.NUXT_S3_SECRET_ACCESS_KEY,
+    briefApiSecret: process.env.NUXT_BRIEF_API_SECRET,
+    briefSiteUrl: process.env.NUXT_BRIEF_SITE_URL,
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL,
       appEnv: process.env.NUXT_PUBLIC_APP_ENV || 'production'

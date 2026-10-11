@@ -61,3 +61,16 @@ test('getProjectDisplayStatus preserve le statut annule', () => {
     'annule'
   )
 })
+
+test('getProjectDisplayStatus garde un projet en avant-vente quelles que soient ses dates', () => {
+  const now = new Date('2026-10-11T10:00:00.000Z')
+  assert.equal(getProjectDisplayStatus({ status: 'avant_vente' }, now), 'avant_vente')
+  assert.equal(getProjectDisplayStatus({ status: 'avant_vente', endDate: '2026-11-30T00:00:00.000Z' }, now), 'avant_vente')
+  assert.equal(getProjectDisplayStatus({ status: 'avant_vente', startDate: '2026-01-01T00:00:00.000Z', endDate: '2026-02-01T00:00:00.000Z' }, now), 'avant_vente')
+})
+
+test('getProjectDisplayStatus recalcule le statut depuis les dates une fois sorti de l’avant-vente', () => {
+  const now = new Date('2026-10-11T10:00:00.000Z')
+  assert.equal(getProjectDisplayStatus({ status: 'en_cours', endDate: '2026-11-30T00:00:00.000Z' }, now), 'en_cours')
+  assert.equal(getProjectDisplayStatus({ status: 'en_cours' }, now), 'sans_statut')
+})

@@ -7,7 +7,8 @@ export const projectsTable = pgTable('projects', {
   clientId: integer().notNull().references(() => clientsTable.id, { onDelete: 'cascade' }),
   name: varchar({ length: 255 }).notNull(),
   description: text(),
-  status: varchar({ length: 50 }).notNull().default('en_cours'),
+  // Dérivé des dates (app/lib/projects.ts), sauf 'annule' et 'avant_vente', posés explicitement.
+  status: varchar({ length: 50 }).notNull().default('en_cours'), // 'en_cours' | 'termine' | 'en_attente' | 'annule' | 'sans_statut' | 'avant_vente'
   archived: boolean().notNull().default(false),
   requiresAcompte: boolean().notNull().default(true),
   startDate: timestamp(),

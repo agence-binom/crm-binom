@@ -5,6 +5,7 @@ export function useStatusHelpers() {
       case 'termine': return 'success'
       case 'en_attente': return 'warning'
       case 'annule': return 'error'
+      case 'avant_vente': return 'primary'
       default: return 'neutral'
     }
   }
@@ -15,6 +16,7 @@ export function useStatusHelpers() {
       case 'termine': return 'Terminé'
       case 'en_attente': return 'En attente'
       case 'annule': return 'Annulé'
+      case 'avant_vente': return 'Avant-vente'
       default: return 'Sans statut'
     }
   }

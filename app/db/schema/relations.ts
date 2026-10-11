@@ -5,6 +5,7 @@ import { contactsTable } from './contacts'
 import { deliverablesTable } from './deliverables'
 import { documentsTable } from './documents'
 import { projectNotesTable } from './project-notes'
+import { projectBriefsTable } from './project-briefs'
 import { projectsTable } from './projects'
 import { tasksTable } from './tasks'
 import { resourcesTable } from './resources'
@@ -15,7 +16,23 @@ import { usersTable } from './users'
 
 export const clientsRelations = relations(clientsTable, ({ many }) => ({
   contacts: many(contactsTable),
-  projects: many(projectsTable)
+  projects: many(projectsTable),
+  briefs: many(projectBriefsTable)
+}))
+
+export const projectBriefsRelations = relations(projectBriefsTable, ({ one }) => ({
+  client: one(clientsTable, {
+    fields: [projectBriefsTable.clientId],
+    references: [clientsTable.id]
+  }),
+  project: one(projectsTable, {
+    fields: [projectBriefsTable.projectId],
+    references: [projectsTable.id]
+  }),
+  contact: one(contactsTable, {
+    fields: [projectBriefsTable.contactId],
+    references: [contactsTable.id]
+  })
 }))
 
 export const contactsRelations = relations(contactsTable, ({ one }) => ({

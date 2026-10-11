@@ -24,7 +24,7 @@ export const sendMagicLinkEmail = async (email: string, url: string) => {
   // envoi Resend vers ces domaines échouerait, faisant remonter une erreur à l'UI.
   // Aucun effet en production : NODE_ENV y vaut 'production', le comportement est inchangé.
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`\n🔗 Magic link — ${email}\n${url}\n`)
+    console.log(`\n🔗 Magic link - ${email}\n${url}\n`)
     return
   }
 
@@ -37,5 +37,29 @@ export const sendMagicLinkEmail = async (email: string, url: string) => {
 
   if (error) {
     throw new Error(`Impossible d'envoyer l'email de connexion: ${error.message}`)
+  }
+}
+
+export const sendBriefCompletedEmail = async (
+  recipients: string[],
+  { clientName, projectUrl, projectCreated }: { clientName: string, projectUrl: string, projectCreated: boolean }
+) => {
+  const subject = `Brief reçu : ${clientName} - ${projectCreated ? 'projet créé' : 'projet complété'}`
+
+  // Même garde que sendMagicLinkEmail : rien ne part hors production.
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`\n📋 ${subject} (notification pour ${recipients.join(', ')})\n${projectUrl}\n`)
+    return
+  }
+
+  const { error } = await getResendClient().emails.send({
+    from: MAIL_FROM,
+    to: recipients,
+    subject,
+    text: `${clientName} vient de remplir son brief pré-rendez-vous. ${projectCreated ? 'Un projet en avant-vente a été créé à partir de ses réponses.' : 'Les champs vides du projet ont été complétés avec ses réponses.'}\n\nSynthèse, points de vigilance et réponses complètes : ${projectUrl}`
+  })
+
+  if (error) {
+    throw new Error(`Impossible d'envoyer la notification de brief: ${error.message}`)
   }
 }

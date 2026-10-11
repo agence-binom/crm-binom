@@ -1,8 +1,9 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { asc } from 'drizzle-orm'
 import type { InferSelectModel } from 'drizzle-orm'
 import { db } from '~/db'
 import type { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
+import { portalVisibleProjectCondition } from '~~/server/utils/client-portal'
 
 // Le contact/client actifs sont déjà résolus et vérifiés par ../../middleware/01-auth.ts. La
 // portée par clientId est ce qui garantit qu'un contact ne peut lister que les projets de son
@@ -18,7 +19,7 @@ export default defineEventHandler(async (event) => {
       status: projectsTable.status
     })
     .from(projectsTable)
-    .where(and(eq(projectsTable.clientId, client.id), eq(projectsTable.archived, false)))
+    .where(portalVisibleProjectCondition(client.id))
     .orderBy(asc(projectsTable.name), asc(projectsTable.id))
 
   return { projects }

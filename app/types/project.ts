@@ -1,3 +1,5 @@
+import type { ProjectBriefSummary } from './brief'
+
 export type Project = {
   id: number
   clientId: number
@@ -11,4 +13,5 @@ export type Project = {
   endDate?: string | null
   links?: string[] | null
   timeSpent?: number
+  brief?: ProjectBriefSummary | null
 }

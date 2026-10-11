@@ -8,7 +8,7 @@ import { usersTable } from './users'
 // suppression ne doit pas effacer sa propre trace, donc pas de cascade possible de toute façon.
 export const activityLogTable = pgTable('activity_log', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  entityType: varchar({ length: 50 }).notNull(), // 'client' | 'contact' | 'project' | 'task' | 'resource' | 'document' | 'billing_document' | 'deliverable' | 'task_attachment'
+  entityType: varchar({ length: 50 }).notNull(), // 'client' | 'contact' | 'project' | 'task' | 'resource' | 'document' | 'billing_document' | 'deliverable' | 'task_attachment' | 'user' | 'time_entry' | 'brief'
   entityId: integer().notNull(),
   action: varchar({ length: 20 }).notNull(), // 'create' | 'update' | 'delete'
   actorType: varchar({ length: 20 }).notNull(), // 'user' | 'contact'
