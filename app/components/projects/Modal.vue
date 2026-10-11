@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getProjectDisplayStatus, toProjectInputDate } from '~/lib/projects'
+import { getProjectDisplayStatus, presaleProjectStatus, toProjectInputDate } from '~/lib/projects'
 import { projectCreateSchema, projectUpdateSchema } from '~/validation/projects'
 import type { Project } from '~/types'
 
@@ -36,6 +36,7 @@ const formState = reactive({
   url: '',
   clientId: props.clientId
 })
+const isPresale = ref(false)
 
 const resetForm = () => {
   Object.assign(formState, {
@@ -46,9 +47,11 @@ const resetForm = () => {
     url: '',
     clientId: props.clientId
   })
+  isPresale.value = false
 }
 
 const fillFromProject = (project: Project) => {
+  isPresale.value = project.status === presaleProjectStatus
   Object.assign(formState, {
     name: project.name ?? '',
     description: project.description ?? '',
@@ -65,7 +68,10 @@ const displayStatus = computed(() => {
   return getProjectDisplayStatus({
     startDate: formState.startDate || null,
     endDate: formState.endDate || null,
-    status: props.project?.status ?? 'en_cours'
+    // Décocher « avant-vente » rend la main aux dates : on repart d'un statut dérivé ordinaire.
+    status: isPresale.value
+      ? presaleProjectStatus
+      : (props.project?.status === presaleProjectStatus ? 'en_cours' : props.project?.status ?? 'en_cours')
   })
 })
 
@@ -184,6 +190,16 @@ const onSubmit = async () => {
               </div>
             </UFormField>
           </div>
+
+          <UFormField
+            name="presale"
+            description="Projet encore en discussion : il prime sur les dates et reste invisible dans l’espace client. Levé automatiquement à la signature du devis."
+          >
+            <USwitch
+              v-model="isPresale"
+              label="En avant-vente"
+            />
+          </UFormField>
 
           <UFormField
             label="Description"

@@ -5,6 +5,7 @@ import { db } from '~/db'
 import { contactsTable } from '~/db/schema/contacts'
 import { clientsTable } from '~/db/schema/clients'
 import { projectsTable } from '~/db/schema/projects'
+import { presaleProjectStatus } from '~/lib/projects'
 import { normalizeEmailAddress } from '../lib/auth-users'
 
 const UNAUTHORIZED_PORTAL_MESSAGE = 'Cette adresse email n’est pas autorisée à accéder à l’espace client.'
@@ -108,6 +109,15 @@ export const getPortalContact = (event: H3Event) => (
   event.context.portalContact as InferSelectModel<typeof contactsTable>
 )
 
+// Un projet en avant-vente (brief reçu, devis pas encore signé) est une discussion commerciale
+// interne : un client qui revient avec un accès portail ne doit pas le voir. Seule source de cette
+// règle pour la liste (api/portal/projects.get.ts) comme pour l'accès par id ci-dessous.
+export const portalVisibleProjectCondition = (clientId: number) => and(
+  eq(projectsTable.clientId, clientId),
+  eq(projectsTable.archived, false),
+  ne(projectsTable.status, presaleProjectStatus)
+)
+
 // Every portal endpoint scoped to a single project (resources, billing documents...) must call
 // this before touching the projectId from the route/body - it's what stops a contact from reading
 // or writing another client's project by guessing its id.
@@ -117,8 +127,7 @@ export const requirePortalProject = async (clientId: number, projectId: number) 
     .from(projectsTable)
     .where(and(
       eq(projectsTable.id, projectId),
-      eq(projectsTable.clientId, clientId),
-      eq(projectsTable.archived, false)
+      portalVisibleProjectCondition(clientId)
     ))
     .limit(1)
 

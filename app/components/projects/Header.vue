@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Project } from '~/types'
 import { getClientContactInfos } from '~/lib/clients'
+import { presaleProjectStatus } from '~/lib/projects'
 
 type ProjectHeaderClient = {
   id?: number | null
@@ -22,6 +23,8 @@ const emit = defineEmits<{
   restore: [projectId: number]
 }>()
 
+const { getStatusColor, getStatusLabel } = useStatusHelpers()
+
 const infos = computed(() => getClientContactInfos(props.client))
 </script>
 
@@ -42,6 +45,15 @@ const infos = computed(() => getClientContactInfos(props.client))
         <UIcon name="i-lucide-building-2" />
         {{ client.name }}
       </NuxtLink>
+      <UBadge
+        v-if="project.status === presaleProjectStatus"
+        variant="soft"
+        :color="getStatusColor(project.status)"
+        icon="i-lucide-handshake"
+        class="ml-2 rounded-full"
+      >
+        {{ getStatusLabel(project.status) }}
+      </UBadge>
     </template>
 
     <template #actions>

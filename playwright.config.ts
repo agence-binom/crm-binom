@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { E2E_BRIEF_API_SECRET, E2E_BRIEF_SITE_URL } from './e2e/helpers/brief-api'
 
 export default defineConfig({
   testDir: './e2e',
@@ -49,6 +50,10 @@ export default defineConfig({
     // :3000 (port du dev serveur classique) alors que ce serveur e2e tourne sur :3100, ces
     // requêtes échouent en 403 "Invalid origin" - on force donc la valeur ici plutôt que de
     // dépendre du .env local de chaque dev.
-    env: { NUXT_PUBLIC_SITE_URL: 'http://localhost:3100' }
+    env: {
+      NUXT_PUBLIC_SITE_URL: 'http://localhost:3100',
+      NUXT_BRIEF_API_SECRET: E2E_BRIEF_API_SECRET,
+      NUXT_BRIEF_SITE_URL: E2E_BRIEF_SITE_URL
+    }
   }
 })

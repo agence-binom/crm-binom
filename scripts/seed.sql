@@ -50,6 +50,54 @@ insert into public.tasks ("projectId", "assignedTo", title, notes, status, prior
   ((select id from public.projects where name = 'Plateforme de réservation'), (select id from public.users where email = 'employee@crmbinom.test'), 'Tests paiement Stripe', null, 'waiting', 'medium', '2026-08-10', null, null),
   ((select id from public.projects where name = 'Catalogue produits en ligne'), (select id from public.users where email = 'employee@crmbinom.test'), 'Import des photos produits', 'En attente des visuels du client.', 'todo', 'medium', '2026-07-28', null, null);
 
+-- Deux prospects pour exercer le brief pré-rendez-vous : l'un a renvoyé son brief, qui a créé son
+-- projet en avant-vente (synthèse, points de vigilance et enrichissement de démonstration - aucune
+-- requête réseau au seed) ; l'autre ne l'a pas encore ouvert, le brief attend sur sa fiche sans
+-- projet. Jetons fixes : seed local uniquement.
+insert into public.clients (name, email, phone, city, country, website, description, "prospectionStatus") values
+  ('Boulangerie Martin', 'contact@boulangerie-martin.fr', '+33 3 88 11 22 33', 'Strasbourg', 'France', 'https://boulangerie-martin.fr', 'Boulangerie artisanale, deux boutiques.', 'en_discussion'),
+  ('Fleurs de Rose', 'bonjour@fleurs-de-rose.fr', '+33 4 91 22 33 44', 'Marseille', 'France', null, 'Fleuriste, projet de boutique en ligne.', 'contacte');
+
+insert into public.contacts ("clientId", "firstName", "lastName", email, phone, position) values
+  ((select id from public.clients where name = 'Boulangerie Martin'), 'Léa', 'Martin', 'lea@boulangerie-martin.fr', '+33 6 45 67 89 01', 'Gérante'),
+  ((select id from public.clients where name = 'Fleurs de Rose'), 'Rose', 'Garnier', 'rose@fleurs-de-rose.fr', '+33 6 56 78 90 12', 'Fondatrice');
+
+-- Projet tel que la réception du brief le crée (buildProjectFieldsFromBrief, app/lib/brief-project.ts).
+insert into public.projects ("clientId", name, description, status, "endDate", url, notes, "createdBy") values
+  ((select id from public.clients where name = 'Boulangerie Martin'), 'Refonte',
+    E'Objectifs :\n- Prendre les commandes de gâteaux en ligne\n- Moderniser l''image\n\nContexte de l’échéance : Ouverture de la deuxième boutique avant Noël.',
+    'avant_vente', '2026-11-30', 'https://boulangerie-martin.fr',
+    E'Issu du brief pré-rendez-vous :\n- Type de projet : Refonte\n- Budget : 6 à 12 k€\n- Décideur : Léa et son associé\n- Outils à connecter : SumUp, Instagram',
+    (select id from public.users where email = 'admin@crmbinom.test'));
+
+insert into public.project_briefs ("clientId", "projectId", target, "contactId", token, status, "expiresAt", "openedAt", "completedAt", "formVersion", answers, "projectType", "budgetRange", deadline, domain, summary, enrichment, "enrichmentStatus", "enrichedAt", "notifiedAt", "createdBy") values
+  ((select id from public.clients where name = 'Boulangerie Martin'), (select id from public.projects where name = 'Refonte'), 'new_project', (select id from public.contacts where email = 'lea@boulangerie-martin.fr'),
+    'seedBriefBoulangerieMartinCompleted00000001', 'completed', now() + interval '20 days', now() - interval '2 days', now() - interval '1 day', '2026-10',
+    '[
+      {"id":"project_type","section":"Votre projet","label":"Quel est votre projet ?","status":"answered","value":"redesign"},
+      {"id":"goals","section":"Votre projet","label":"Vos objectifs principaux","status":"answered","value":["Prendre les commandes de gâteaux en ligne","Moderniser l''image"]},
+      {"id":"budget_range","section":"Votre projet","label":"Budget envisagé","status":"answered","value":"6k_12k"},
+      {"id":"deadline","section":"Votre projet","label":"Échéance souhaitée","status":"answered","value":"2026-11-30"},
+      {"id":"deadline_context","section":"Votre projet","label":"Pourquoi cette date ?","status":"answered","value":"Ouverture de la deuxième boutique avant Noël."},
+      {"id":"decision_maker","section":"Votre projet","label":"Qui prend la décision ?","status":"answered","value":"Léa et son associé"},
+      {"id":"current_website","section":"Votre site actuel","label":"Adresse du site actuel","status":"answered","value":"https://boulangerie-martin.fr"},
+      {"id":"domain_registrar","section":"Votre site actuel","label":"Où avez-vous acheté le nom de domaine ?","status":"unknown"},
+      {"id":"site_manager","section":"Votre site actuel","label":"Qui s''occupe du site aujourd''hui ?","status":"answered","value":"former_provider"},
+      {"id":"provider_informed","section":"Votre site actuel","label":"Est-il informé du projet ?","status":"answered","value":false},
+      {"id":"access_availability","section":"Accès","label":"Avez-vous les accès ?","status":"answered","value":"to_find"},
+      {"id":"domain_emails","section":"Emails","label":"Utilisez-vous des emails en @votre-domaine ?","status":"answered","value":true},
+      {"id":"email_provider","section":"Emails","label":"Où sont-ils gérés ?","status":"unknown"},
+      {"id":"tools_to_connect","section":"Outils","label":"Outils à connecter","status":"answered","value":["SumUp","Instagram"]},
+      {"id":"inspirations","section":"Inspirations","label":"Des sites que vous aimez ?","status":"answered","value":"Le site de la Maison Landemaine"}
+    ]',
+    'redesign', '6k_12k', '2026-11-30', 'boulangerie-martin.fr',
+    '{"projectType":{"status":"answered","value":"redesign"},"goals":{"status":"answered","value":["Prendre les commandes de gâteaux en ligne","Moderniser l''image"]},"budgetRange":{"status":"answered","value":"6k_12k"},"deadline":{"status":"answered","value":"2026-11-30"},"deadlineContext":{"status":"answered","value":"Ouverture de la deuxième boutique avant Noël."},"decisionMaker":{"status":"answered","value":"Léa et son associé"},"currentWebsite":{"status":"answered","value":"https://boulangerie-martin.fr"},"domainRegistrar":{"status":"unknown"},"siteManager":{"status":"answered","value":"former_provider"},"providerInformed":{"status":"answered","value":false},"accessAvailability":{"status":"answered","value":"to_find"},"domainEmails":{"status":"answered","value":true},"emailProvider":{"status":"unknown"},"toolsToConnect":{"status":"answered","value":["SumUp","Instagram"]}}',
+    '{"domain":"boulangerie-martin.fr","registrar":"OVH SAS","nameServers":["dns200.anycast.me","ns200.anycast.me"],"mxHosts":["mx1.mail.ovh.net","mx2.mail.ovh.net"],"emailProvider":"OVHcloud","ipAddresses":["213.186.33.5"],"reverseDns":["cluster020.hosting.ovh.net"],"hosting":"OVHcloud","technologies":["WordPress","Elementor","PHP"],"finalUrl":"https://boulangerie-martin.fr/"}',
+    'done', now() - interval '1 day', now() - interval '1 day', (select id from public.users where email = 'admin@crmbinom.test')),
+  ((select id from public.clients where name = 'Fleurs de Rose'), null, 'new_project', (select id from public.contacts where email = 'rose@fleurs-de-rose.fr'),
+    'seedBriefFleursDeRoseSent000000000000000001', 'sent', now() + interval '25 days', null, null, null, null, null, null, null, null, null, null, null, null, null,
+    (select id from public.users where email = 'admin@crmbinom.test'));
+
 -- La note sans titre exerce le cas "titre dérivé de la première ligne de contentText".
 insert into public.project_notes ("projectId", title, content, "contentText", "createdBy", "updatedBy", "createdAt", "updatedAt") values
   ((select id from public.projects where name = 'Refonte site vitrine'), 'Compte rendu kick-off',
