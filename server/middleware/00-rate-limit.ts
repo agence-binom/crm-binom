@@ -30,7 +30,9 @@ export default defineEventHandler(async (event) => {
   if (!path.startsWith('/api')) return
 
   const storage = useStorage<Bucket>('rate-limit')
-  const ip = getClientIp(event) ?? 'unknown'
+  // `||` et non `??` : les appels internes du rendu serveur ont un remoteAddress vide, et une clé
+  // vide fait lever une erreur à unstorage (500 sur la route appelée).
+  const ip = getClientIp(event) || 'unknown'
   const key = ip.replace(/[^a-zA-Z0-9._-]/g, '_')
   const now = Date.now()
 

@@ -32,7 +32,7 @@ CRM interne à binōm : un seul organisme utilise l'app côté staff (`public.us
 - Un utilisateur staff est résolu via `event.context.appUser` (`getAppUser`), jamais en interrogeant `usersTable` à nouveau dans un handler.
 - Rate limiting IP (120 req/min) sur `/api/*` avant l'auth (`00-rate-limit.ts`) — ne pas le désactiver pour un nouvel endpoint sans raison explicite.
 - `DATABASE_URL` doit utiliser **le rôle propriétaire des tables** (`postgres`, celui qui joue les migrations). Toutes les tables sont en RLS sans aucune policy (`.enableRLS()`) : un autre rôle lit zéro ligne sans lever la moindre erreur — symptôme « pages vides, aucun log ». Voir `scripts/dev-db-init.sql`.
-- Ne jamais committer `.env` ou une valeur réelle de secret. Secret scanning + push protection sont actifs au niveau du repo (GitHub natif) — un push contenant un secret sera bloqué côté GitHub, ce n'est pas juste une convention.
+- Ne jamais committer `.env` ou une valeur réelle de secret. Secret scanning + push protection sont actifs au niveau du repo (GitHub natif) — un push contenant un secret sera bloqué côté GitHub, ce n'est pas juste une convention. Ces protections et les rulesets de `main`/`staging` dépendent de la visibilité **publique** du repo : l'organisation est sur le plan GitHub Free, passer le repo en privé les désactive silencieusement.
 - `NUXT_S3_ACCESS_KEY_ID`/`NUXT_S3_SECRET_ACCESS_KEY` (storage documents), `BETTER_AUTH_SECRET` et `RESEND_API_KEY` sont côté serveur uniquement — ne jamais les exposer dans `runtimeConfig.public` ni dans une réponse API.
 
 ## Conventions de code
@@ -98,7 +98,7 @@ Ces trois commandes tournent aussi en pre-commit hook (`.husky/pre-commit`) — 
 - L'ancien projet Supabase (base + storage) n'est plus utilisé par l'application mais existe encore côté Supabase, avec les données d'avant bascule. À supprimer une fois la nouvelle prod jugée stable et les sauvegardes vérifiées — d'ici là, ne pas s'y reconnecter par erreur.
 - `users.authUserId` porte pour le staff des identifiants hérités de l'ancien Supabase Auth. Sans incidence tant que la reliaison automatique à l'identité Better Auth fonctionne (elle se fait à la première connexion réussie), mais c'est le premier endroit à regarder si un compte staff se retrouve sans accès après la migration.
 - Scope du PAT `PROJECT_TOKEN` (utilisé par `staging-merge.yml`) non audité dans le cadre de ce passage — à vérifier qu'il n'a que les droits GitHub Projects nécessaires, pas plus.
-- Scan de secrets fait uniquement sur l'état actuel des fichiers trackés, pas sur l'historique git complet — envisager un passage `gitleaks --log-opts="--all"` ou équivalent si un doute survient sur un secret ayant pu être commité puis retiré.
+- Alertes Dependabot `glob` (#205), `minimatch` (#206) et `deepmerge` (#184) laissées ouvertes volontairement : ces paquets ne sont importés ni par le code serveur ni par le bundle à l'exécution. `glob` et `minimatch` attendent que `@vercel/nft` et `readdir-glob` acceptent les majeures corrigées (ne pas les forcer par `overrides`) ; `deepmerge` n'a pas de correctif.
 - L'envoi réel du mail magic-link (via `invite.post.ts` pour le portail, et le flux de login normal) n'est couvert par aucun test e2e automatisé (seul le RBAC autour est testé) — à valider manuellement avec un vrai `RESEND_API_KEY` avant de considérer le flux portail fiable en staging. Vérifier aussi que le domaine d'envoi (`server/lib/mail.ts`, `MAIL_FROM`) est correctement vérifié côté Resend (SPF/DKIM), sinon les mails partent en spam ou échouent silencieusement.
 
 ## graphify
