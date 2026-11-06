@@ -64,8 +64,6 @@
     "@nuxt/icon": "2.3.1",
     "@esbuild-kit/core-utils": {
       "esbuild": "^0.25.4"
-    },
-    "glob": "^14.0.4",
-    "minimatch": "^11.0.5"
+    }
   }
 }
