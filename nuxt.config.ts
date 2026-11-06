@@ -67,5 +67,6 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
-  }
+  },
+  icon: { localApiEndpoint: '/_nuxt_icon' }
 })
