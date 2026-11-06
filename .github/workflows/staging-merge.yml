@@ -9,8 +9,12 @@ jobs:
     steps:
       - name: Extraire le numéro d'issue
         id: extract
+        env:
+          # Via env et non interpolé dans le script : le message vient du titre d'une PR, donc d'un
+          # contributeur externe, et serait sinon exécuté par le shell.
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          ISSUE=$(echo "${{ github.event.head_commit.message }}" | grep -oP '/\K[0-9]+' | head -1)
+          ISSUE=$(printf '%s' "$COMMIT_MESSAGE" | grep -oP '/\K[0-9]+' | head -1)
           echo "issue_number=$ISSUE" >> "$GITHUB_OUTPUT"
 
       - name: Trouver l'Item ID dans le Project
