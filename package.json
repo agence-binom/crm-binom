@@ -33,7 +33,7 @@
     "@iconify-json/simple-icons": "^1.2.97",
     "@nuxt/ui": "4.11.2",
     "@tiptap/extension-list": "3.31.3",
-    "better-auth": "^1.7.6",
+    "better-auth": "^1.7.7",
     "dotenv": "^18.0.3",
     "drizzle-orm": "^0.45.3",
     "nuxt": "4.5.2",
